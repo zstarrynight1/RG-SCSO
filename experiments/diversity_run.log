@@ -1,0 +1,11 @@
+Zoo          γ=0.0: end diversity=0.4830 frozen=0.000 size=7.7
+Zoo          γ=0.5: end diversity=0.4420 frozen=0.000 size=6.1
+Zoo          γ=1.0: end diversity=0.3202 frozen=0.125 size=4.3
+WDBC         γ=0.0: end diversity=0.4819 frozen=0.000 size=15.0
+WDBC         γ=0.5: end diversity=0.4367 frozen=0.000 size=12.1
+WDBC         γ=1.0: end diversity=0.3028 frozen=0.111 size=9.9
+ColonCancer  γ=0.0: end diversity=0.4829 frozen=0.000 size=999.4
+ColonCancer  γ=0.5: end diversity=0.3886 frozen=0.000 size=566.0
+ColonCancer  γ=1.0: end diversity=0.1026 frozen=0.511 size=129.2
+
+Đã ghi experiments/results_diversity/diversity_history.csv (3546 dòng).

@@ -1,0 +1,24 @@
+  done HeartDisease (d=13) seed=42
+  done HeartDisease (d=13) seed=43
+  done HeartDisease (d=13) seed=44
+  done Zoo (d=16) seed=42
+  done Zoo (d=16) seed=43
+  done Zoo (d=16) seed=44
+  done Lymphography (d=18) seed=42
+  done Lymphography (d=18) seed=43
+  done Lymphography (d=18) seed=44
+  done Parkinsons (d=22) seed=42
+  done Parkinsons (d=22) seed=43
+  done Parkinsons (d=22) seed=44
+  done WDBC (d=30) seed=42
+  done WDBC (d=30) seed=43
+  done WDBC (d=30) seed=44
+  done Sonar (d=60) seed=42
+  done Sonar (d=60) seed=43
+  done Sonar (d=60) seed=44
+
+=== washout(early 10%) vs (late 10%) of search, mean over datasets/seeds ===
+  S-shaped: early=0.840  late=0.809  rise=-0.031
+  V-shaped: early=0.946  late=0.937  rise=-0.009
+
+Saved: experiments/results_washout/washout_raw.csv and washout_by_dim.csv

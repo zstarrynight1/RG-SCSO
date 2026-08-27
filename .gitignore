@@ -1,0 +1,40 @@
+# Environment / caches
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+.claude/
+
+# Leftover local scratch/extraction dirs, not part of the reproducible project
+RG-SCSO_ASOC_overleaf/
+RG-SCSO_ASOC_overleaf 2/
+_archived_files_20260827/
+
+# Internal review / revision-tracking documents -- not for the reviewer-facing
+# anonymized repository (matches the same "no internal notes leaking into
+# reader-facing material" principle applied to the manuscript itself).
+Diem_yeu_RG-SCSO.md
+RG-SCSO_MASTER_FINAL_COMPLETE.md
+RG-SCSO_Q1_Review_Final.md
+RG-SCSO_Revision_Action_Plan.md
+RG-SCSO_Action_Plan_For_IEEE_Q1.md
+RG-SCSO_SciRep_Revision_Summary.md
+HELDOUT_REVIEW.md
+HELDOUT_DISCLOSURE_DRAFT.md
+Q1_BLUEPRINT.md
+
+# Old/superseded manuscript drafts and other journal-target artifacts not
+# relevant to this submission
+RG-SCSO_SciRep*
+RG-SCSO_demo*
+RG-SCSO_IEEE*
+RG-SCSO_TitlePage*
+RG-SCSO_submission*
+RG-SCSO_word*
+RG-SCSO.docx
+RG-SCSO.pdf
+RG_SCSO_Final.pdf
+RG_SCSO_for_Parsimonious_Feature_Selection*
+manuscript.pdf
+IEEEtran_skeleton.tex

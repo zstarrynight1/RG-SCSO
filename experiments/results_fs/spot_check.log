@@ -1,0 +1,8 @@
+config        dataset       run    acc(CSV)   acc(re)   nf(CSV) nf(re)  verdict
+Full          ColonCancer     5    0.855128  0.855128       542    542  MATCH
+NoRMS         ColonCancer     5    0.792308  0.792308       984    984  MATCH
+Full          Leukemia        3    0.986667  0.986667       942    942  MATCH
+NoUMR         Sonar           0    0.884901  0.884901        16     16  MATCH
+NoORL         WDBC            0    0.975423  0.975423        11     11  MATCH
+
+KẾT LUẬN: TẤT CẢ TRÙNG KHÍT — throttle vô hại, dùng được kết quả.

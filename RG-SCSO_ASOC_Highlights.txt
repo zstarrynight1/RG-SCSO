@@ -1,0 +1,5 @@
+Injects a per-feature relevance prior directly at the binarization step
+Selects second-smallest feature subsets across 18 benchmarks (trails COA)
+Controlled ablation isolates the relevance-modulation contribution
+Cross-classifier and cross-prior experiments confirm robustness
+Honest failure analysis on extreme high-dimensional gene-expression data
