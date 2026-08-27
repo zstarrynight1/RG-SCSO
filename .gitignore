@@ -5,6 +5,8 @@ __pycache__/
 .pytest_cache/
 .DS_Store
 .claude/
+~$*
+Ảnh màn hình*.png
 
 # Leftover local scratch/extraction dirs, not part of the reproducible project
 RG-SCSO_ASOC_overleaf/
