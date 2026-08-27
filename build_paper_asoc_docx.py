@@ -1324,11 +1324,10 @@ def build() -> None:
     para(doc, "The datasets are publicly available benchmarks (UCI and "
               "standard microarray sets). The source code, the "
               "preregistration, the per-run seeds, and the raw results are "
-              "available at [ANONYMIZED-LINK-PENDING -- generate at "
-              "https://anonymous.4open.science/ from "
-              "https://github.com/zstarrynight1/RG-SCSO (private) before "
-              "submission] and will be released in a public, citable "
-              "repository upon acceptance.")
+              "available in an anonymized repository "
+              "(https://anonymous.4open.science/r/RG-SCSO-8BC0/) and will "
+              "be released in a public, citable repository upon "
+              "acceptance.")
 
     doc.add_heading("Funding", level=1)
     para(doc, "No funding was received for this work.")
