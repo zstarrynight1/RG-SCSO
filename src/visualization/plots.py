@@ -1,19 +1,3 @@
-"""Phase 5 — toàn bộ hình vẽ cho bài báo (PROJECT_SPEC.md mục 7):
-    1. Convergence curves (ECL-SCSO vs top 4-5 baseline mạnh nhất)
-    2. Boxplot phân phối fitness/accuracy 30 run, theo thuật toán, mỗi dataset
-    3. Heatmap ranking (ma trận algorithm x dataset, màu theo Friedman rank)
-    4. Bar chart tỉ lệ feature được chọn trung bình, theo thuật toán/dataset
-    5. Ablation bar chart (so sánh 6 cấu hình ở Phase 4)
-
-Mọi hình lưu CẢ `.png` (300 dpi) VÀ `.pdf` (vector) vào `experiments/figures/`.
-
-MÀU SẮC NHẤT QUÁN: 1 thuật toán = 1 màu cố định ở MỌI hình (ALGORITHM_COLORS
-bên dưới), tránh tình trạng đổi màu giữa các hình gây khó đối chiếu khi
-reviewer Q1 soi kỹ. ECL-SCSO và SCSO (đề xuất + baseline trực tiếp của nó)
-được gán màu nổi bật, cố định, dễ phân biệt với phần còn lại.
-
-Chạy: python -m src.visualization.plots
-"""
 
 from __future__ import annotations
 
@@ -42,8 +26,8 @@ ALGORITHMS_ORDER = [
 ]
 _OTHER_PALETTE = sns.color_palette("husl", n_colors=len(ALGORITHMS_ORDER) - 2)
 ALGORITHM_COLORS = {
-    "ECL-SCSO": "#d62728",  # đỏ nổi bật — thuật toán đề xuất
-    "SCSO": "#1f77b4",  # xanh dương — baseline trực tiếp (thuật toán gốc)
+    "ECL-SCSO": "#d62728",                                   
+    "SCSO": "#1f77b4",                                                    
     **dict(zip(ALGORITHMS_ORDER[2:], _OTHER_PALETTE)),
 }
 
@@ -59,7 +43,7 @@ _ABLATION_PALETTE = sns.color_palette("flare", n_colors=len(ABLATION_CONFIGS_ORD
 ABLATION_COLORS = {
     "Full": "#d62728",
     **dict(zip(ABLATION_CONFIGS_ORDER[1:-1], _ABLATION_PALETTE)),
-    "NoImprovement": ALGORITHM_COLORS["SCSO"],  # = SCSO gốc, dùng lại màu SCSO cho nhất quán
+    "NoImprovement": ALGORITHM_COLORS["SCSO"],                                               
 }
 
 
@@ -73,10 +57,6 @@ def _save_figure(fig: plt.Figure, name: str) -> None:
 def plot_convergence_curve(
     curves: dict[str, list[float]], title: str, name: str, log_scale: bool = True
 ) -> None:
-    """1 hình so sánh convergence curve của vài thuật toán trên 1 dataset/hàm.
-
-    `curves`: {algorithm_name: convergence_curve (list, độ dài = max_iter)}.
-    """
     fig, ax = plt.subplots(figsize=(6, 4.2))
     for algo, curve in curves.items():
         color = ALGORITHM_COLORS.get(algo, "#888888")
@@ -95,8 +75,6 @@ def plot_convergence_curve(
 def plot_boxplot_distribution(
     df: pd.DataFrame, value_col: str, group_label: str, name: str
 ) -> None:
-    """Boxplot phân phối `value_col` (fitness/accuracy) qua 30 run, theo
-    thuật toán, cho 1 dataset/hàm cụ thể. `df` đã lọc sẵn về 1 dataset/hàm."""
     algos_present = [a for a in ALGORITHMS_ORDER if a in df["algorithm"].unique()]
     fig, ax = plt.subplots(figsize=(7.5, 4.2))
     sns.boxplot(
@@ -117,8 +95,6 @@ def plot_boxplot_distribution(
 
 
 def plot_ranking_heatmap(rank_pivot: pd.DataFrame, name: str) -> None:
-    """`rank_pivot`: index=dataset/function, columns=algorithm, values=rank
-    (1=tốt nhất). Vẽ heatmap algorithm x dataset."""
     cols = [a for a in ALGORITHMS_ORDER if a in rank_pivot.columns]
     rank_pivot = rank_pivot[cols]
     fig, ax = plt.subplots(figsize=(0.7 * len(cols) + 2, 0.35 * len(rank_pivot) + 2))
@@ -138,9 +114,6 @@ def plot_ranking_heatmap(rank_pivot: pd.DataFrame, name: str) -> None:
 
 
 def plot_selected_features_bar(df: pd.DataFrame, name: str) -> None:
-    """`df`: cột algorithm, dataset, n_selected_features, n_total_features
-    (1 dòng / run, hoặc đã tổng hợp sẵn mean). Vẽ bar chart tỉ lệ feature
-    được chọn trung bình, nhóm theo dataset, mỗi nhóm 1 cụm cột thuật toán."""
     agg = df.groupby(["dataset", "algorithm"], as_index=False).agg(
         ratio=("n_selected_features", "mean"), n_total=("n_total_features", "first")
     )
@@ -166,8 +139,6 @@ def plot_selected_features_bar(df: pd.DataFrame, name: str) -> None:
 
 
 def plot_ablation_bar(ablation_summary: pd.DataFrame, name: str) -> None:
-    """`ablation_summary`: cột config_name, function_name, mean (best_fitness).
-    Vẽ bar chart fitness trung bình (qua các hàm) giữa 6 cấu hình ablation."""
     agg = ablation_summary.groupby("config_name", as_index=False)["mean"].mean()
     agg["config_name"] = pd.Categorical(
         agg["config_name"], categories=ABLATION_CONFIGS_ORDER, ordered=True
@@ -192,18 +163,7 @@ def plot_ablation_bar(ablation_summary: pd.DataFrame, name: str) -> None:
     _save_figure(fig, name)
 
 
-# ----------------------------------------------------------------------
-# CLI: tạo các hình hiện đã có ĐỦ dữ liệu (Phase 2 benchmark + Phase 4
-# ablation). Hình theo dataset (Phase 3) cần fs_results.csv đầy đủ — chạy lại
-# script này sau khi Phase 3 (`run_feature_selection.py`) hoàn tất.
-# ----------------------------------------------------------------------
-
-
 def _generate_benchmark_convergence_figures() -> None:
-    """Chạy lại 1 seed (RANDOM_SEED_BASE) cho ECL-SCSO + top 4 baseline mạnh
-    nhất (theo friedman_ranking.csv của Phase 2) trên TỪNG hàm CEC2017, vì
-    benchmark_results.csv (Phase 2) không lưu convergence_curve đầy đủ (chỉ
-    lưu best_fitness cuối cùng để tiết kiệm dung lượng)."""
     from config import MAX_ITERATION, POPULATION_SIZE, RANDOM_SEED_BASE
     from src.algorithms.baselines import run_mealpy_baseline
     from src.algorithms.ecl_scso import ECLSCSO
@@ -249,9 +209,6 @@ def _generate_ablation_figure() -> None:
 
 
 def _generate_fs_figures_if_ready() -> None:
-    """Boxplot / heatmap ranking / selected-features bar — cần fs_results.csv
-    (Phase 3) đủ cho tất cả 18 dataset x 11 thuật toán. Bỏ qua (không tạo
-    hình dở dang gây hiểu nhầm) nếu Phase 3 chưa chạy xong."""
     results_path = os.path.join("experiments", "results_fs", "fs_results.csv")
     if not os.path.exists(results_path):
         print("Chưa có fs_results.csv — bỏ qua hình theo dataset (cần Phase 3 xong).")

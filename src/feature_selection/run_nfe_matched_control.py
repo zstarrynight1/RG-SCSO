@@ -1,40 +1,9 @@
-"""NFE-matched random-probe control (RG-SCSO_MASTER_FINAL_COMPLETE.md, "NFE
-control" / 5 most-important-items #2) — isolates whether UMR's (C3) benefit
-comes from TARGETING the K features nearest the RMS decision boundary
-(uncertain -> most likely to flip a wrong bit), or simply from spending K
-extra evaluations of local search ANYWHERE, at the same NFE cost.
-
-The existing ablation ("NoUMR", already in experiments/results_fs/
-fs_ablation_results.csv) removes C3 entirely -- it confounds "loses targeting"
-with "loses the extra evaluations altogether". RGSCSORandomProbe (see
-src/algorithms/rg_scso_random_probe.py) keeps the exact same NFE budget and
-greedy-accept-if-better logic, but picks its K probe features uniformly at
-random instead of by relevance-uncertainty -- the genuine NFE-matched control
-this comparison needs.
-
-Three-way comparison per dataset (all under the SAME protocol as the main
-ablation): RG-SCSO (targeted UMR, final deployed config) vs RG-SCSO-RandomProbe
-(this new control) vs -UMR (existing ablation CSV, reused rather than rerun --
-same seeds, same protocol, already verified data). If targeted beats
-RandomProbe by a margin similar to how it beats -UMR entirely, targeting is
-what matters. If RandomProbe performs comparably to targeted UMR, that is an
-honest, disclosable null result on the value of TARGETING specifically (not on
-UMR/extra-search-effort as a whole) -- report whichever the data shows.
-
-SCOPE: same 5-dataset representative set as every other pilot this session
-(Zoo, Sonar, WDBC, ColonCancer, Leukemia), 30 runs, matching main protocol.
-
-Output: experiments/results_nfe_control/nfe_control_results.csv
-Run:    .venv/bin/python -m src.feature_selection.run_nfe_matched_control
-        [--smoke] [--datasets ...] [--runs N]
-"""
 
 from __future__ import annotations
 
 import os
 
-# Phải set TRƯỚC khi import numpy — tránh deadlock ProcessPoolExecutor +
-# threaded BLAS đã gặp trước đó trong phiên này.
+
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
@@ -59,9 +28,8 @@ RESULTS_CSV = os.path.join(OUTPUT_DIR, "nfe_control_results.csv")
 
 SEARCH_LB, SEARCH_UB = -1.0, 1.0
 DEFAULT_DATASETS = ["Zoo", "Sonar", "WDBC", "ColonCancer", "Leukemia"]
-# "RG-SCSO" ở đây trùng đúng cấu hình Full-2-component đã có (RMS+UMR targeted)
-# -- chạy lại độc lập (không tái dùng CSV cũ) để cùng seed/protocol/timestamp
-# với RandomProbe, tránh mọi khác biệt môi trường lặt vặt làm nhiễu so sánh.
+
+
 CONFIGS = ["RG-SCSO", "RG-SCSO-RandomProbe"]
 
 

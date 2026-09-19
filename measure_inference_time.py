@@ -1,15 +1,3 @@
-"""Đo chi phí inference (wall-clock) như hàm của SỐ CHIỀU (§2.2 Diem_yeu_RG-SCSO.md:
-"giá trị thực tiễn của parsimony là gì?"). KNN k-NN suy luận có chi phí O(n_train·d)
-mỗi truy vấn (tính khoảng cách), nên đo trực tiếp latency dự đoán ở d = số feature
-trung bình mỗi thuật toán chọn (RG-SCSO/SCSO/AOA, từ fs_results.csv đã có) trên
-CÙNG dữ liệu thật, KHÔNG cần mask đã chọn thật sự (không lưu) — vì latency KNN phụ
-thuộc SỐ chiều của phép tính khoảng cách, không phụ thuộc feature nào cụ thể. Đây
-là phép đo CHI PHÍ TÍNH TOÁN của việc chọn subset nhỏ hơn, tách biệt khỏi accuracy
-(đã báo cáo riêng ở bảng khác) — không đại diện cho pipeline suy luận đầy đủ.
-
-Output: experiments/results_inference/inference_time.csv
-Chạy:   .venv/bin/python measure_inference_time.py
-"""
 
 from __future__ import annotations
 
@@ -31,8 +19,8 @@ OUT_CSV = os.path.join(OUT_DIR, "inference_time.csv")
 
 DATASETS = ["Zoo", "Sonar", "WDBC", "ColonCancer", "Leukemia"]
 ALGOS = ["RG-SCSO", "SCSO", "AOA"]
-N_QUERY_REPS = 200   # số lần lặp đo latency 1 truy vấn (median ổn định)
-N_BATCH_REPS = 20    # số lần lặp đo latency cả batch test
+N_QUERY_REPS = 200                                                      
+N_BATCH_REPS = 20                                         
 
 
 def _load(name: str):
@@ -41,28 +29,21 @@ def _load(name: str):
 
 
 def _time_knn(X: np.ndarray, y: np.ndarray, n_feat: int, seed: int = 42) -> dict:
-    """Fit KNN(k=5) trên n_feat cột đầu (đại diện chi phí tính toán ở số chiều
-    này, KHÔNG phải mask đã chọn thật — xem docstring module)."""
     n_feat = max(1, min(n_feat, X.shape[1]))
     Xs = X[:, :n_feat]
     X_tr, X_te, y_tr, y_te = train_test_split(
         Xs, y, test_size=0.2, stratify=y, random_state=seed)
     sc = StandardScaler().fit(X_tr)
     X_tr, X_te = sc.transform(X_tr), sc.transform(X_te)
-    # algorithm="brute" CỐ ĐỊNH: sklearn "auto" tự chọn ball_tree/kd_tree khác
-    # nhau tùy (n_samples, n_features) của TỪNG dataset, làm độ trễ không còn
-    # phản ánh sạch chi phí O(n_train*d) của khoảng cách — đo lệch, gây nhiễu
-    # không tương quan với d (phát hiện được khi kiểm tra sơ bộ). brute force
-    # còn là lựa chọn ĐÚNG về mặt thực tế cho các tập chiều cao trong bài
-    # (ColonCancer/Leukemia hàng nghìn feature) vì cây kd/ball suy biến về
-    # brute-force do curse of dimensionality.
+
+
     clf = KNeighborsClassifier(n_neighbors=KNN_NEIGHBORS, algorithm="brute").fit(X_tr, y_tr)
 
-    # warm-up (tránh chi phí import/cache lần gọi đầu làm méo phép đo)
+                                                                      
     clf.predict(X_te[:min(5, len(X_te))])
     clf.predict(X_te)
 
-    # per-query latency (1 mẫu/lần) — mô phỏng suy luận thời gian thực
+                                                                      
     q = X_te[:1]
     times = []
     for _ in range(N_QUERY_REPS):
@@ -71,7 +52,7 @@ def _time_knn(X: np.ndarray, y: np.ndarray, n_feat: int, seed: int = 42) -> dict
         times.append(time.perf_counter() - t0)
     per_query_ms = float(np.median(times)) * 1000
 
-    # batch latency (toàn bộ test set/lần) — mô phỏng suy luận theo lô
+                                                                      
     times_b = []
     for _ in range(N_BATCH_REPS):
         t0 = time.perf_counter()
@@ -84,17 +65,12 @@ def _time_knn(X: np.ndarray, y: np.ndarray, n_feat: int, seed: int = 42) -> dict
 
 
 def _time_synthetic(d: int, n_train: int, n_test: int, seed: int) -> float:
-    """Đo latency KNN(k=5, brute) trên dữ liệu TỔNG HỢP ở quy mô lớn (deployment-
-    scale), số chiều d = số feature thật RG-SCSO/AOA chọn trên dataset tương ứng.
-    Tách biệt khỏi phần đo trên dataset thật (quá nhỏ để tín hiệu vượt nhiễu) —
-    đây là minh họa CÓ KIỂM SOÁT cho lập luận độ phức tạp O(n_train·d), không
-    phải số đo trên chính 18 dataset benchmark."""
     rng = np.random.default_rng(seed)
     X_tr = rng.standard_normal((n_train, d)).astype(np.float32)
     y_tr = rng.integers(0, 2, n_train)
     X_te = rng.standard_normal((n_test, d)).astype(np.float32)
     clf = KNeighborsClassifier(n_neighbors=KNN_NEIGHBORS, algorithm="brute").fit(X_tr, y_tr)
-    clf.predict(X_te[:5]); clf.predict(X_te)  # warm-up
+    clf.predict(X_te[:5]); clf.predict(X_te)           
     times = []
     for _ in range(N_BATCH_REPS):
         t0 = time.perf_counter()

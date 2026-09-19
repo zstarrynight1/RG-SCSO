@@ -1,26 +1,3 @@
-"""Phase 4 — Ablation study (PROJECT_SPEC.md mục 6.2): chạy lại ECL-SCSO với
-6 cấu hình (bật/tắt độc lập 4 cải tiến) trên 6 hàm CEC2017 đại diện (KHÔNG
-chạy lại hết 29 hàm để tiết kiệm thời gian, đúng như spec cho phép), mỗi cấu
-hình x mỗi hàm chạy NUM_INDEPENDENT_RUNS lần độc lập.
-
-6 hàm đại diện (phủ đủ 4 nhóm của CEC2017): F1 (unimodal), F4 (simple
-multimodal — Rastrigin), F9 (simple multimodal — Schwefel), F13 (hybrid),
-F20 (composition), F27 (composition).
-
-6 cấu hình:
-    Full              : chaotic=on,  adaptiveR=on,  DE=on,  Levy=on
-    OnlyChaoticInit   : chaotic=on,  adaptiveR=off, DE=off, Levy=off
-    OnlyAdaptiveR     : chaotic=off, adaptiveR=on,  DE=off, Levy=off
-    OnlyDEMutation    : chaotic=off, adaptiveR=off, DE=on,  Levy=off
-    OnlyLevyFlight    : chaotic=off, adaptiveR=off, DE=off, Levy=on
-    NoImprovement     : chaotic=off, adaptiveR=off, DE=off, Levy=off  (= SCSO gốc)
-
-Output:
-    experiments/results_benchmark/ablation_results.csv
-        cột: config_name, function_name, run_id, best_fitness, runtime_seconds
-
-Chạy: python -m src.benchmark.run_ablation
-"""
 
 from __future__ import annotations
 

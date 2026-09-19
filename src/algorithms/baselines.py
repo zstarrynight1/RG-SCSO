@@ -1,24 +1,3 @@
-"""Wrapper gọi 9 thuật toán baseline qua thư viện `mealpy` (v3.x).
-
-Mọi wrapper trả về CÙNG format dict như `BaseOptimizer.optimize()`:
-    {"best_solution": np.ndarray, "best_fitness": float,
-     "convergence_curve": list[float], "runtime": float}
-để pipeline downstream (benchmark, feature selection) xử lý đồng nhất,
-không cần biết baseline nào đang chạy.
-
-LƯU Ý ĐẶT TÊN TRONG MEALPY (dễ nhầm):
-    - `mealpy.swarm_based.COA`      = Coyote Optimization Algorithm (KHÔNG
-      phải Coati).
-    - `mealpy.swarm_based.CoatiOA`  = Coati Optimization Algorithm — đây mới
-      là "COA (Coati)" mà spec yêu cầu, nên dùng `CoatiOA.OriginalCoatiOA`.
-    - "AOA" trong spec được hiểu là Arithmetic Optimization Algorithm
-      (Abualigah et al., 2021) — `mealpy.math_based.AOA.OriginalAOA`. Đây là
-      nghĩa phổ biến nhất của "AOA" trong tài liệu feature-selection, KHÔNG
-      phải Archimedes Optimization Algorithm.
-
-Đã xác minh (2026-06-21) cả 9 thuật toán đều có sẵn trong mealpy==3.0.3,
-class "Original*", API thống nhất: `model.solve(problem_dict, seed=...)`.
-"""
 
 from __future__ import annotations
 
@@ -38,7 +17,7 @@ from mealpy.swarm_based.PSO import OriginalPSO
 from mealpy.swarm_based.SSA import OriginalSSA
 from mealpy.swarm_based.WOA import OriginalWOA
 
-# algorithm_name -> mealpy "Original*" class
+                                            
 _MEALPY_ALGORITHMS = {
     "GA": OriginalGA,
     "PSO": OriginalPSO,
@@ -47,11 +26,10 @@ _MEALPY_ALGORITHMS = {
     "HHO": OriginalHHO,
     "SSA": OriginalSSA,
     "AOA": OriginalAOA,
-    "COA": OriginalCoatiOA,  # Coati Optimization Algorithm (xem ghi chú ở trên)
+    "COA": OriginalCoatiOA,                                                     
     "OOA": OriginalOOA,
-    # SOTA gần đây (2023) làm mốc "recent" cho so sánh Q1 — Rime Optimization
-    # Algorithm (Su et al., Neurocomputing 2023). Chạy CÙNG pipeline binarize
-    # (sigmoid + ngưỡng) như các baseline khác để công bằng tuyệt đối.
+
+
     "RIME": OriginalRIME,
 }
 
@@ -66,12 +44,6 @@ def run_mealpy_baseline(
     max_iter: int,
     seed: int,
 ) -> dict:
-    """Chạy 1 baseline mealpy, trả về dict cùng format với `BaseOptimizer.optimize()`.
-
-    Args:
-        algorithm_name: 1 trong các key của `_MEALPY_ALGORITHMS`
-            (GA, PSO, GWO, WOA, HHO, SSA, AOA, COA, OOA).
-    """
     if algorithm_name not in _MEALPY_ALGORITHMS:
         raise ValueError(
             f"Không hỗ trợ baseline '{algorithm_name}'. "
@@ -85,7 +57,7 @@ def run_mealpy_baseline(
         "bounds": FloatVar(lb=lb_vec.tolist(), ub=ub_vec.tolist()),
         "minmax": "min",
         "obj_func": obj_func,
-        "log_to": None,  # tắt log console của mealpy, pipeline tự quản lý progress bar
+        "log_to": None,                                                                
     }
 
     model_cls = _MEALPY_ALGORITHMS[algorithm_name]

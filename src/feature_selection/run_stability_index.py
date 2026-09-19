@@ -1,41 +1,3 @@
-"""Feature-selection stability index (Diem_yeu_RG-SCSO.md §2.2) — RG-SCSO's
-central contribution is parsimony at preserved accuracy, but the paper never
-quantifies whether the SELECTED SUBSET ITSELF is consistent across independent
-runs, only its size and downstream accuracy. A method that selects a
-different, equally-small, equally-accurate subset on every run is a much
-weaker practical claim than one that converges on largely the same features.
-
-METHOD: Nogueira, Sechidis & Brown (2018), "On the Stability of Feature
-Selection Algorithms," JMLR 18(174):1-54 — the standard generalization of the
-Kuncheva (2007) consistency index to VARIABLE subset size (RG-SCSO's subset
-size is not fixed across runs, so the classical equal-size Kuncheva formula
-does not directly apply; Nogueira's Phi is the correctly-cited modern
-replacement, reducing to Kuncheva's index in the equal-size case).
-
-Given a binary indicator matrix Z in {0,1}^(M x d) (M runs, d features),
-p_j = mean_i Z[i,j] (selection frequency of feature j), k_bar = mean subset
-size:
-
-    Phi = 1 - [ (1/d) * sum_j (M/(M-1)) * p_j*(1-p_j) ]
-              / [ (k_bar/d) * (1 - k_bar/d) ]
-
-Phi in [-1, 1] (typically); 1 = identical subset every run, 0 = no more
-consistent than selecting k_bar features uniformly at random each run.
-
-SCOPE: same 5-dataset representative subset used throughout this paper's
-robustness/ablation pilots (Zoo, Sonar, WDBC, ColonCancer, Leukemia), 30
-independent runs per algorithm (matching the main study's run count), for
-RG-SCSO (the deployed configuration), SCSO (no relevance signal, in-family
-reference), and AOA (cross-family reference) — masks are saved per run
-(compact selected-index string, not a full bit matrix, since Leukemia has
-3571 features) so Phi can be computed after the fact.
-
-Output: experiments/results_stability/stability_masks.csv (raw masks)
-        experiments/results_stability/stability_index_results.csv (Phi per
-        algorithm x dataset)
-Run:    .venv/bin/python -m src.feature_selection.run_stability_index [--smoke]
-        [--datasets ...] [--runs N]
-"""
 
 from __future__ import annotations
 
@@ -97,7 +59,7 @@ def _run_single(task: dict) -> dict:
                              MAX_ITERATION, seed, eval_mask=eval_mask,
                              transfer_kind="s", use_obl=False).optimize()
         mask = result["best_mask"]
-    else:  # AOA — mealpy baseline, thresholded like elsewhere in this project
+    else:                                                                     
         from src.feature_selection.transfer_function import binarize_threshold
         result = run_mealpy_baseline(algo, obj_func, dim=dim, lb=SEARCH_LB,
                                       ub=SEARCH_UB, pop_size=POPULATION_SIZE,
@@ -119,8 +81,6 @@ def _append_rows(rows: list[dict]) -> None:
 
 
 def nogueira_phi(masks: list[set[int]], d: int) -> float:
-    """Nogueira et al. (2018) stability measure Phi for M runs' selected-index
-    sets (variable size), d = total feature count. See module docstring."""
     m = len(masks)
     if m < 2:
         return float("nan")

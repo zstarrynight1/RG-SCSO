@@ -1,18 +1,3 @@
-"""Baseline SCSO-FS CÙNG HỌ (rev #2) — so RG-SCSO trực tiếp với các biến thể
-SCSO-based feature selection, đúng dòng thuật toán mà bài tuyên bố "gap".
-
-Chạy bSCSO-S và bSCSO-OBL (xem src/algorithms/scso_fs_baselines.py) dưới CÙNG giao
-thức wrapper với bảng chính: KNN k=5, 5-fold CV, fitness = 0.99·err + 0.01·tỉ_lệ,
-biên [-1,1], pop=30, iter=500, ngân sách NFE = pop×iter, seed = BASE + run_id.
-18 dataset × 30 run — KHÓA TRƯỚC, KHÔNG tinh chỉnh cho số đẹp (spec 8.1/4.2).
-
-Kết quả ghép với fs_results.csv (cùng cột) để đưa vào Table II–VII như baseline
-họ SCSO. ĐỌC caveat sourcing trong scso_fs_baselines.py trước khi công bố.
-
-Output: experiments/results_fs_scso_family/fs_scso_family_results.csv
-Chạy:   .venv/bin/python -m src.feature_selection.run_fs_scso_family [--smoke]
-        [--datasets Zoo,Sonar,...] [--configs bSCSO-S,bSCSO-OBL] [--runs N]
-"""
 
 from __future__ import annotations
 
@@ -39,7 +24,7 @@ RESULTS_CSV = os.path.join(OUTPUT_DIR, "fs_scso_family_results.csv")
 
 SEARCH_LB, SEARCH_UB = -1.0, 1.0
 
-# 18 dataset KHỚP bảng chính fs_results.csv (cùng protocol/seed).
+                                                                 
 ALL_DATASETS = [
     "BreastEW", "ColonCancer", "Diabetes", "GermanCredit", "HeartDisease",
     "IonosphereEW", "KrVsKpEW", "Leukemia", "Lymphography", "M-of-n",
@@ -47,7 +32,7 @@ ALL_DATASETS = [
     "WaveformEW", "Zoo",
 ]
 
-# config -> kwargs cho BinarySCSO (khác nhau ở transfer + OBL, cùng SCSO move).
+                                                                               
 CONFIGS = {
     "bSCSO-S": {"transfer_kind": "s", "use_obl": False},
     "bSCSO-OBL": {"transfer_kind": "v", "use_obl": True},

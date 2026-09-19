@@ -1,14 +1,3 @@
-"""Sinh bài RG-SCSO ra file LaTeX theo chuẩn Springer sn-jnl (target Applied Intelligence).
-
-Nguyên tắc (giống bản docx):
-  - MỌI số trong bảng/prose đọc tự động từ fs_results.csv, không gõ tay.
-  - Phần chưa chạy xong (RIME đủ 18 dataset, Wilcoxon/Holm, effect size,
-    Friedman/CD, ablation, hình) để trống bằng \\textit{[pending ...]}.
-  - Bố cục, đánh số, table/figure/equation/algorithm theo IEEEtran_skeleton.tex.
-
-Chạy:   .venv/bin/python build_paper_tex.py
-Xuất:   RG-SCSO_demo.tex   (compile trên Overleaf, class sn-jnl, Springer Nature LaTeX)
-"""
 
 from __future__ import annotations
 
@@ -40,13 +29,10 @@ YEAR = {"RG-SCSO": "ours", "SCSO": "2022", "AOA": "2021", "COA": "2023",
 
 
 def esc(s: str) -> str:
-    """Escape ký tự LaTeX trong tên dataset/thuật toán."""
     return s.replace("_", r"\_").replace("&", r"\&").replace("%", r"\%")
 
 
 def sci(x: float, sig: int = 1) -> str:
-    """Ký hiệu khoa học LaTeX cho p-value (dùng TRONG math mode).
-    Vd 2.36e-13 -> '2.4\\times10^{-13}'. Với p rất nhỏ tránh kiểu '2.4e-13' của code."""
     if x == 0:
         return "0"
     exp = int(math.floor(math.log10(abs(x))))
@@ -55,20 +41,18 @@ def sci(x: float, sig: int = 1) -> str:
 
 
 def pcmp(p: float) -> str:
-    """RHS của báo cáo p-value: p rất nhỏ -> '<10^{-3}' (tránh ngụ ý độ chính xác
-    giả với chỉ 18 block, rev #8); còn lại '=<giá trị>'. Dùng dạng '$p{pcmp(p)}$'."""
     if p < 1e-3:
         return "<10^{-3}"
     return f"={p:.3f}"
 
 
 def accuracy_table(s: dict) -> str:
-    cols = "l" + "c" * (len(COMPLETE_ALGOS) + 2)  # dataset + #F + methods + RIME
+    cols = "l" + "c" * (len(COMPLETE_ALGOS) + 2)                                 
     head = " & ".join(["Dataset", "\\#F"] + [esc(a) for a in COMPLETE_ALGOS] + ["RIME"])
     lines = []
     rime_incomplete = False
     for ds in s["datasets"]:
-        # best gồm cả RIME nếu dataset này RIME đã đủ 30 run
+                                                            
         vals = list(s["acc_mean"].loc[ds])
         if ds in s["rime"]:
             vals.append(s["rime"][ds]["acc"])
@@ -80,13 +64,13 @@ def accuracy_table(s: dict) -> str:
             if abs(m - best) < 1e-9:
                 val = f"\\textbf{{{val}}}"
             cells.append(val)
-        if ds in s["rime"]:  # RIME đủ 30 run → số thật
+        if ds in s["rime"]:                            
             m, sd = s["rime"][ds]["acc"], s["rime"][ds]["std"]
             val = f"{m:.4f}$\\pm${sd:.3f}"
             if abs(m - best) < 1e-9:
                 val = f"\\textbf{{{val}}}"
             cells.append(val)
-        else:  # RIME đang chạy dataset này
+        else:                              
             cells.append("--")
             rime_incomplete = True
         lines.append(" & ".join(cells) + r" \\")
@@ -162,8 +146,6 @@ def rank_table(s: dict) -> str:
     )
 
 
-# Nhãn LaTeX các cấu hình ablation (§V-D). "Full" = thiết-kế 3-thành-phần khảo
-# sát; "$-$ ORL" = RG-SCSO CUỐI (2-thành-phần).
 ABL_LABEL_TEX = {
     "Full": r"Full (RMS+ORL+UMR)",
     "NoRMS": r"$-$ RMS",
@@ -174,9 +156,7 @@ ABL_LABEL_TEX = {
 
 
 def ablation_table(s: dict) -> str:
-    """Bảng V, accuracy trung bình mỗi cấu hình × dataset. Hàng Full \\textbf;
-    ô có $\\dagger$ = tệ hơn Full có ý nghĩa (Wilcoxon paired + Holm, p<0.05)."""
-    ds_list = s["abl_datasets"]  # 5 dataset ablation, KHÔNG phải 18 của bảng chính
+    ds_list = s["abl_datasets"]                                                    
     cols = "l" + "c" * len(ds_list)
     head = "Configuration & " + " & ".join(esc(d) for d in ds_list) + r" \\"
     lines = []
@@ -206,7 +186,6 @@ def ablation_table(s: dict) -> str:
 
 
 def dataset_table(s: dict) -> str:
-    """Bảng I, đặc trưng dataset (samples/features/classes), đọc từ data/processed."""
     lines = []
     for ds in s["datasets"]:
         df = pd.read_csv(os.path.join(PROC_DIR, f"{ds}.csv"))
@@ -224,7 +203,6 @@ def dataset_table(s: dict) -> str:
 
 
 def runtime_table() -> str:
-    """Bảng VIII, wall-clock trung bình (s/run) trên 5 dataset đại diện × 7 algo."""
     fs = pd.read_csv(FS_CSV)
     rt = fs.pivot_table(index="algorithm", columns="dataset",
                         values="runtime_seconds", aggfunc="mean")
@@ -251,7 +229,6 @@ def runtime_table() -> str:
 
 
 def washout_table(s: dict) -> str:
-    """Bảng IX, ECL-SCSO vs SCSO per-dataset + Wilcoxon (chứng cứ washout Phase-3)."""
     fs = pd.read_csv(FS_CSV)
     lines, wins, losses, ties = [], 0, 0, 0
     for ds in s["datasets"]:
@@ -261,7 +238,7 @@ def washout_table(s: dict) -> str:
             "run_id")["accuracy"].to_numpy()
         try:
             p = wilcoxon(e, c).pvalue
-        except ValueError:  # tất cả hiệu = 0 → không khác biệt
+        except ValueError:                                     
             p = 1.0
         if p < 0.05 and e.mean() > c.mean():
             sig, wins = f"win (p={p:.3f})", wins + 1
@@ -284,7 +261,6 @@ def washout_table(s: dict) -> str:
     )
 
 
-# Nhãn + định dạng giá trị cho từng sweep của bảng sensitivity (§C phụ lục).
 SENS_ROWS = [
     ("gamma", r"$\gamma$ (RMS)", lambda v: f"{v:.2f}"),
     ("umr_k", r"$K$ (UMR)", lambda v: f"{int(v)}"),
@@ -294,7 +270,6 @@ SENS_ROWS = [
 
 
 def sensitivity_table() -> str:
-    """Bảng X, OFAT sensitivity (γ/K/λ/w_o) pooled 3 dataset × 10 run, NFE cố định."""
     sv = pd.read_csv(SENS_CSV)
     lines = []
     for gi, (sweep, label, fmt) in enumerate(SENS_ROWS):
@@ -323,16 +298,6 @@ def sensitivity_table() -> str:
 
 
 def adaptive_baselines() -> dict:
-    """Bảng XI + số liệu §D, baseline transfer thích nghi (bPSO/bGWO × TVT/V4).
-
-    Đọc summary_vs_rgscso.csv (5 config × mean_acc/nfeat/fit/rank, mọi số từ
-    artifact). Trả về dict: table (LaTeX), red_min/red_max (% feature RG-SCSO ít
-    hơn từng baseline), best_acc_cfg (config accuracy cao nhất) + acc/rank của nó.
-
-    Returns:
-        dict với keys: table, red_min, red_max, best_acc_cfg, best_acc, best_rank,
-                       rg_nfeat.
-    """
     df = pd.read_csv(ADAPTIVE_CSV)
     labels = {"RG-SCSO": "RG-SCSO (ours)", "bPSO-TVT": "bPSO-TVT",
               "bGWO-TVT": "bGWO-TVT", "bPSO-V4": "bPSO-V4", "bGWO-V4": "bGWO-V4"}
@@ -392,14 +357,6 @@ def adaptive_baselines() -> dict:
 
 
 def scso_family_baselines() -> dict:
-    """Bảng + số liệu §so-với-họ-SCSO (rev #2). RG-SCSO vs bSCSO-S/bSCSO-OBL trên
-    18 dataset × 30 run, cùng protocol. W/T/L theo Wilcoxon Holm-per-dataset (khớp
-    phương pháp bài). Mọi số đọc từ raw per-run CSV, không gõ tay.
-
-    Returns:
-        dict: table (LaTeX), mean_acc (dict theo algo), mean_nfeat (dict),
-              wtl (dict algo -> "w/t/l"), red (dict algo -> % feature RG ít hơn).
-    """
     from src.stats.statistical_tests import paired_wilcoxon_vs_target
 
     rg = pd.read_csv(FS_CSV)
@@ -411,6 +368,7 @@ def scso_family_baselines() -> dict:
     order = ["RG-SCSO", "bSCSO-S", "bSCSO-OBL"]
     labels = {"RG-SCSO": "RG-SCSO (ours)", "bSCSO-S": "bSCSO (S-shaped)",
               "bSCSO-OBL": "bSCSO (V-shaped + OBL)"}
+
 
     mean_acc = {a: combined[combined.algorithm == a].accuracy.mean() for a in order}
     mean_nfeat = {a: combined[combined.algorithm == a].n_selected_features.mean()
@@ -464,16 +422,9 @@ def scso_family_baselines() -> dict:
 
 
 def robustness_baselines() -> dict:
-    """Bảng + số liệu §robustness (rev #3/#6). RG-SCSO(MI/ReliefF) vs bSCSO qua
-    KNN/SVM trên 5 dataset. Số đọc từ raw per-run CSV.
-
-    Returns:
-        dict: table (LaTeX), red (dict wrapper -> % RG(MI) ít feature hơn bSCSO),
-              relieff_vs_mi (dict wrapper -> tỉ lệ nfeat ReliefF/MI), acc/nfeat means.
-    """
     rob = pd.read_csv(ROBUST_CSV)
-    # Bảng chéo KNN×SVM cố định trên 5 dataset đại diện (khớp cả 2 wrapper); SVM/18
-    # được phân tích riêng khi chạy xong, không trộn vào đây.
+                                                                                   
+                                                             
     rep5 = ["Zoo", "Sonar", "WDBC", "ColonCancer", "Leukemia"]
     rob = rob[rob.dataset.isin(rep5)]
     wrappers = ["KNN", "SVM"]
@@ -518,11 +469,6 @@ def robustness_baselines() -> dict:
 
 
 def diversity_analysis() -> dict:
-    """Bằng chứng thực nghiệm cho §1.1/§1.2 (Diem_yeu_RG-SCSO.md): đa dạng quần
-    thể + tỉ lệ bit đóng băng theo vòng lặp, gamma in {0, 0.5, 1.0}, trên 3 dataset
-    (thấp/trung/siêu cao chiều). gamma=0.5 LÀ giá trị triển khai thật trong bài;
-    gamma=1.0 là stress test (bias cực đại); gamma=0 là V-shaped thuần đối chứng.
-    """
     df = pd.read_csv(DIVERSITY_CSV)
     datasets = sorted(df["dataset"].unique())
     end = df.sort_values("iter").groupby(["dataset", "gamma"]).tail(1)
@@ -575,12 +521,6 @@ def diversity_analysis() -> dict:
 
 
 def inference_value() -> dict | None:
-    """§2.2 Diem_yeu_RG-SCSO.md: giá trị THỰC TIỄN của parsimony, đo bằng KNN
-    inference latency. measure_inference_time.py cho hai kết quả trung thực:
-    (a) trên chính n_train của 18 dataset (50-455 mẫu) hiệu ứng nằm trong nhiễu
-    đo (không claim), (b) mô phỏng có kiểm soát ở quy mô triển khai
-    (n_train=5000, d = số feature THẬT RG-SCSO/AOA chọn) cho tốc độ tăng rõ.
-    """
     p = os.path.join("experiments", "results_inference", "inference_time_synthetic.csv")
     if not os.path.exists(p):
         return None
@@ -594,9 +534,6 @@ def inference_value() -> dict | None:
 
 
 def robustness_svm16() -> dict:
-    """SVM trên 16/18 dataset (rev #3 — robustness classifier trên diện rộng).
-    Bỏ KrVsKpEW/WaveformEW (RBF-SVM O(n^2)/fit, bất khả thi trong wrapper 15k-eval).
-    """
     from src.stats.statistical_tests import paired_wilcoxon_vs_target
     svm = pd.read_csv(ROBUST_CSV)
     svm = svm[svm.wrapper == "SVM"]
@@ -651,7 +588,7 @@ def build() -> None:
     rank = s["avg_rank"]
     colon = s["gene"].get("ColonCancer", {})
 
-    #, Bảng phụ + prose parity với docx (mọi số đọc từ artifact), 
+                                                                  
     dataset_tab = dataset_table(s)
     runtime_tab = runtime_table()
     washout_tab = washout_table(s)
@@ -735,8 +672,8 @@ def build() -> None:
     _hs = _heldout.load()
     heldout_acc_tab = _heldout.acc_table_tex(_hs)
     heldout_nfeat_tab = _heldout.nfeat_table_tex(_hs)
-    # Số leak-free cho Abstract (đọc động từ artifact, KHÔNG hardcode) — dùng làm
-    # bằng chứng CHÍNH trong Abstract thay vì con số in-sample optimistic.
+                                                                                 
+                                                                          
     hs_rank = float(_hs["ranking"]["RG-SCSO"])
     hs_wtl = _hs["wil"]["mark"].value_counts()
     hs_w, hs_t, hs_l = (int(hs_wtl.get(k, 0)) for k in ("+", "=", "-"))
@@ -747,7 +684,7 @@ def build() -> None:
                    for d in s["datasets"]]
     feat_min, feat_max = min(feat_counts), max(feat_counts)
 
-    #, Câu thống kê R4 (điền từ artifact; fallback [pending] nếu chưa chạy), 
+                                                                             
     if s.get("stats"):
         w, ti, l = s["sig_total"]
         fr = s["friedman"]
@@ -795,9 +732,9 @@ def build() -> None:
             f"Holm-corrected significance are reported in the final version.")
         conclusion_tail = ("Final claims are conditioned on the statistical tests "
                            "and the ablation reported in the final version.")
-        w, n_cmp = "[pending]", "[pending]"  # dùng trong Abstract nếu stats chưa xong
+        w, n_cmp = "[pending]", "[pending]"                                           
 
-    #, Ablation §V-D (điền từ artifact; fallback [pending] nếu chưa chạy), 
+                                                                           
     if s.get("ablation"):
         v = s["verdict"]
         rms, orl, umr = v["NoRMS"], v["NoORL"], v["NoUMR"]

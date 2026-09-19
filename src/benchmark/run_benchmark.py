@@ -1,21 +1,3 @@
-"""Phase 2 — chạy benchmark: ECL-SCSO + SCSO gốc + 9 baseline (mealpy) trên
-bộ hàm CEC2017 (hoặc fallback cổ điển nếu opfunu không cài được), mỗi cặp
-(algorithm, function) chạy NUM_INDEPENDENT_RUNS lần độc lập, seed =
-RANDOM_SEED_BASE + run_id để reproducible.
-
-LƯU Ý: spec gốc (PROJECT_SPEC.md mục 3.4 và 4.2) không khớp số lượng thuật
-toán (mục 3.4 liệt kê 9 baseline, mục 4.2 nói "10 thuật toán = ECL-SCSO +
-SCSO + 8 baseline"). Đã hỏi và được xác nhận dùng ĐỦ 9 baseline, tổng cộng
-11 thuật toán (ECL-SCSO, SCSO, GA, PSO, GWO, WOA, HHO, SSA, AOA, COA, OOA).
-
-Output:
-    experiments/results_benchmark/benchmark_results.csv
-        cột: algorithm, function_name, run_id, best_fitness, runtime_seconds
-    experiments/results_benchmark/summary_stats.csv
-        cột: algorithm, function_name, mean, std, best, worst, median
-
-Chạy: python -m src.benchmark.run_benchmark
-"""
 
 from __future__ import annotations
 
@@ -37,7 +19,7 @@ from src.algorithms.ecl_scso import ECLSCSO
 from src.algorithms.scso import SCSO
 from src.benchmark.cec_functions import build_function, get_function_names
 
-BENCHMARK_DIM = 30  # dimension chuẩn của bộ CEC2017
+BENCHMARK_DIM = 30                                  
 OUTPUT_DIR = os.path.join("experiments", "results_benchmark")
 RESULTS_CSV = os.path.join(OUTPUT_DIR, "benchmark_results.csv")
 SUMMARY_CSV = os.path.join(OUTPUT_DIR, "summary_stats.csv")
@@ -47,13 +29,6 @@ ALL_ALGORITHMS = ["SCSO", "ECL-SCSO"] + MEALPY_BASELINES
 
 
 def _run_one_algorithm_on_function(algorithm: str, function_name: str, dim: int) -> list[dict]:
-    """Chạy 1 thuật toán trên 1 hàm benchmark, NUM_INDEPENDENT_RUNS lần độc lập.
-
-    Build lại BenchmarkFunction NGAY TRONG worker (thay vì truyền obj_func đã
-    build sẵn qua process boundary) vì closure/object opfunu không pickle
-    được an toàn qua ProcessPoolExecutor (multiprocessing trên macOS dùng
-    'spawn').
-    """
     bf = build_function(function_name, dim=dim)
     rows = []
     for run_id in range(NUM_INDEPENDENT_RUNS):

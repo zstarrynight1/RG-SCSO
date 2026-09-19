@@ -1,23 +1,3 @@
-"""Hyperparameter sensitivity study cho RG-SCSO (trả lời reviewer #4).
-
-Phân tích one-factor-at-a-time (OFAT): mỗi siêu tham số được quét quanh giá trị
-mặc định trong khi các tham số còn lại giữ nguyên default, để chứng minh RG-SCSO
-KHÔNG được tinh chỉnh may rủi / cherry-pick (spec 8.1/4.2 — báo cáo trung thực).
-
-QUAN TRỌNG — bản cuối chỉ có HAI siêu tham số thật:
-    gamma (γ) : cường độ điều biến relevance ở RMS (C1)   — bản cuối (ORL off)
-    umr_k (K) : số feature "biên" thử lật mỗi vòng ở UMR (C3) — bản cuối (ORL off)
-λ (ema_lambda) và w_o (w_online) CHỈ tác động lên ORL — thành phần đã bị ablation
-CẮT (use_orl=False trong bản ship). Với bản cuối chúng TRƠ (ρ = ρ_static). Ta vẫn
-quét chúng trên biến thể ORL-ON để chứng minh: (i) không nhạy cảm, (ii) ORL-on
-không thắng ORL-off — củng cố quyết định cắt. KHÔNG quét tham số trơ trên bản cuối.
-
-Ngân sách NFE giữ CỐ ĐỊNH (max_nfe = pop×iter) cho mọi cấu hình → so sánh công
-bằng, không cấu hình nào được "nhiều eval hơn".
-
-Output: experiments/results_fs_sensitivity/fs_sensitivity_results.csv
-Chạy:   .venv/bin/python -m src.feature_selection.run_fs_sensitivity [--smoke]
-"""
 
 from __future__ import annotations
 
@@ -38,23 +18,23 @@ OUTPUT_DIR = os.path.join("experiments", "results_fs_sensitivity")
 RESULTS_CSV = os.path.join(OUTPUT_DIR, "fs_sensitivity_results.csv")
 
 SEARCH_LB, SEARCH_UB = -1.0, 1.0
-N_RUNS = 10  # số run độc lập cho robustness check (không phải headline stat test)
+N_RUNS = 10                                                                       
 
-# datasets trải chiều: thấp (Zoo d=16) / trung (Sonar d=60) / cao gene (ColonCancer d=2000)
+                                                                                           
 DATASETS = ["Zoo", "Sonar", "ColonCancer"]
 
-# default của bản cuối (ORL OFF = bản ship) và của biến thể ORL-ON
+                                                                  
 BASE_FINAL = dict(use_rms=True, use_orl=False, use_umr=True,
                   gamma=0.5, umr_k=8, ema_lambda=0.9, w_online=0.3)
 BASE_ORL = dict(use_rms=True, use_orl=True, use_umr=True,
                 gamma=0.5, umr_k=8, ema_lambda=0.9, w_online=0.3)
 
-# OFAT: (param, [values], base_config, nhãn config)
+                                                   
 SWEEPS = [
-    ("gamma", [0.0, 0.25, 0.5, 0.75, 1.0], BASE_FINAL, "final"),   # γ — bản cuối
-    ("umr_k", [2, 4, 8, 12, 16], BASE_FINAL, "final"),             # K — bản cuối
-    ("ema_lambda", [0.7, 0.9, 0.99], BASE_ORL, "orl"),            # λ — biến thể ORL
-    ("w_online", [0.1, 0.3, 0.7], BASE_ORL, "orl"),               # w_o — biến thể ORL
+    ("gamma", [0.0, 0.25, 0.5, 0.75, 1.0], BASE_FINAL, "final"),                 
+    ("umr_k", [2, 4, 8, 12, 16], BASE_FINAL, "final"),                           
+    ("ema_lambda", [0.7, 0.9, 0.99], BASE_ORL, "orl"),                              
+    ("w_online", [0.1, 0.3, 0.7], BASE_ORL, "orl"),                                   
 ]
 
 
@@ -64,8 +44,6 @@ def _load(name: str) -> tuple[np.ndarray, np.ndarray]:
 
 
 def _build_tasks(n_runs: int) -> list[dict]:
-    """Sinh danh sách task; dedup các cấu hình trùng (điểm default xuất hiện ở
-    nhiều sweep) để không lãng phí compute — mỗi cấu hình duy nhất chạy 1 lần."""
     seen: dict[tuple, dict] = {}
     for param, values, base, tag in SWEEPS:
         for v in values:
@@ -101,7 +79,7 @@ def _run_single(task: dict) -> dict:
         X=X, y=y, eval_mask=eval_mask, **opt_kwargs,
     ).optimize()
     final = evaluate_binary_mask(result["best_mask"], X, y, seed=seed)
-    # một dòng cho MỖI sweep mà cấu hình này thuộc về (default point dùng chung)
+                                                                                
     rows = []
     for param, value, tag in task["sweeps"]:
         rows.append({

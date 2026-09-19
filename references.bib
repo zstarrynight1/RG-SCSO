@@ -4,6 +4,22 @@
 % Keys match the \cite{...} keys emitted by build_paper_tex.py.
 % 4 entries below added 2026-08-09, verified via CrossRef API (api.crossref.org)
 % against each DOI, not scraped from the publisher page (Nature/MDPI block bots).
+% islam2017tvtf/teng2017avbpso added 2026-09-17 (IJCS checklist P0-1/P0-3
+% confound-isolation baselines): DOIs resolved and every field (author,
+% title, journal, volume, pages, year) confirmed via CrossRef API by
+% bibliographic-string search against the resolved DOI record, same
+% methodology as the 2026-08-09 batch. A 4-entry spot-check re-audit of the
+% pre-existing entries (rime, coa, plus the two above) against CrossRef on
+% the same date found zero discrepancies.
+% 2026-09-18 (IJCS Related-Work currency revision, reviewer 3.3): added 6
+% recent non-SCSO baselines (bgoatvg2024, fhsbpso2024, mobgwogms2023,
+% hhoelm2023, whalehho2022, xaifs2024) and back-filled DOIs on 6 pre-existing
+% entries (pso, aoa, tf, bgwo, mafarja, ludwig2025guided) -- all 12 DOIs
+% resolved and every field confirmed via the CrossRef REST API. The only
+% entries still without a doi field are guyon, demsar, holm, and
+% nogueira2018stability: JMLR (2003/2006/2018) and Scand. J. Statist. (1979)
+% articles that carry no publisher/CrossRef-registered DOI. This absence is
+% intentional, not an oversight.
 
 @article{imscso2024,
   author  = {Zhang, Kuan and He, Yirui and Wang, Yuhang and Sun, Changjian},
@@ -92,7 +108,8 @@
                Networks},
   volume    = {4},
   pages     = {1942--1948},
-  year      = {1995}
+  year      = {1995},
+  doi       = {10.1109/ICNN.1995.488968}
 }
 
 @article{gwo,
@@ -112,7 +129,8 @@
   journal = {Computer Methods in Applied Mechanics and Engineering},
   volume  = {376},
   pages   = {113609},
-  year    = {2021}
+  year    = {2021},
+  doi     = {10.1016/j.cma.2020.113609}
 }
 
 @article{scso,
@@ -194,7 +212,8 @@
   journal = {Swarm and Evolutionary Computation},
   volume  = {9},
   pages   = {1--14},
-  year    = {2013}
+  year    = {2013},
+  doi     = {10.1016/j.swevo.2012.09.002}
 }
 
 @article{bgwo,
@@ -203,7 +222,8 @@
   journal = {Neurocomputing},
   volume  = {172},
   pages   = {371--381},
-  year    = {2016}
+  year    = {2016},
+  doi     = {10.1016/j.neucom.2015.06.083}
 }
 
 @article{mafarja,
@@ -212,7 +232,8 @@
   journal = {Applied Soft Computing},
   volume  = {62},
   pages   = {441--453},
-  year    = {2018}
+  year    = {2018},
+  doi     = {10.1016/j.asoc.2017.11.006}
 }
 
 @article{neri,
@@ -262,17 +283,19 @@
   journal = {Applied Soft Computing},
   volume  = {59},
   pages   = {182--196},
-  year    = {2017}
+  year    = {2017},
+  doi     = {10.1016/j.asoc.2017.04.050}
 }
 
 @article{teng2017avbpso,
   author  = {Teng, Xuyang and Dong, Hongbin and Zhou, Xiurong},
   title   = {Adaptive Feature Selection Using V-Shaped Binary Particle Swarm Optimization},
-  journal = {PLoS ONE},
+  journal = {PLOS ONE},
   volume  = {12},
   number  = {3},
   pages   = {e0173907},
-  year    = {2017}
+  year    = {2017},
+  doi     = {10.1371/journal.pone.0173907}
 }
 
 @article{ludwig2025guided,
@@ -282,7 +305,8 @@
   volume  = {18},
   number  = {4},
   pages   = {220},
-  year    = {2025}
+  year    = {2025},
+  doi     = {10.3390/a18040220}
 }
 
 @article{nogueira2018stability,
@@ -293,4 +317,96 @@
   number  = {174},
   pages   = {1--54},
   year    = {2018}
+}
+
+% ---------------------------------------------------------------------------
+% Recent (2022-2024) non-SCSO baselines added 2026-09-18 for the IJCS Related
+% Work currency revision (reviewer 3.3). Every field (authors, title, journal,
+% volume, issue, article number, year, DOI) confirmed via the CrossRef REST
+% API (api.crossref.org/works/<doi> and bibliographic query), same
+% methodology as the 2026-08-09 and 2026-09-17 batches above.
+% ---------------------------------------------------------------------------
+
+@article{bgoatvg2024,
+  author  = {Li, Mengjun and Luo, Qifang and Zhou, Yongquan},
+  title   = {{BGOA-TVG}: Binary Grasshopper Optimization Algorithm with
+             Time-Varying Gaussian Transfer Functions for Feature Selection},
+  journal = {Biomimetics},
+  volume  = {9},
+  number  = {3},
+  pages   = {187},
+  year    = {2024},
+  doi     = {10.3390/biomimetics9030187}
+}
+
+@article{fhsbpso2024,
+  author  = {Gupta, Shubham and Gupta, Saurabh},
+  title   = {Fitness and Historical Success Information-Assisted Binary
+             Particle Swarm Optimization for Feature Selection},
+  journal = {Knowledge-Based Systems},
+  volume  = {306},
+  pages   = {112699},
+  year    = {2024},
+  doi     = {10.1016/j.knosys.2024.112699}
+}
+
+@article{mobgwogms2023,
+  author  = {Li, Xiaobo and Fu, Qiyong and Li, Qi and Ding, Weiping and
+             Lin, Feilong and Zheng, Zhonglong},
+  title   = {Multi-Objective Binary Grey Wolf Optimization for Feature
+             Selection Based on Guided Mutation Strategy},
+  journal = {Applied Soft Computing},
+  volume  = {145},
+  pages   = {110558},
+  year    = {2023},
+  doi     = {10.1016/j.asoc.2023.110558}
+}
+
+@article{hhoelm2023,
+  author  = {Alzaqebah, Abdullah and Al-Kadi, Omar and Aljarah, Ibrahim},
+  title   = {An Enhanced Harris Hawk Optimizer Based on Extreme Learning
+             Machine for Feature Selection},
+  journal = {Progress in Artificial Intelligence},
+  volume  = {12},
+  number  = {1},
+  pages   = {77--97},
+  year    = {2023},
+  doi     = {10.1007/s13748-023-00298-6}
+}
+
+@article{whalehho2022,
+  author  = {Alwajih, Ranya and Abdulkadir, Said Jadid and Al Hussian, Hitham
+             and Aziz, Norshakirah and Al-Tashi, Qasem and Mirjalili, Seyedali
+             and Alqushaibi, Alawi},
+  title   = {Hybrid Binary Whale with Harris Hawks for Feature Selection},
+  journal = {Neural Computing and Applications},
+  volume  = {34},
+  number  = {21},
+  pages   = {19377--19395},
+  year    = {2022},
+  doi     = {10.1007/s00521-022-07522-9}
+}
+
+@inproceedings{concreteae,
+  author    = {Bal{\i}n, Muhammed Fatih and Abid, Abubakar and Zou, James},
+  title     = {Concrete Autoencoders for Differentiable Feature Selection and
+               Reconstruction},
+  booktitle = {Proceedings of the 36th International Conference on Machine
+               Learning (ICML)},
+  series    = {PMLR},
+  volume    = {97},
+  pages     = {444--453},
+  year      = {2019}
+}
+
+@article{xaifs2024,
+  author  = {Chen, Xuejiao and Liu, Minyao and Wang, Zixuan and Wang, Yun},
+  title   = {Explainable Deep Learning-Based Feature Selection and Intrusion
+             Detection Method on the {Internet} of {Things}},
+  journal = {Sensors},
+  volume  = {24},
+  number  = {16},
+  pages   = {5223},
+  year    = {2024},
+  doi     = {10.3390/s24165223}
 }

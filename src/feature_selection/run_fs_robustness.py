@@ -1,37 +1,9 @@
-"""Robustness qua CLASSIFIER và RELEVANCE PRIOR (rev #3 + #6) — kiểm tra lợi ích
-RG-SCSO KHÔNG phải artifact riêng của cặp "hợp rơ" KNN + mutual information.
-
-THIẾT KẾ (trên tập con đại diện, khớp tập ablation để nhất quán):
-    datasets : Zoo, Sonar, WDBC, ColonCancer, Leukemia (đa dạng chiều/lớp/mẫu)
-    wrappers : KNN (tham chiếu bài chính), SVM-RBF, RandomForest
-    algos    : RG-SCSO(MI), RG-SCSO(ReliefF), bSCSO (SCSO nhị phân KHÔNG relevance)
-
-Hai phép so chốt:
-    (a) RG-SCSO vs bSCSO DƯỚI CÙNG wrapper  -> lợi ích relevance có bền qua
-        classifier không (không riêng KNN)?
-    (b) RG-SCSO(MI) vs RG-SCSO(ReliefF)     -> lợi ích có bền qua prior không
-        (không riêng MI)?
-
-Giao thức KHỚP bảng chính: 5-fold CV, fitness = 0.99·err + 0.01·tỉ_lệ, biên
-[-1,1], pop=30, iter=500, NFE = pop×iter, seed = BASE + run_id, 30 run. Classifier
-được fit RIÊNG mỗi fold (Pipeline scaler+clf) — không leakage. KHÓA TRƯỚC, KHÔNG
-tinh chỉnh cho số đẹp (spec 8.1/4.2).
-
-Output: experiments/results_fs_robustness/fs_robustness_results.csv
-Chạy:   .venv/bin/python -m src.feature_selection.run_fs_robustness [--smoke]
-        [--datasets ...] [--wrappers KNN,SVM,RF] [--algos RG-SCSO-MI,...] [--runs N]
-"""
 
 from __future__ import annotations
 
 import os
 
-# Phải set TRƯỚC khi import numpy — nếu không, threaded BLAS (Accelerate/vecLib
-# trên macOS) có thể deadlock khi ProcessPoolExecutor fork worker trong lúc BLAS
-# đã có sẵn thread pool (lớp bug fork()-sau-khi-có-thread kinh điển). Quan sát
-# thực nghiệm: wrapper="RF" treo ở CPU~0% dưới ProcessPoolExecutor dù cùng code
-# chạy bình thường (99% CPU) khi gọi trực tiếp không qua pool — dấu hiệu kinh
-# điển của deadlock này, không phải RF chậm.
+
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
@@ -65,12 +37,11 @@ RESULTS_CSV = os.path.join(OUTPUT_DIR, "fs_robustness_results.csv")
 
 SEARCH_LB, SEARCH_UB = -1.0, 1.0
 
-# Tập con đại diện = tập ablation (đa dạng: Zoo thấp chiều nhiều lớp; Sonar/WDBC
-# trung bình; ColonCancer/Leukemia gene-expression siêu cao chiều).
+
 DEFAULT_DATASETS = ["Zoo", "Sonar", "WDBC", "ColonCancer", "Leukemia"]
 DEFAULT_WRAPPERS = ["KNN", "SVM", "RF"]
 
-# algorithm-config -> (loại optimizer, prior). "bscso" = SCSO nhị phân không relevance.
+                                                                                       
 ALGOS = {
     "RG-SCSO-MI": {"kind": "rgscso", "prior": "mi"},
     "RG-SCSO-ReliefF": {"kind": "rgscso", "prior": "relieff"},
@@ -79,7 +50,6 @@ ALGOS = {
 
 
 def _make_clf(wrapper: str, seed: int):
-    """Trả về estimator MỚI (chưa fit) cho 1 fold. Fresh mỗi lần gọi để CV sạch."""
     if wrapper == "KNN":
         return KNeighborsClassifier(n_neighbors=KNN_NEIGHBORS)
     if wrapper == "SVM":
@@ -124,7 +94,7 @@ def _run_single(task: dict) -> dict:
             pop_size=POPULATION_SIZE, max_iter=MAX_ITERATION, seed=seed,
             X=X, y=y, eval_mask=eval_mask, prior_method=spec["prior"],
         ).optimize()
-    else:  # bSCSO — SCSO nhị phân không relevance (tham chiếu trong-họ)
+    else:                                                               
         result = BinarySCSO(
             obj_func, dim, SEARCH_LB, SEARCH_UB, POPULATION_SIZE, MAX_ITERATION, seed,
             eval_mask=eval_mask, transfer_kind="s", use_obl=False,

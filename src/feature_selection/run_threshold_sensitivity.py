@@ -1,39 +1,9 @@
-"""Threshold sensitivity study (RG-SCSO_MASTER_FINAL_COMPLETE.md, 5 most-
-important-items list, item 1) — RG-SCSO's RMS binarization uses tau=0.5 as
-the decision threshold separating "preferred" from "disfavored" bits
-(b*_j = 1 if rho_j > tau else 0). The paper already discloses tau=0.5 is a
-convenience, not a theoretically grounded neutral point, but never actually
-SWEEPS it. This harness runs RG-SCSO at tau in {0.4, 0.5, 0.6} and reports
-accuracy, feature count, and feature-selection stability (Nogueira Phi, same
-method as run_stability_index.py) at each value, so the disclosed caveat is
-backed by real data rather than left as an unquantified hedge.
-
-tau=0.5 is EXACTLY the existing main-study RG-SCSO configuration (verified:
-binarize_relevance(..., threshold=0.5) reduces algebraically to the original
-un-parameterized formula, confirmed via a direct before/after equality check
-before this harness was written) -- no existing result is invalidated by this
-addition, tau is a strictly additive new capability.
-
-SCOPE: same 5-dataset representative subset used throughout this paper's
-pilots (Zoo, Sonar, WDBC, ColonCancer, Leukemia), 30 independent runs per
-(tau, dataset) cell, matching the main protocol (pop=30, iter=500,
-seed=BASE+run_id).
-
-Output: experiments/results_threshold/threshold_masks.csv (raw masks, for
-        Phi computation)
-        experiments/results_threshold/threshold_sensitivity_results.csv
-        (accuracy, n_selected_features, Phi per tau x dataset)
-Run:    .venv/bin/python -m src.feature_selection.run_threshold_sensitivity
-        [--smoke] [--datasets ...] [--runs N] [--taus 0.4,0.5,0.6]
-"""
 
 from __future__ import annotations
 
 import os
 
-# Phải set TRƯỚC khi import numpy — tránh deadlock ProcessPoolExecutor +
-# threaded BLAS đã gặp trước đó trong phiên này (macOS fork()-sau-khi-có-
-# thread). Áp dụng chủ động ngay từ đầu thay vì chờ phát hiện lại bug.
+
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
@@ -108,8 +78,6 @@ def _append_rows(rows: list[dict]) -> None:
 
 
 def nogueira_phi(masks: list[set[int]], d: int) -> float:
-    """Cùng công thức Nogueira et al. (2018) đã dùng ở run_stability_index.py
-    — xem file đó để biết chi tiết diễn giải/nguồn gốc."""
     m = len(masks)
     if m < 2:
         return float("nan")

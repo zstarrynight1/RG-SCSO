@@ -1,9 +1,3 @@
-"""Sinh file Word ghi lại toàn bộ quy trình hoàn thiện bài RG-SCSO (Scientific
-Reports) — nhật ký thực hiện từ đầu phiên làm việc đến hiện tại, phục vụ mục
-đích tham khảo nội bộ của tác giả, KHÔNG phải một phần bản thảo nộp tạp chí.
-
-Chạy: python build_process_log_docx.py
-"""
 
 from __future__ import annotations
 
@@ -80,7 +74,7 @@ def build() -> None:
     r.font.size = Pt(10)
     r.font.color.rgb = RGBColor(0x55, 0x55, 0x55)
 
-    # ------------------------------------------------------------ Giai đoạn 0
+                                                                              
     h1(doc, "Giai đoạn 0 — Điểm xuất phát")
     para(
         doc,
@@ -111,7 +105,7 @@ def build() -> None:
         bold_lead="Quyết định phạm vi: ",
     )
 
-    # ------------------------------------------------------------ Giai đoạn 1
+                                                                              
     h1(doc, "Giai đoạn 1 — Phân loại điểm yếu và sửa nhanh (“Loại A”)")
     para(
         doc,
@@ -138,7 +132,7 @@ def build() -> None:
     bullet(doc, "W12 — đổi tên gọi “deployment speedup” thành “projected, "
                 "reconstructed inference-cost analysis” cho đúng bản chất.")
 
-    # ------------------------------------------------------------ Giai đoạn 2
+                                                                              
     h1(doc, "Giai đoạn 2 — 5 thí nghiệm mới (Loại B, đợt 1)")
     para(
         doc,
@@ -185,7 +179,7 @@ def build() -> None:
         bold_lead="Lưu ý quan trọng: ",
     )
 
-    # ------------------------------------------------------------ Giai đoạn 3
+                                                                              
     h1(doc, "Giai đoạn 3 — Tích hợp trung thực + nâng cấp lý thuyết")
     para(
         doc,
@@ -215,7 +209,7 @@ def build() -> None:
         bold_lead="Nâng cấp lý thuyết (Priority 4): ",
     )
 
-    # ------------------------------------------------------------ Giai đoạn 4
+                                                                              
     h1(doc, "Giai đoạn 4 — Xử lý tài liệu phản biện thứ hai (Diem_yeu_RG-SCSO.md)")
     para(
         doc,
@@ -265,7 +259,7 @@ def build() -> None:
         "dẫn Nogueira mới thêm) hiển thị lỗi [?] — đã sửa cho cả 3.",
     )
 
-    # ------------------------------------------------------------ Giai đoạn 5
+                                                                              
     h1(doc, "Giai đoạn 5 — Chuẩn hoá văn phong theo đúng chuẩn Q1 thật")
     para(
         doc,
@@ -288,7 +282,7 @@ def build() -> None:
                 "chủ đề — không đổi số liệu, chỉ phá vỡ cấu trúc đọc như "
                 "liệt kê checklist.")
 
-    # ------------------------------------------------------------ Giai đoạn 6
+                                                                              
     h1(doc, "Giai đoạn 6 — Tái cấu trúc bảng/hình, giảm số mục")
     para(
         doc,
@@ -323,7 +317,7 @@ def build() -> None:
         "rebuild lại.",
     )
 
-    # ------------------------------------------------------------ Giai đoạn 7
+                                                                              
     h1(doc, "Giai đoạn 7 — Nén độ dài")
     para(
         doc,
@@ -359,7 +353,7 @@ def build() -> None:
         bold_lead="Quyết định cuối cùng của người dùng: ",
     )
 
-    # ------------------------------------------------------------ Giai đoạn 8
+                                                                              
     h1(doc, "Giai đoạn 8 — Rà và sửa tiêu đề mục cuối cùng")
     para(
         doc,
@@ -383,7 +377,7 @@ def build() -> None:
     para(doc, " — sửa ở cả tex và docx, biên dịch lại xác nhận vẫn 15 "
               "trang, không có mục nào khác cần sửa thêm.")
 
-    # ------------------------------------------------------------ Kết quả
+                                                                          
     h1(doc, "Kết quả cuối cùng")
     add_table(
         doc,

@@ -1,16 +1,3 @@
-"""Sinh bản thảo Word (.docx) cho Scientific Reports — SINGLE SOURCE OF TRUTH,
-song song với build_paper_scirep.py (bản LaTeX cùng target journal). Cấu trúc
-và nội dung khớp với bản LaTeX (đã verify kỹ số liệu ở đó); file này chỉ
-chuyển sang định dạng python-docx.
-
-Scientific Reports ưu tiên Word hơn LaTeX ("Preferred format: Microsoft
-Word"), nên đây là bản chính thức đề xuất nộp, không phải bản phụ.
-
-KHÔNG gõ tay số liệu: import lại các hàm load/vẽ bảng dùng chung từ
-build_paper_structure.py (bản Applied Intelligence, không bị đụng vào).
-
-Chạy:  python build_paper_scirep_docx.py
-"""
 
 from __future__ import annotations
 
@@ -74,9 +61,7 @@ from src.stats.statistical_tests import holm_correction
 OUT_DOCX = "RG-SCSO_SciRep.docx"
 OUT_SUPP_DOCX = "RG-SCSO_SciRep_Supplementary.docx"
 
-# Q1-review Loại B experiment outputs (added post-review; see
-# RG-SCSO_Q1_Review_Final.md Priority 1/2/3/6). Same sources as
-# build_paper_scirep.py, kept in sync by convention throughout this project.
+
 CLASSIC_CSV = os.path.join("experiments", "results_fs_classic", "fs_classic_results.csv")
 SIGNAL_POS_CSV = os.path.join(
     "experiments", "results_fs_signal_position", "fs_signal_position_results.csv"
@@ -87,15 +72,10 @@ SIGPOS_LABEL = {
     "2_MIInit_NoRMS": "MI-guided init (no RMS)",
     "3_MIObjective_NoRMS": "MI-weighted objective (no RMS)",
 }
-SIGPOS_FINAL_STEP = "5_RMS_UMR_Full"  # == deployed "- ORL (final)" 2-component RG-SCSO
+SIGPOS_FINAL_STEP = "5_RMS_UMR_Full"                                                   
 
 
 def add_extended_ablation_table(doc, s):
-    """Main-text component-ablation table, extended with 2 rows from the
-    Q1-review Priority-2 signal-position experiment. Mirrors
-    build_paper_structure.add_ablation_table's rendering but adds the two
-    alternative-injection rows after "- UMR" (does not modify the shared
-    function, which other paper variants also use)."""
     ds_list = s["abl_datasets"]
     sp = pd.read_csv(SIGNAL_POS_CSV)
 
@@ -166,9 +146,6 @@ def add_extended_ablation_table(doc, s):
 
 
 def add_classic_baselines_table(doc, s):
-    """NEW main-text table (Q1 review Priority 1): RG-SCSO vs. five
-    classical filter/embedded/wrapper selectors on the same 5-dataset
-    ablation pilot, identical fitness/eval protocol."""
     ds_list = s["abl_datasets"]
     cb = pd.read_csv(CLASSIC_CSV)
     main = pd.read_csv(FS_MAIN_CSV)
@@ -177,11 +154,12 @@ def add_classic_baselines_table(doc, s):
     algos = ["RG-SCSO", "MI-threshold", "mRMR", "ReliefF-baseline", "LASSO", "SFS"]
     label = {"RG-SCSO": "RG-SCSO", "MI-threshold": "MI-threshold", "mRMR": "mRMR",
               "ReliefF-baseline": "ReliefF", "LASSO": "LASSO", "SFS": "SFS"}
-    acc, nfeat = {}, {}
+    acc, acc_sd, nfeat = {}, {}, {}
     for a in algos:
         sub = rgscso if a == "RG-SCSO" else cb[cb.algorithm == a]
         g = sub.groupby("dataset")
         acc[a] = g["accuracy"].mean()
+        acc_sd[a] = g["accuracy"].std()
         nfeat[a] = g["n_selected_features"].mean()
 
     cols = ["Method"] + ds_list
@@ -194,28 +172,40 @@ def add_classic_baselines_table(doc, s):
         cells = t.add_row().cells
         cells[0].paragraphs[0].add_run(label[a]).font.size = Pt(8)
         for j, ds in enumerate(ds_list):
-            a_acc, a_nf = acc[a].get(ds, float("nan")), nfeat[a].get(ds, float("nan"))
+            a_acc = acc[a].get(ds, float("nan"))
+            a_sd = acc_sd[a].get(ds, float("nan"))
+            a_nf = nfeat[a].get(ds, float("nan"))
             col_best = max(acc[oa].get(ds, -1.0) for oa in algos)
-            run = cells[1 + j].paragraphs[0].add_run(f"{a_acc:.4f} ({a_nf:.0f})")
+            run = cells[1 + j].paragraphs[0].add_run(
+                f"{a_acc:.3f}±{a_sd:.3f} ({a_nf:.0f})")
             run.font.size = Pt(8)
             if a_acc >= col_best - 1e-9:
                 run.bold = True
     caption(doc, "Table 4 Comparison with classical filter, embedded, and "
-                 "wrapper feature selectors (5-dataset pilot, not the full "
-                 "18-dataset benchmark; 30 runs each, identical fitness "
-                 "function and evaluation protocol as the main study; "
+                 "wrapper feature selectors (mean ± SD accuracy, mean "
+                 "selected-feature count in parentheses; the same 5-dataset "
+                 "representative pilot subset used for every other pilot "
+                 "study in this paper, spanning the full d=16 to d=3571 "
+                 "dimensionality range, chosen because the wrapper-style "
+                 "selectors compared here, sequential forward selection "
+                 "in particular, are not computationally feasible at "
+                 "30 runs across the full 18-dataset benchmark within the "
+                 "same evaluation budget; 30 runs each, same train/test "
+                 "splits and downstream KNN evaluation protocol as the "
+                 "main study, with each selector operating according to "
+                 "its own native selection procedure rather than RG-SCSO's "
+                 "wrapper fitness; "
                  "cells show accuracy with mean selected-feature count in "
                  "parentheses, best per column in bold). RG-SCSO "
                  "significantly outperforms every classical baseline on "
-                 "the three lower-dimensional datasets (Zoo, Sonar, WDBC). "
+                 "the three lower-dimensional datasets (Zoo, Sonar, WDBC; "
+                 "paired Wilcoxon signed-rank test, Holm-corrected across "
+                 "all 15 dataset-baseline pairs, p<0.001 in every case). "
                  "On the two gene-expression (p >> n) datasets, LASSO "
                  "attains higher accuracy with far fewer features, and "
                  "mRMR is competitive with RG-SCSO.")
 
-# Thứ tự trích dẫn RIÊNG cho bản SciRep, khớp CHÍNH XÁC thứ tự xuất hiện lần
-# đầu trong build_paper_scirep.py (đã verify qua bản PDF compile: [1]-[23]).
-# KHÔNG dùng chung CITE_ORDER của build_paper_structure.py (26 mục, thứ tự
-# khác) để hai định dạng của CÙNG bản SciRep này đánh số [n] giống nhau.
+
 SCIREP_CITE_ORDER = [
     "guyon", "mrmr", "bgwo", "pso", "mafarja", "aoa", "coa", "rime", "tf",
     "scso", "bscso", "scsofs2", "scsofs3", "imscso2024", "mescso2025",
@@ -225,12 +215,10 @@ SCIREP_CITE_ORDER = [
 
 
 def _cnum(key: str) -> str:
-    """Số trích dẫn [n] cho 1 key, theo SCIREP_CITE_ORDER (1-indexed)."""
     return str(SCIREP_CITE_ORDER.index(key) + 1)
 
 
 def _c(*keys: str) -> str:
-    """'[3]' hoặc '[3, 7]' cho nhiều key liền nhau."""
     nums = sorted(int(_cnum(k)) for k in keys)
     return "[" + ", ".join(str(n) for n in nums) + "]"
 
@@ -240,11 +228,6 @@ WILC_CSV_LOCAL = os.path.join(FS_DIR_LOCAL, "wilcoxon_vs_rgscso.csv")
 
 
 def add_rank_table_with_effect_size(doc, s) -> None:
-    """Docx mirror of build_paper_scirep.py's rank_table_with_effect_size() --
-    does NOT modify the shared add_rank_table() in build_paper_structure.py,
-    reproduces its content plus a new median |Cohen's d| column (RG-SCSO_
-    MASTER_FINAL_COMPLETE.md audit finding: effect sizes were already computed
-    and used in prose but never surfaced as a table column)."""
     yr = {"RG-SCSO": "ours", "SCSO": "2022", "AOA": "2021", "COA": "2023",
           "GWO": "2014", "PSO": "1995", "RIME": "2023"}
     has = s.get("stats")
@@ -336,12 +319,7 @@ def _style_setup(doc) -> None:
         h.paragraph_format.space_after = Pt(after)
         h.paragraph_format.line_spacing = 1.0
 
-    # docDefaults is the document-wide fallback used whenever a run has no
-    # font of its own AND its paragraph doesn't resolve one -- as shipped by
-    # python-docx it points at the theme's minorHAnsi/minorEastAsia
-    # (Calibri), not at "Normal". Every run is now stamped explicitly by
-    # force_font_everywhere() at save time, but fixing this too closes the
-    # gap for anything created after that call or missed by the XML walk.
+
     w_ns = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
     defaults = doc.styles.element.find(f"{w_ns}docDefaults")
     if defaults is not None:
@@ -359,12 +337,6 @@ def _style_setup(doc) -> None:
 
 
 def _add_heldout_combined_table(doc, _hs) -> None:
-    """Merges the former separate accuracy table and feature-count table into
-    one combined table (accuracy with mean selected feature count in
-    parentheses) -- mirrors heldout_combined_table() in build_paper_scirep.py,
-    frees a main-text display-item slot for add_classifier_robustness_table()
-    below. Standard deviations are omitted for compactness (same trade-off
-    as the LaTeX version); raw per-run results are in the public repository."""
     algos = _hs["algos"]
     cols = ["Dataset"] + algos
     tb = doc.add_table(rows=1, cols=len(cols)); _ieee_table(tb); _hdr(tb, cols, size=7)
@@ -375,29 +347,26 @@ def _add_heldout_combined_table(doc, _hs) -> None:
         best = row.max()
         for j, a in enumerate(algos):
             m = _hs["acc_mean"].loc[ds, a]
+            sd = _hs["acc_std"].loc[ds, a]
             nf = _hs["nf_mean"].loc[ds, a]
-            r = cells[1 + j].paragraphs[0].add_run(f"{m:.4f} ({nf:.1f})")
+            r = cells[1 + j].paragraphs[0].add_run(f"{m:.3f}±{sd:.3f} ({nf:.0f})")
             r.font.size = Pt(7)
             if abs(m - best) < 1e-9:
                 r.bold = True
     widen_first_col(tb, 1.0)
-    caption(doc, "Table 1 Held-out generalization: mean accuracy, with mean "
-                 "number of selected features in parentheses, on the outer "
-                 "20% hold-out over 30 runs (relevance prior, search, and CV "
+    caption(doc, "Table 1 Held-out generalization: mean ± SD accuracy over "
+                 "30 runs, with mean number of selected features in "
+                 "parentheses, on the outer "
+                 "20% hold-out (relevance prior, search, and CV "
                  "fitness fit on the 80% training split only; dataset "
                  "feature counts are given in Supplementary Table S1). "
-                 "Standard deviations are omitted here for compactness; "
-                 "per-run raw results, from which they can be recomputed "
-                 "exactly, are in the public repository (Data availability). "
+                 "Per-run raw results, from which every figure here can be "
+                 "recomputed exactly, are in the public repository (Data "
+                 "availability). "
                  "Bold = best accuracy per dataset.")
 
 
 def add_classifier_robustness_table(doc) -> None:
-    """NEW main-text table, using the slot freed by _add_heldout_combined_table
-    above: a compact, dataset-averaged summary of the KNN/SVM/RF robustness
-    check. Mirrors classifier_robustness_table() in build_paper_scirep.py.
-    Wrapper labels are repeated per row (python-docx has no direct LaTeX
-    \\multirow equivalent worth the added complexity here)."""
     if not os.path.exists(ROBUST_CSV):
         return
     rob = pd.read_csv(ROBUST_CSV)
@@ -411,10 +380,13 @@ def add_classifier_robustness_table(doc) -> None:
     def m(w, a, col):
         return rob[(rob.wrapper == w) & (rob.algorithm == a)][col].mean()
 
+    def sd(w, a, col):
+        return rob[(rob.wrapper == w) & (rob.algorithm == a)][col].std()
+
     def n_runs(w):
         return int(rob[rob.wrapper == w]["run_id"].nunique())
 
-    cols = ["Wrapper", "Method", "Mean Acc.", "Mean #Feat."]
+    cols = ["Wrapper", "Method", "Mean Acc. ± SD", "Mean #Feat."]
     t = doc.add_table(rows=1, cols=len(cols))
     _ieee_table(t)
     t.alignment = WD_TABLE_ALIGNMENT.CENTER
@@ -435,7 +407,8 @@ def add_classifier_robustness_table(doc) -> None:
             if a == "RG-SCSO-MI":
                 wlab.bold = True
                 nrun.bold = True
-            accr = cells[2].paragraphs[0].add_run(f"{acc:.4f}")
+            acc_sd = sd(w, a, "accuracy")
+            accr = cells[2].paragraphs[0].add_run(f"{acc:.3f}±{acc_sd:.3f}")
             accr.font.size = Pt(8)
             nfr = cells[3].paragraphs[0].add_run(f"{nf:.1f}")
             nfr.font.size = Pt(8)
@@ -487,7 +460,7 @@ def build() -> None:
     _sec0_a4(doc)
     _style_setup(doc)
 
-    # ---------------------------------------------------------- Title block
+                                                                            
     title = doc.add_paragraph()
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
     tr = title.add_run(
@@ -525,7 +498,7 @@ def build() -> None:
     afr.italic = True
     afr.font.size = Pt(9.5)
 
-    # -------------------------------------------------------------- Abstract
+                                                                             
     ab = doc.add_paragraph()
     ab.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     lead = ab.add_run("Abstract ")
@@ -571,7 +544,7 @@ def build() -> None:
     kwr.italic = True
     kwr.font.size = Pt(9)
 
-    # ------------------------------------------------------------ Introduction
+                                                                               
     doc.add_heading("1. Introduction", level=1)
     para(doc, "Feature selection removes irrelevant and redundant features "
               "to improve classifier accuracy, reduce overfitting, and "
@@ -655,7 +628,7 @@ def build() -> None:
         "memetic refinement on uncertain bits.",
         width_in=5.3))
 
-    # ----------------------------------------------------------------- Results
+                                                                               
     doc.add_heading("2. Results", level=1)
     doc.add_heading("Held-out generalization", level=2)
     para(doc, "For each dataset, algorithm, and independent run we draw an "
@@ -859,7 +832,7 @@ def build() -> None:
     full_width(doc, lambda: add_classic_baselines_table(doc, s))
     full_width(doc, lambda: add_classifier_robustness_table(doc))
 
-    # -------------------------------------------------------------- Discussion
+                                                                               
     doc.add_heading("3. Discussion", level=1)
     para(doc, "These results trace washout, a concrete failure mode of "
               "transfer-function-based binary feature selection, to its "
@@ -985,7 +958,7 @@ def build() -> None:
                 "LASSO in the extreme p >> n regime this study exposes as a "
                 "genuine limit.")
 
-    # ----------------------------------------------------------------- Methods
+                                                                               
     doc.add_heading("4. Methods", level=1)
     doc.add_heading("Problem formulation", level=2)
     para(doc, "We encode a candidate subset as a binary mask b in {0,1}^d "
@@ -1215,7 +1188,7 @@ def build() -> None:
               "after results were observed; all randomness is seeded "
               "deterministically and shared across algorithms.")
 
-    # ---------------------- Statements and Declarations + References
+                                                                     
     doc.add_heading("Statements and Declarations", level=1)
     para(doc, "Data availability: The datasets are publicly available "
               "benchmarks (UCI and standard microarray sets). The source "

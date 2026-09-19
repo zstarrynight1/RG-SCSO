@@ -1,23 +1,3 @@
-"""Baseline transfer-thích-nghi để CÔ LẬP đóng góp relevance của RG-SCSO (rev #1/Q4).
-
-Chạy PSO/GWO nhị phân trang bị transfer function V-shaped ĐÃ CÔNG BỐ nhưng KHÔNG
-có relevance per-feature — dưới CÙNG giao thức wrapper với RG-SCSO (KNN k=5, 5-fold
-CV, fitness = 0.99·err + 0.01·tỉ_lệ_feature, biên [-1,1], pop=30, iter=500, ngân
-sách NFE = pop×iter, seed = RANDOM_SEED_BASE + run_id). Nếu RG-SCSO vẫn vượt các
-baseline này -> lợi thế đến từ relevance per-feature, KHÔNG phải từ binarize
-V-shaped/thích nghi chung chung.
-
-BỐN CẤU HÌNH (2 optimizer × 2 họ transfer):
-    bPSO-TVT, bGWO-TVT   : Islam time-varying |tanh(τ·x)|, τ 4 -> 0.01
-    bPSO-V4 , bGWO-V4    : Teng V4 |(2/π)arctan((π/2)x)| cố định
-
-Giao thức KHÓA TRƯỚC (spec pre-registration): 18 dataset × 30 run, khớp bảng chính.
-KHÔNG tinh chỉnh tham số cho số đẹp (spec 8.1/4.2); báo cáo thắng/thua trung thực.
-
-Output: experiments/results_fs_adaptive_baselines/fs_adaptive_baselines_results.csv
-Chạy:   .venv/bin/python -m src.feature_selection.run_fs_adaptive_baselines [--smoke]
-        [--datasets Zoo,Sonar,...] [--configs bPSO-TVT,bGWO-TVT,...] [--runs N]
-"""
 
 from __future__ import annotations
 
@@ -49,7 +29,7 @@ RESULTS_CSV = os.path.join(OUTPUT_DIR, "fs_adaptive_baselines_results.csv")
 
 SEARCH_LB, SEARCH_UB = -1.0, 1.0
 
-# 18 dataset KHỚP bảng chính fs_results.csv (so sánh cùng protocol/seed).
+                                                                         
 ALL_DATASETS = [
     "BreastEW", "ColonCancer", "Diabetes", "GermanCredit", "HeartDisease",
     "IonosphereEW", "KrVsKpEW", "Leukemia", "Lymphography", "M-of-n",
@@ -57,7 +37,7 @@ ALL_DATASETS = [
     "WaveformEW", "Zoo",
 ]
 
-# config -> (lớp optimizer, hàm transfer)
+                                         
 CONFIGS = {
     "bPSO-TVT": (BinaryPSO, islam_tvt_pflip),
     "bGWO-TVT": (BinaryGWO, islam_tvt_pflip),
@@ -72,7 +52,6 @@ def _load(name: str) -> tuple[np.ndarray, np.ndarray]:
 
 
 def _existing_keys() -> set[tuple[str, str, int]]:
-    """(config, dataset, run_id) đã hoàn tất -> để resume, không chạy lại."""
     if not os.path.exists(RESULTS_CSV):
         return set()
     df = pd.read_csv(RESULTS_CSV)
@@ -105,7 +84,6 @@ def _run_single(task: dict) -> dict:
 
 
 def _append_rows(rows: list[dict]) -> None:
-    """Ghi bổ sung (giữ resume an toàn nếu job bị ngắt giữa chừng)."""
     df = pd.DataFrame(rows)
     header = not os.path.exists(RESULTS_CSV)
     df.to_csv(RESULTS_CSV, mode="a", header=header, index=False)

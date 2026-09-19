@@ -40,3 +40,12 @@ RG_SCSO_Final.pdf
 RG_SCSO_for_Parsimonious_Feature_Selection*
 manuscript.pdf
 IEEEtran_skeleton.tex
+
+# Local macOS-27 build helpers (scipy Fortran-binary workaround) -- environment-
+# specific, not part of the portable reproducible project.
+build_run_macos27.py
+sitecustomize_macos27.py
+
+# Internal revision checklist and local backups -- not for the public repo.
+RG-SCSO_IJCS_Master_Fix_Checklist_v2.md
+*.bak

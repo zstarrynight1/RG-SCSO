@@ -1,15 +1,3 @@
-"""Sinh bản draft bài báo (RG-SCSO) ra .docx theo chuẩn Springer / Applied Intelligence:
-1 cột, đánh số mục Ả-Rập (1, 1.1, ...), có Declarations, tham chiếu numbered.
-
-Nguyên tắc (không thỏa hiệp):
-  1. MỌI con số trong bảng/prose đọc trực tiếp từ fs_results.csv, không gõ tay.
-  2. Phần chưa chạy xong (RIME đủ 18 dataset, kiểm định thống kê, ablation, hình)
-     để trống bằng placeholder in đậm màu, KHÔNG bịa số.
-  3. Prose tiếng Anh; phần method và setup mô tả ĐÚNG code đã cài, không phóng đại.
-
-Chạy: .venv/bin/python build_paper_structure.py
-Xuất:  RG-SCSO_AppliedIntelligence.docx
-"""
 
 from __future__ import annotations
 
@@ -47,17 +35,14 @@ OUT_DOCX = "RG-SCSO.docx"
 
 COMPLETE_ALGOS = ["RG-SCSO", "SCSO", "AOA", "COA", "GWO", "PSO"]
 GRAY = RGBColor(0x80, 0x80, 0x80)
-PEND = RGBColor(0x99, 0x66, 0x00)  # muted amber cho placeholder (chuyên nghiệp hơn đỏ)
-BODY_PT = 11    # cỡ chữ thân bài 1 cột kiểu Springer (Applied Intelligence)
+PEND = RGBColor(0x99, 0x66, 0x00)                                                      
+BODY_PT = 11                                                                
 
 
-# --------------------------------------------------------------- số liệu thật
 _SUP = str.maketrans("0123456789-", "⁰¹²³⁴⁵⁶⁷⁸⁹⁻")
 
 
 def sci_unicode(x: float, sig: int = 1) -> str:
-    """Ký hiệu khoa học đọc được cho p-value trong docx (không dùng superscript run).
-    Vd 2.36e-13 -> '2.4 × 10⁻¹³'. Tránh kiểu code '2.4e-13'."""
     import math
     if x == 0:
         return "0"
@@ -67,8 +52,6 @@ def sci_unicode(x: float, sig: int = 1) -> str:
 
 
 def pcmp_unicode(p: float) -> str:
-    """RHS báo cáo p-value cho docx: p rất nhỏ -> '< 0.001' (tránh độ chính xác
-    giả với chỉ 18 block, rev #8); còn lại '= <giá trị>'. Dùng 'p {pcmp_unicode(p)}'."""
     if p < 1e-3:
         return "< 0.001"
     return f"= {p:.3f}"
@@ -97,10 +80,10 @@ def load_summary() -> dict:
         loss = int((acc_mean["RG-SCSO"] < acc_mean[a]).sum())
         wtl[a] = (w, len(acc_mean) - w - loss, loss)
 
-    # tỉ lệ giảm feature trung bình RG-SCSO vs SCSO / AOA
+                                                         
     red_scso = float((1 - nf_mean["RG-SCSO"] / nf_mean["SCSO"]).mean() * 100)
     red_aoa = float((1 - nf_mean["RG-SCSO"] / nf_mean["AOA"]).mean() * 100)
-    # biên accuracy trung bình vs AOA (đối thủ mạnh nhất)
+                                                         
     margin_aoa = float((acc_mean["RG-SCSO"] - acc_mean["AOA"]).mean() * 100)
     margin_scso = float((acc_mean["RG-SCSO"] - acc_mean["SCSO"]).mean() * 100)
 
@@ -113,7 +96,7 @@ def load_summary() -> dict:
                 acc_aoa=acc_mean.loc[g, "AOA"],
             )
 
-    # RIME đang chạy, chỉ lấy dataset đã đủ 30 run (số THẬT, không bịa phần thiếu)
+                                                                                  
     rime_df = raw[raw.algorithm == "RIME"]
     rime_cnt = rime_df.groupby("dataset").size()
     rime = {}
@@ -137,14 +120,12 @@ def load_summary() -> dict:
 
 
 def _load_stats() -> dict:
-    """Đọc artifact R4-stats (Wilcoxon+Holm+effect size + Friedman) NẾU đã chạy.
-    Trả về dict rỗng (stats=None) khi chưa có → paper vẫn để [pending]."""
     if not (os.path.exists(WILC_CSV) and os.path.exists(RANK_CSV)):
         return dict(stats=None)
     w = pd.read_csv(WILC_CSV)
     rank7 = pd.read_csv(RANK_CSV).set_index("algorithm")["avg_rank"]
 
-    # W/T/L có Ý NGHĨA THỐNG KÊ (Holm) của RG-SCSO vs từng baseline
+                                                                   
     sig_wtl = {}
     for a in w["compared_with"].unique():
         m = w[w["compared_with"] == a]["mark"].value_counts()
@@ -169,10 +150,6 @@ def _load_stats() -> dict:
                 friedman=fried)
 
 
-# ------------------------------------------------------------------- ablation
-# Nhãn hiển thị các cấu hình ablation. "Full" = thiết-kế 3-thành-phần được KHẢO
-# SÁT; "− ORL" chính là RG-SCSO CUỐI CÙNG (2-thành-phần) sau khi cắt C2. Thứ tự
-# giữ Full trên đầu, NoImprovement (tắt cả 3) cuối để làm mốc dưới.
 ABL_CONFIG_ORDER = ["Full", "NoRMS", "NoORL", "NoUMR", "NoImprovement"]
 ABL_CONFIG_LABEL = {
     "Full": "Full (RMS+ORL+UMR)",
@@ -184,20 +161,6 @@ ABL_CONFIG_LABEL = {
 
 
 def load_ablation() -> dict:
-    """Đọc artifact ablation (raw + summary) NẾU đã chạy, trả về dữ liệu điền
-    Bảng V + verdict prose. Trả dict(ablation=None) khi chưa có → paper để [pending].
-
-    Trả về:
-        ablation: True/None (cờ có dữ liệu).
-        datasets: list dataset (cột bảng).
-        configs: list config (hàng bảng) theo ABL_CONFIG_ORDER.
-        means: means[config][dataset] = mean accuracy (30 run).
-        sig: set (config, dataset) mà removal LÀM TỆ có ý nghĩa (Holm p<0.05).
-        verdict: verdict[removal] = dict(component, kept, n_deg, n_ds, worst_ds,
-            worst_delta_pts, worst_d, worst_p, closest_ds, closest_delta_pts,
-            closest_p), số liệu điền câu văn load-bearing / cắt.
-        kept, cut: list nhãn component (RMS/ORL/UMR) giữ lại / cắt.
-    """
     if not (os.path.exists(ABL_RAW_CSV) and os.path.exists(ABL_SUMMARY_CSV)):
         return dict(ablation=None)
     raw = pd.read_csv(ABL_RAW_CSV)
@@ -218,9 +181,9 @@ def load_ablation() -> dict:
         sub = summ[summ["removal"] == removal]
         deg = sub[sub["degrades_sig"]]
         kept = len(deg) > 0
-        # dataset có Δ dương lớn nhất (bằng chứng mạnh nhất, dù có ý nghĩa hay không)
+                                                                                     
         worst = sub.loc[sub["delta"].idxmax()]
-        # dataset "gần đạt" nhất trong nhóm không có ý nghĩa (dùng khi CẮT)
+                                                                           
         closest = sub.loc[sub["p_value"].idxmin()]
         verdict[removal] = dict(
             component=comp, kept=kept, n_deg=int(len(deg)), n_ds=int(len(sub)),
@@ -233,16 +196,12 @@ def load_ablation() -> dict:
     kept = [v["component"] for v in verdict.values() if v["kept"]]
     cut = [v["component"] for v in verdict.values() if not v["kept"]]
 
-    # NB: key phải là `abl_datasets` (KHÔNG phải `datasets`), nếu không
-    # out.update(load_ablation()) sẽ ghi đè danh sách 18 dataset của bảng chính
-    # bằng 5 dataset ablation, cắt cụt Table 2/II/IV.
+
     return dict(ablation=True, abl_datasets=datasets, configs=configs, means=means,
                 sig=sig, verdict=verdict, kept=kept, cut=cut)
 
 
-# --------------------------------------------------------------- layout 2 cột
 def _set_cols(section, n, space=460):
-    """Đặt số cột cho một section (IEEE journal = 2 cột thân bài)."""
     sectPr = section._sectPr
     cols = sectPr.find(qn("w:cols"))
     if cols is None:
@@ -253,8 +212,6 @@ def _set_cols(section, n, space=460):
 
 
 def full_width(doc, emit):
-    """Chạy `emit()` (caption + bảng/hình). Bài Springer 1 cột nên đây chỉ là
-    wrapper giữ nguyên 1 cột (không đổi layout)."""
     s1 = doc.add_section(WD_SECTION.CONTINUOUS)
     _set_cols(s1, 1)
     emit()
@@ -262,26 +219,11 @@ def full_width(doc, emit):
     _set_cols(s2, 1)
 
 
-# --------------------------------------------------------------- helper docx
-# Times New Roman has no glyph for U+2C7C (subscript "j"), the fake-subscript
-# character used throughout the prose (e.g. "rho_j" written as "ρⱼ"); Word/LibreOffice
-# silently substitutes a different font for just that one character, which
-# with ~40 occurrences reads as the font being broken everywhere. Splitting
-# on it and rendering "j" as a real Word subscript run (font.subscript=True)
-# uses the surrounding run's own font, so it can never glyph-mismatch again.
-# Same treatment for literal caret exponents ("10^4", "{0,1}^d", "[-1,1]^d")
-# that never get rendered as real superscripts -- both patterns are
-# tokenized in one pass. The exponent can be numeric ("10^4") or a single
-# variable ("^d"); either way it's whatever word-run directly follows "^",
-# and the caret itself is simply dropped once the exponent is superscripted.
 _SUBSCRIPT_J = "ⱼ"
 _RUN_TOKEN_RE = re.compile(r"ⱼ|\^\w+")
 
 
 def _add_run_text(p, text, *, size=None, italic=None, bold=None):
-    """Add `text` to paragraph `p`, splitting out fake-subscript-j characters
-    and "^exponent" carets into real Word subscript/superscript runs so the
-    font stays consistent and exponents render properly."""
 
     def _add(run_text, *, subscript=False, superscript=False):
         r = p.add_run(run_text)
@@ -304,7 +246,7 @@ def _add_run_text(p, text, *, size=None, italic=None, bold=None):
         if token == _SUBSCRIPT_J:
             _add("j", subscript=True)
         else:
-            _add(token[1:], superscript=True)  # drop the leading "^"
+            _add(token[1:], superscript=True)                        
         pos = m.end()
     if pos < len(text):
         _add(text[pos:])
@@ -320,10 +262,6 @@ def para(doc, text, size=BODY_PT, italic=False, align=WD_ALIGN_PARAGRAPH.JUSTIFY
 
 
 def repeat_header_row(table) -> None:
-    """Mark the table's first row as a repeating header (w:tblHeader) so a
-    table that spans a page break shows column headers again on the next
-    page instead of leaving bare data rows the reader has to scroll back
-    to identify."""
     trPr = table.rows[0]._tr.get_or_add_trPr()
     tblHeader = OxmlElement("w:tblHeader")
     tblHeader.set(qn("w:val"), "true")
@@ -331,20 +269,6 @@ def repeat_header_row(table) -> None:
 
 
 def widen_first_col(table, inches: float = 1.05) -> None:
-    """Word's default column-width algorithm splits long single-token cell
-    text (dataset names like "WaveformEW", "GermanCredit", or a bracketed
-    config label like "(RMS+ORL+UMR)") mid-word when the first column ends
-    up too narrow -- there's no space/hyphen for Word to break on instead.
-
-    Setting `cell.width` per cell (python-docx's documented API) is NOT
-    enough on its own: Word/LibreOffice render column widths from the
-    table's shared <w:tblGrid><w:gridCol .../></w:tblGrid>, and
-    doc.add_table() initializes every gridCol to the same default width;
-    per-cell tcW overrides are inconsistently honored on top of an
-    unchanged, uniform grid. Rewriting tblGrid directly (first column
-    wider, remaining width split evenly across the rest) is what actually
-    changes the rendered layout; the per-cell widths are kept in sync too
-    since some renderers do cross-check them against the grid."""
     table.autofit = False
     grid = table._tbl.find(qn("w:tblGrid"))
     cols = grid.findall(qn("w:gridCol")) if grid is not None else []
@@ -361,19 +285,6 @@ def widen_first_col(table, inches: float = 1.05) -> None:
 
 
 def force_font_everywhere(doc, font_name: str = "Times New Roman") -> None:
-    """Final pass, called right before doc.save(): explicitly stamp
-    w:rFonts on every real Word text run (w:r) in the document, including
-    inside every table cell. Style-level rFonts (Normal/Heading N) already
-    say Times New Roman, and in principle every run without its own
-    override should cascade to that -- but the document's theme
-    (docDefaults -> minorHAnsi/majorHAnsi) resolves to Calibri/Cambria, and
-    any run that was given direct formatting (bold, size, subscript, ...)
-    without an explicit font name is exactly the case where cascade
-    behaviour is least reliable across Word/LibreOffice/Pages. Rather than
-    audit every call site that creates a run, force it once, everywhere,
-    at the end. OMML math runs (m:r/m:t) are untouched -- those correctly
-    use Word's own math font (Cambria Math) and forcing Times New Roman
-    onto them would look wrong."""
     w_ns = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
     for run_elem in doc.element.body.iter(f"{w_ns}r"):
         rpr = run_elem.find(f"{w_ns}rPr")
@@ -396,20 +307,15 @@ def eq(doc, text):
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     r = p.add_run(text)
     r.font.size = Pt(BODY_PT)
-    r.font.name = "Cambria Math"   # font toán của Word (ký hiệu hiển thị chuẩn hơn)
+    r.font.name = "Cambria Math"                                                    
     return p
 
 
-# ------------------------------------------------------- OMML (real Word math)
-# Word's native equation objects (Insert > Equation), built directly as OOXML
-# math markup so formulas render as proper typeset math (real fractions,
-# superscripts, norm bars) instead of plain Cambria-Math text approximating it.
 def M(tag):
     return OxmlElement(f"m:{tag}")
 
 
 def mrun(text):
-    """m:r văn bản toán học (in nghiêng tự động theo quy ước OMML)."""
     r = M("r")
     t = OxmlElement("m:t")
     t.text = text
@@ -443,7 +349,6 @@ def mfrac(num_elems, den_elems):
 
 
 def mdelim(inner_elems, beg="(", end=")"):
-    """Dấu ngoặc/hàng rào tự-co-giãn: (), ||...|| (norm), |...| (abs)."""
     e = M("d")
     dPr = M("dPr")
     begChr = M("begChr"); begChr.set(qn("m:val"), beg)
@@ -456,9 +361,6 @@ def mdelim(inner_elems, beg="(", end=")"):
 
 
 def eqm(doc, elements, note=None):
-    """Chèn 1 dòng công thức OMML thật (list phần tử m:*), căn giữa, thay cho
-    text xấp xỉ bằng Cambria-Math. Nhiều dòng liên quan thì gọi eqm() nhiều lần.
-    `note`: chú thích văn xuôi ngắn nối sau công thức trên cùng dòng (vd. "if ...")."""
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
     oMathPara = M("oMathPara")
@@ -473,7 +375,6 @@ def eqm(doc, elements, note=None):
 
 
 def blank(doc, label):
-    """Placeholder cho số liệu CHƯA chạy xong (không bịa), amber, italic, gọn."""
     p = doc.add_paragraph()
     r = p.add_run("[pending, " + label + "]")
     r.italic = True
@@ -486,25 +387,24 @@ def bullet(doc, text, lead=None):
     p = doc.add_paragraph(style="List Bullet")
     p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     if lead:
-        _add_run_text(p, lead, size=BODY_PT)   # không bôi đậm lead-in (Springer)
+        _add_run_text(p, lead, size=BODY_PT)                                     
     _add_run_text(p, text, size=BODY_PT)
 
 
 def caption(doc, text):
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.LEFT
-    _add_run_text(p, text, size=9)                 # caption thường, không bôi đậm
+    _add_run_text(p, text, size=9)                                                
     return p
 
 
 def add_fig_placeholder(doc, caption_text, height_cm=4.0):
-    """Khung hình rỗng (placeholder) + caption Ả-Rập bên dưới, kiểu IEEE."""
     t = doc.add_table(rows=1, cols=1)
     t.style = "Table Grid"
     t.alignment = WD_TABLE_ALIGNMENT.CENTER
     cell = t.rows[0].cells[0]
     cell.width = Inches(3.2)
-    cell.vertical_alignment = 1  # center
+    cell.vertical_alignment = 1          
     body = cell.paragraphs[0]
     body.alignment = WD_ALIGN_PARAGRAPH.CENTER
     for _ in range(int(height_cm)):
@@ -521,17 +421,13 @@ def add_fig_placeholder(doc, caption_text, height_cm=4.0):
 
 
 def add_figure(doc, img_name, caption_text, width_in=3.3):
-    """Nhúng ảnh THẬT figures/<img_name> (căn giữa) + caption IEEE bên dưới.
-
-    Nếu file ảnh chưa tồn tại → tự lùi về `add_fig_placeholder` (không bịa hình).
-    """
     path = os.path.join(FIG_DIR, img_name)
     if not os.path.exists(path):
         return add_fig_placeholder(doc, caption_text)
     p = doc.add_paragraph()
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p.paragraph_format.keep_with_next = True  # never let a page break land
-    p.add_run().add_picture(path, width=Inches(width_in))  # between image and caption
+    p.paragraph_format.keep_with_next = True                               
+    p.add_run().add_picture(path, width=Inches(width_in))                             
     cap = doc.add_paragraph()
     cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
     cr = cap.add_run(caption_text)
@@ -539,10 +435,8 @@ def add_figure(doc, img_name, caption_text, width_in=3.3):
     return p
 
 
-# --------------------------------------------------------------- bảng
 def _set_borders(el, spec):
-    """Gắn <w:*Borders> vào tblPr/tcPr. spec = {'top':(val,sz),...}."""
-    pr = el  # đã là tblPr hoặc tcPr
+    pr = el                         
     tag = "w:tblBorders" if pr.tag == qn("w:tblPr") else "w:tcBorders"
     b = pr.find(qn(tag))
     if b is None:
@@ -563,15 +457,13 @@ def _set_borders(el, spec):
 
 
 def _ieee_table(t):
-    """Kiểu booktabs IEEE: không tô màu, không kẻ dọc/kẻ giữa các hàng; chỉ 3
-    đường ngang (trên header, dưới header, dưới cùng). Áp cho bảng số liệu."""
-    t.style = "Table Grid"          # style trung tính, KHÔNG tô nền (khác Accent)
+    t.style = "Table Grid"                                                        
     t.alignment = WD_TABLE_ALIGNMENT.CENTER
     tblpr = t._tbl.tblPr
-    # top + bottom = rule dày; bỏ hết kẻ dọc và kẻ ngang giữa các hàng dữ liệu
+                                                                              
     _set_borders(tblpr, {"top": 8, "bottom": 8, "left": None, "right": None,
                          "insideH": None, "insideV": None})
-    # rule dưới hàng header (mid-rule booktabs)
+                                               
     for cell in t.rows[0].cells:
         _set_borders(cell._tc.get_or_add_tcPr(), {"bottom": 6})
     return t
@@ -595,7 +487,7 @@ def add_accuracy_table(doc, s):
         cells = t.add_row().cells
         cells[0].paragraphs[0].add_run(ds).font.size = Pt(8)
         cells[1].paragraphs[0].add_run(str(int(s["ntot"][ds]))).font.size = Pt(8)
-        # best gồm cả RIME nếu dataset này RIME đã xong (để in đậm đúng)
+                                                                        
         vals = list(s["acc_mean"].loc[ds])
         if ds in s["rime"]:
             vals.append(s["rime"][ds]["acc"])
@@ -606,13 +498,13 @@ def add_accuracy_table(doc, s):
             run.font.size = Pt(7.5)
             if abs(m - best) < 1e-9:
                 run.bold = True
-        if ds in s["rime"]:  # RIME đủ 30 run → số thật
+        if ds in s["rime"]:                            
             m, sd = s["rime"][ds]["acc"], s["rime"][ds]["std"]
             rr = cells[8].paragraphs[0].add_run(f"{m:.4f}\n±{sd:.3f}")
             rr.font.size = Pt(7.5)
             if abs(m - best) < 1e-9:
                 rr.bold = True
-        else:  # RIME đang chạy dataset này
+        else:                              
             rr = cells[8].paragraphs[0].add_run("-")
             rr.font.size = Pt(8)
             rr.font.color.rgb = PEND
@@ -644,7 +536,7 @@ def add_rank_table(doc, s):
     _ieee_table(t)
     t.alignment = WD_TABLE_ALIGNMENT.CENTER
     _hdr(t, ["Algorithm (year)", "Avg. rank", "W/T/L vs RG-SCSO (Holm)"], 9)
-    # Đã có R4-stats: xếp theo rank 7 thuật toán (gồm RIME), W/T/L có ý nghĩa Holm.
+                                                                                   
     ranking = s["rank7"].sort_values() if s.get("stats") else s["avg_rank"]
     for a, r in ranking.items():
         cells = t.add_row().cells
@@ -662,9 +554,6 @@ def add_rank_table(doc, s):
 
 
 def add_ablation_table(doc, s):
-    """Bảng V, ablation: accuracy trung bình mỗi cấu hình × dataset. Hàng Full
-    in đậm (mốc trên); ô có dấu † = cấu hình đó TỆ hơn Full có ý nghĩa (Wilcoxon
-    paired + Holm, p<0.05) → thành phần bị gỡ là load-bearing trên dataset đó."""
     ds_list = s["abl_datasets"]
     cols = ["Configuration"] + ds_list
     t = doc.add_table(rows=1, cols=len(cols))
@@ -702,13 +591,10 @@ def add_dataset_spec_table(doc, s):
             cells[i].paragraphs[0].add_run(v).font.size = Pt(9)
 
 
-# --------------------------------------------------------------- ép font đồng nhất
 FONT_NAME = "Times New Roman"
 
 
 def _force_run_font(run) -> None:
-    """Set toàn bộ 4 slot rFonts (ascii/hAnsi/cs/eastAsia) của 1 run về Times New
-    Roman, ghi đè cả font kế thừa từ table-style (thường là Calibri)."""
     run.font.name = FONT_NAME
     rpr = run._element.get_or_add_rPr()
     rfonts = rpr.find(qn("w:rFonts"))
@@ -720,7 +606,6 @@ def _force_run_font(run) -> None:
 
 
 def _iter_all_paragraphs(container):
-    """Duyệt paragraph ở body + trong MỌI cell của MỌI bảng (đệ quy bảng lồng)."""
     for p in container.paragraphs:
         yield p
     for tbl in container.tables:
@@ -730,9 +615,7 @@ def _iter_all_paragraphs(container):
 
 
 def _enforce_font(doc) -> None:
-    """Một lượt cuối: mọi run trong toàn tài liệu dùng chung Times New Roman.
-    Cũng set docDefaults để phần tử không có run (vd numbering) kế thừa đúng."""
-    # docDefaults rFonts
+                        
     styles_el = doc.styles.element
     dd = styles_el.find(qn("w:docDefaults"))
     if dd is None:
@@ -752,7 +635,7 @@ def _enforce_font(doc) -> None:
         rpr.insert(0, rfonts)
     for attr in ("w:ascii", "w:hAnsi", "w:cs", "w:eastAsia"):
         rfonts.set(qn(attr), FONT_NAME)
-    # từng run (body + tất cả bảng + header/footer mọi section)
+                                                               
     scopes = [doc]
     for sec in doc.sections:
         scopes += [sec.header, sec.footer, sec.first_page_header,
@@ -763,18 +646,12 @@ def _enforce_font(doc) -> None:
                 _force_run_font(run)
 
 
-# bề rộng ước lượng 1 ký tự ở Times 9pt (in) + đệm 2 lề ô; dùng để đo cột theo nội dung
-_CHAR_IN = 0.063        # nới nhẹ cho header bold 9pt rộng hơn data 7.5pt (tránh gãy chữ)
+_CHAR_IN = 0.063                                                                         
 _CELL_PAD_IN = 0.16
 _MIN_COL_IN = 0.45
 
 
 def _table_col_counts(doc) -> list:
-    """Trả về số cột (1=full-width / 2=inline) của section chứa mỗi bảng, THEO ĐÚNG
-    thứ tự `doc.tables`. Trong OOXML, w:sectPr trong pPr của 1 paragraph ĐÓNG section
-    đó, mọi nội dung từ ranh giới trước tới paragraph ấy thuộc section có thuộc tính này.
-    Nên gom các bảng gặp được từ sau ranh giới trước; khi chạm sectPr kế, gán số cột ấy
-    cho cả nhóm. (Không dùng id()/dict vì proxy lxml của cùng 1 node không trùng id.)"""
     body = doc.element.body
 
     def cols_of(sectpr):
@@ -800,24 +677,20 @@ def _table_col_counts(doc) -> list:
 
 
 def _fit_tables(doc) -> None:
-    """Đặt bề rộng cột THEO NỘI DUNG (không chia đều): mỗi cột rộng theo chuỗi dài
-    nhất trong cột đó. Bảng nhiều cột-số (accuracy/feature) tự vượt trần → scale vừa
-    khít bề rộng trang; bảng nhỏ (dataset-spec, rank) giữ bề rộng tự nhiên và căn giữa,
-    tránh cảnh số lọt thỏm giữa ô bị kéo giãn. Fixed layout để Word tôn trọng đúng số đo."""
     sec = doc.sections[0]
     page_tw = int((int(sec.page_width) - int(sec.left_margin)
-                   - int(sec.right_margin)) / 914400 * 1440)   # 8640 (full-width)
-    col_tw = (page_tw - 460) // 2      # bề rộng 1 cột thân bài (space cols = 460)
-    gov = _table_col_counts(doc)       # số cột section chứa mỗi bảng, theo thứ tự doc.tables
+                   - int(sec.right_margin)) / 914400 * 1440)                      
+    col_tw = (page_tw - 460) // 2                                                 
+    gov = _table_col_counts(doc)                                                             
     for t, num in zip(doc.tables, gov):
-        # bảng nằm trong section 1 cột (full_width) → trần 6in; trong section 2 cột
-        # (inline) → trần = bề rộng 1 cột, nếu không bảng sẽ TRÀN sang cột kia (Word lệch).
+                                                                                   
+                                                                                           
         target_tw = page_tw if num == 1 else col_tw
         t.autofit = False
         t.allow_autofit = False
-        t.alignment = WD_TABLE_ALIGNMENT.CENTER      # bảng hẹp thì căn giữa vùng chứa
+        t.alignment = WD_TABLE_ALIGNMENT.CENTER                                       
         tblpr = t._tbl.tblPr
-        # tblLayout = fixed
+                           
         lay = tblpr.find(qn("w:tblLayout"))
         if lay is None:
             lay = OxmlElement("w:tblLayout")
@@ -827,7 +700,7 @@ def _fit_tables(doc) -> None:
         grid = t._tbl.tblGrid
         gcs = grid.findall(qn("w:gridCol"))
         ncol = len(gcs)
-        # đo chuỗi dài nhất mỗi cột (header + mọi hàng), quy ra bề rộng tự nhiên
+                                                                                
         nat_in = [_MIN_COL_IN] * ncol
         for row in t.rows:
             for ci, cell in enumerate(row.cells):
@@ -839,18 +712,17 @@ def _fit_tables(doc) -> None:
                     nat_in[ci] = w_in
         nat_tw = [max(1, int(w * 1440)) for w in nat_in]
         cur = sum(nat_tw)
-        # 1 cột (Algorithm box) hoặc rộng hơn trần vùng chứa → scale vừa khít trần
+                                                                                  
         if ncol == 1 or cur > target_tw:
             scale = target_tw / cur
             nat_tw = [max(1, int(w * scale)) for w in nat_tw]
             total_tw = target_tw
         else:
-            total_tw = cur                            # bảng nhỏ: giữ tự nhiên, căn giữa
+            total_tw = cur                                                              
         for g, wtw in zip(gcs, nat_tw):
             g.set(qn("w:w"), str(wtw))
-        # QUAN TRỌNG cho Word: set luôn tcW từng ô = gridCol. Word ở fixed-layout ưu
-        # tiên tcW của ô; nếu bỏ trống, ô co giãn lệch so với gridCol (LibreOffice thì
-        # theo gridCol nên nhìn đúng, đây là chỗ Word "lệch" mà LO không).
+
+
         for row in t.rows:
             for ci, cell in enumerate(row.cells):
                 if ci >= len(nat_tw):
@@ -868,7 +740,7 @@ def _fit_tables(doc) -> None:
             tblpr.append(w)
         w.set(qn("w:w"), str(total_tw))
         w.set(qn("w:type"), "dxa")
-        # lề ô nhỏ (0.04in ~ 58 twips mỗi bên) để chữ có chỗ, tránh wrap thừa
+                                                                             
         mar = tblpr.find(qn("w:tblCellMar"))
         if mar is None:
             mar = OxmlElement("w:tblCellMar")
@@ -882,10 +754,6 @@ def _fit_tables(doc) -> None:
             e.set(qn("w:type"), "dxa")
 
 
-# --------------------------------------------------------------- build
-# --------------------------------------------------------------- references
-# Nguồn DUY NHẤT = references.bib (chung với bản .tex). Đánh số theo THỨ TỰ
-# TRÍCH DẪN trong bài để KHỚP CHÍNH XÁC với bản PDF/LaTeX (IEEE numbering).
 BIB_PATH = "references.bib"
 CITE_ORDER = ["guyon", "mrmr", "gwo", "pso", "tf", "scso", "bgwo", "mafarja",
               "aoa", "coa", "rime", "nfl", "neri", "bscso", "scsofs2", "scsofs3",
@@ -903,7 +771,6 @@ _LATEX_MAP = {
 
 
 def _delatex(s: str) -> str:
-    """Gỡ escape LaTeX + gộp khoảng trắng/xuống dòng thành text hiển thị được."""
     for k, v in _LATEX_MAP.items():
         s = s.replace(k, v)
     s = s.replace("{", "").replace("}", "")
@@ -911,7 +778,6 @@ def _delatex(s: str) -> str:
 
 
 def _parse_entry_fields(body: str) -> dict:
-    """Bóc các field key=value trong một entry BibTeX (giá trị bọc {} cân bằng)."""
     fields, i, n = {}, 0, len(body)
     while i < n:
         m = re.match(r"\s*(\w+)\s*=\s*", body[i:])
@@ -942,7 +808,6 @@ def _parse_entry_fields(body: str) -> dict:
 
 
 def _parse_bib(path: str = BIB_PATH) -> dict:
-    """Đọc references.bib -> {key: {field: value, __type__: ...}} (balanced-brace)."""
     text = open(path, encoding="utf-8").read()
     entries = {}
     for m in re.finditer(r"@(\w+)\s*\{", text):
@@ -962,7 +827,6 @@ def _parse_bib(path: str = BIB_PATH) -> dict:
 
 
 def _fmt_authors(raw: str) -> str:
-    """'Last, First and ...' -> 'F. Last, G. Other, and H. Third' (kiểu IEEE)."""
     out = []
     for a in (x.strip() for x in raw.split(" and ")):
         if "," in a:
@@ -980,10 +844,6 @@ def _fmt_authors(raw: str) -> str:
 
 
 def add_references(doc) -> None:
-    """Mục References: đọc references.bib, đánh số theo CITE_ORDER (khớp PDF).
-
-    Venue in nghiêng theo chuẩn IEEE; mọi thông tin lấy từ .bib, không gõ tay.
-    """
     doc.add_heading("References", level=1)
     entries = _parse_bib()
     for num, key in enumerate(CITE_ORDER, 1):
@@ -1011,14 +871,10 @@ def add_references(doc) -> None:
         if f.get("year"):
             seg += f", {f['year']}"
         run(seg + ".")
-        _bookmark_paragraph(p, f"ref{num}", 3000 + num)   # đích cho [num] click tới
+        _bookmark_paragraph(p, f"ref{num}", 3000 + num)                             
 
 
 def add_heldout_section(doc, _hs) -> None:
-    """§5.G — Generalization under a Leak-Free Hold-Out (Table 6/7). Mirror của
-    mục cùng tên trong build_paper_tex.py; TRƯỚC đây mục này hoàn toàn KHÔNG có
-    trong bản Word dù Abstract đã dẫn số leak-free làm bằng chứng chính — số đọc
-    động từ build_heldout_table.load(), không hardcode."""
     algos = _hs["algos"]
     wil = _hs["wil"]
     fr_chi2 = _hs["stats"]["friedman_chi2"]
@@ -1130,7 +986,6 @@ def add_heldout_section(doc, _hs) -> None:
 
 
 def add_scso_family_section(doc) -> None:
-    """§V-G, so RG-SCSO với baseline CÙNG HỌ SCSO-FS (bSCSO-S/OBL). Số đọc raw CSV."""
     from src.stats.statistical_tests import paired_wilcoxon_vs_target
     rg = pd.read_csv(RESULTS_CSV)
     rg = rg[rg.algorithm == "RG-SCSO"][
@@ -1182,7 +1037,7 @@ def add_scso_family_section(doc) -> None:
     caption(doc, "Table 8 Comparison with same-family binary SCSO feature "
                  f"selectors ({n_ds} datasets × 30 runs, budget-matched). W/T/L is "
                  "RG-SCSO's Holm-corrected win/tie/loss on accuracy (paired Wilcoxon, "
-                 "per-dataset family).")   # caption TRÊN bảng (chuẩn Springer)
+                 "per-dataset family).")                                       
     cols = ["Method", "Mean Acc.", "Mean #Feat.", "W/T/L vs RG-SCSO"]
     tb = doc.add_table(rows=1, cols=len(cols)); _ieee_table(tb); _hdr(tb, cols)
     for a in order:
@@ -1193,13 +1048,12 @@ def add_scso_family_section(doc) -> None:
         r3 = cells[3].paragraphs[0].add_run("-" if a == "RG-SCSO" else wtl[a])
         r3.font.size = Pt(8)
         if a == "RG-SCSO":
-            r2.bold = True   # chỉ đậm giá trị tốt nhất (ít feature nhất), không đậm tên
+            r2.bold = True                                                              
 
 
 def add_robustness_section(doc) -> None:
-    """§V-H, robustness qua wrapper (KNN/SVM) và prior (MI/ReliefF). Số từ raw CSV."""
     rob = pd.read_csv(ROBUST_CSV)
-    # Bảng chéo KNN×SVM cố định trên 5 dataset đại diện; SVM/18 phân tích riêng.
+                                                                                
     rob = rob[rob.dataset.isin(["Zoo", "Sonar", "WDBC", "ColonCancer", "Leukemia"])]
     wrappers = ["KNN", "SVM"]
     algos = ["RG-SCSO-MI", "RG-SCSO-ReliefF", "bSCSO"]
@@ -1237,7 +1091,7 @@ def add_robustness_section(doc) -> None:
          "we did not retune the ReliefF mapping to obscure this.")
     caption(doc, "Table 9 Robustness across classifier wrappers and relevance "
                  f"priors on {n_ds} representative datasets (× 30 runs, "
-                 "budget-matched). Fewest features per wrapper in bold.")   # caption TRÊN bảng
+                 "budget-matched). Fewest features per wrapper in bold.")                      
     cols = ["Wrapper", "Method", "Mean Acc.", "Mean #Feat."]
     tb = doc.add_table(rows=1, cols=len(cols)); _ieee_table(tb); _hdr(tb, cols)
     for w in wrappers:
@@ -1249,9 +1103,9 @@ def add_robustness_section(doc) -> None:
             r3 = cells[3].paragraphs[0].add_run(f"{m(w, a, 'n_selected_features'):.1f}")
             r3.font.size = Pt(8)
             if a == "RG-SCSO-MI":
-                r3.bold = True   # chỉ đậm giá trị tốt nhất, không đậm tên method
+                r3.bold = True                                                   
 
-    # ---- SVM trên 16 dataset (rev #3, diện rộng) ----
+                                                       
     from src.stats.statistical_tests import paired_wilcoxon_vs_target
     svm = pd.read_csv(ROBUST_CSV)
     svm = svm[svm.wrapper == "SVM"]
@@ -1305,10 +1159,6 @@ def add_robustness_section(doc) -> None:
 
 
 def add_diversity_section(doc) -> None:
-    """Chẩn đoán đóng băng bit / sụp đa dạng quần thể (phòng thủ tử huyệt
-    §1.1/§1.2 Diem_yeu_RG-SCSO.md). Bỏ qua nếu chưa đo (measure_diversity.py).
-    Đặt CUỐI Results (sau Robustness) để bảng mới là Table 11, không phải dịch
-    số các bảng trước (khác LaTeX, Word đánh số bảng bằng chuỗi tĩnh)."""
     if not os.path.exists(DIVERSITY_CSV):
         return
     df = pd.read_csv(DIVERSITY_CSV)
@@ -1377,17 +1227,13 @@ def add_diversity_section(doc) -> None:
     tb = doc.add_table(rows=1, cols=len(cols)); _ieee_table(tb); _hdr(tb, cols, size=7)
     for d in datasets:
         cells = tb.add_row().cells
-        vals = [d] + [f"{val(d,g,'diversity'):.3f}" for g in (0.0, 0.5, 1.0)] \
+        vals = [d] + [f"{val(d,g,'diversity'):.3f}" for g in (0.0, 0.5, 1.0)]\
                     + [f"{val(d,g,'frozen_frac'):.3f}" for g in (0.0, 0.5, 1.0)]
         for c, v in zip(cells, vals):
             c.paragraphs[0].add_run(v).font.size = Pt(7.5)
 
 
 def add_threats_section(doc, s, adaptive_red_min: float, adaptive_red_max: float) -> None:
-    """§V-J Threats to Validity, mirroring build_paper_tex.py's subsection so the
-    two artifacts carry the same limitations. Numbers pulled fresh from the same
-    CSVs the other Results subsections already read; no cross-doc import since
-    the two generators are kept independent by design."""
     div_df = pd.read_csv(DIVERSITY_CSV)
     max_frz_g5 = float(div_df[div_df.gamma == 0.5]["frozen_frac"].max() * 100)
 
@@ -1397,7 +1243,7 @@ def add_threats_section(doc, s, adaptive_red_min: float, adaptive_red_max: float
     def m5(w, a, col):
         return rob5[(rob5.wrapper == w) & (rob5.algorithm == a)][col].mean()
 
-    ratio_knn = m5("KNN", "RG-SCSO-ReliefF", "n_selected_features") / \
+    ratio_knn = m5("KNN", "RG-SCSO-ReliefF", "n_selected_features") /\
         m5("KNN", "RG-SCSO-MI", "n_selected_features")
 
     svm = rob[rob.wrapper == "SVM"]
@@ -1406,7 +1252,7 @@ def add_threats_section(doc, s, adaptive_red_min: float, adaptive_red_max: float
     def m16(a, col):
         return svm[svm.algorithm == a][col].mean()
 
-    s_red = (m16("bSCSO", "n_selected_features") - m16("RG-SCSO-MI", "n_selected_features")) \
+    s_red = (m16("bSCSO", "n_selected_features") - m16("RG-SCSO-MI", "n_selected_features"))\
         / m16("bSCSO", "n_selected_features") * 100
 
     feat_min, feat_max = int(s["ntot"].min()), int(s["ntot"].max())
@@ -1473,8 +1319,6 @@ def add_threats_section(doc, s, adaptive_red_min: float, adaptive_red_max: float
 
 
 def _bookmark_paragraph(p, name, bmid) -> None:
-    """Bọc paragraph bằng bookmark (đích để [n] nhảy tới). Đặt bookmarkStart sau
-    pPr, bookmarkEnd ở cuối."""
     start = OxmlElement("w:bookmarkStart")
     start.set(qn("w:id"), str(bmid))
     start.set(qn("w:name"), name)
@@ -1489,7 +1333,6 @@ def _bookmark_paragraph(p, name, bmid) -> None:
 
 
 def _mk_run_xml(text, size):
-    """1 <w:r> văn bản thường (Times New Roman, cỡ size), giữ khoảng trắng."""
     r = OxmlElement("w:r")
     rPr = OxmlElement("w:rPr")
     rf = OxmlElement("w:rFonts")
@@ -1509,11 +1352,10 @@ def _mk_run_xml(text, size):
 
 
 def _cite_hyperlink_xml(anchor, text, size):
-    """<w:hyperlink w:anchor=...> quanh [n] — click nhảy tới bookmark, giữ màu đen."""
     hl = OxmlElement("w:hyperlink")
     hl.set(qn("w:anchor"), anchor)
     r = _mk_run_xml(text, size)
-    col = OxmlElement("w:color")           # đen, không xanh/underline kiểu web-link
+    col = OxmlElement("w:color")                                                    
     col.set(qn("w:val"), "000000")
     r.find(qn("w:rPr")).append(col)
     hl.append(r)
@@ -1521,8 +1363,6 @@ def _cite_hyperlink_xml(anchor, text, size):
 
 
 def _linkify_citations(doc, maxref) -> None:
-    """Đổi mọi [n] trong thân bài thành internal hyperlink tới bookmark ref{n}.
-    Bỏ qua heading và danh mục References."""
     pat = re.compile(r"\[(\d+)\]")
     in_refs = False
     for p in doc.paragraphs:
@@ -1551,9 +1391,6 @@ def _linkify_citations(doc, maxref) -> None:
 
 
 def _renumber_springer(doc) -> None:
-    """Đổi số mục IEEE (I./II. + A./B.) sang Springer Ả-Rập (1, 1.1, 2, 2.1, ...).
-    'Statements and Declarations' và 'References' để KHÔNG đánh số (back-matter
-    chuẩn Springer)."""
     top, sub = 0, 0
     for p in doc.paragraphs:
         st = p.style.name
@@ -1580,8 +1417,8 @@ def _renumber_springer(doc) -> None:
 
 def build():
     s = load_summary()
-    # Số leak-free cho Abstract (đọc động từ artifact, KHÔNG hardcode) — dùng làm
-    # bằng chứng CHÍNH trong Abstract thay vì con số in-sample optimistic.
+                                                                                 
+                                                                          
     _hs = _heldout.load()
     hs_rank = float(_hs["ranking"]["RG-SCSO"])
     hs_wtl = _hs["wil"]["mark"].value_counts()
@@ -1594,9 +1431,8 @@ def build():
                  for cfg, row in _adap.iterrows() if cfg != "RG-SCSO"]
     adaptive_red_min, adaptive_red_max = min(_adap_red), max(_adap_red)
     doc = Document()
-    # A4 + margins matching the compiled sn-jnl PDF (measured via pdftotext -bbox:
-    # left/right text block ~35-43mm, top ~25.5mm), not python-docx's US-Letter
-    # default, so the Word and LaTeX deliverables share the same page geometry.
+
+
     sec0 = doc.sections[0]
     sec0.page_width = Mm(210)
     sec0.page_height = Mm(297)
@@ -1610,8 +1446,8 @@ def build():
     st.paragraph_format.line_spacing = 1.0
     st.paragraph_format.space_before = Pt(0)
     st.paragraph_format.space_after = Pt(6)
-    # Heading kiểu Springer: đen, Times, RÕ RÀNG lớn hơn thân bài (không phải
-    # xanh-to mặc định Word, và không được bằng/nhỏ hơn cỡ chữ thân bài).
+                                                                             
+                                                                         
     for hs, sz, before, after in [("Heading 1", 14, 18, 8), ("Heading 2", 12, 14, 6)]:
         h = doc.styles[hs]
         h.font.name = "Times New Roman"
@@ -1623,7 +1459,7 @@ def build():
         h.paragraph_format.space_after = Pt(after)
         h.paragraph_format.line_spacing = 1.0
 
-    # ---- Title block (full-width, kiểu IEEE)
+                                              
     title = doc.add_paragraph()
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
     tr = title.add_run(
@@ -1661,7 +1497,7 @@ def build():
     afr.italic = True
     afr.font.size = Pt(9.5)
 
-    # ---- Abstract (IEEE: 1 đoạn, bold lead-in, justify, cỡ nhỏ)
+                                                                 
     ab = doc.add_paragraph()
     ab.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
     lead = ab.add_run("Abstract ")
@@ -1723,12 +1559,12 @@ def build():
     it.italic = True
     it.font.size = Pt(9)
 
-    # ---- Chuyển sang 2 cột cho toàn bộ thân bài
+                                                 
     body = doc.add_section(WD_SECTION.CONTINUOUS)
-    _set_cols(doc.sections[0], 1)   # title block: 1 cột
-    _set_cols(body, 1)              # thân bài: 1 cột kiểu Springer
+    _set_cols(doc.sections[0], 1)                       
+    _set_cols(body, 1)                                             
 
-    # ---------------- I Introduction
+                                     
     doc.add_heading("I. Introduction", level=1)
     para(doc,
          "Feature selection removes irrelevant and redundant features to "
@@ -1798,7 +1634,7 @@ def build():
                 "tests whether each component is load-bearing, cutting any "
                 "that are not.", lead="We report ")
 
-    # ---------------- II Related Work
+                                      
     doc.add_heading("II. Related Work", level=1)
     doc.add_heading("A. Swarm-Based Wrapper Feature Selection", level=2)
     para(doc, "Binary variants of grey wolf optimization [7], particle swarm "
@@ -1845,7 +1681,7 @@ def build():
               "addresses: RG-SCSO is binary-native by construction rather "
               "than a continuous optimizer wrapped in a fixed transfer.")
 
-    # ---------------- III Method
+                                 
     doc.add_heading("III. Proposed Method: RG-SCSO", level=1)
     doc.add_heading("A. Preliminaries", level=2)
     para(doc, "We encode a candidate subset as a binary mask b in {0,1}^d over "
@@ -2121,7 +1957,7 @@ def build():
               "because those probes are drawn from the shared evaluation "
               "budget, the comparison stays strictly budget-matched.")
 
-    # ---------------- IV Setup
+                               
     doc.add_heading("IV. Experimental Setup", level=1)
     doc.add_heading("A. Datasets", level=2)
     para(doc, "Our benchmark spans 18 preprocessed datasets of varying "
@@ -2190,7 +2026,7 @@ def build():
               "released in a public, citable repository (Zenodo DOI) upon "
               "acceptance, permitting bit-for-bit replication.")
 
-    # ---------------- V Results
+                                
     doc.add_heading("V. Results and Discussion", level=1)
     doc.add_heading("A. Classification Accuracy", level=2)
     rime_done = s.get("rime_done", 0) >= 18
@@ -2397,7 +2233,7 @@ def build():
     add_diversity_section(doc)
     add_threats_section(doc, s, adaptive_red_min, adaptive_red_max)
 
-    # ---------------- VI Conclusion
+                                    
     doc.add_heading("VI. Conclusion and Future Work", level=1)
     if s.get("stats"):
         w, ti, l = s["sig_total"]
@@ -2445,8 +2281,7 @@ def build():
               "data, where a relevance-guided, binary-native operator should be "
               "especially valuable.")
 
-    # ---------------- Statements and Declarations (đúng tên mục yêu cầu bởi
-    # Applied Intelligence submission guidelines, không phải chỉ "Declarations")
+
     doc.add_heading("Statements and Declarations", level=1)
     para(doc, "Funding: No funding was received for this work.")
     para(doc, "Competing interests: The authors declare that they have no "
@@ -2463,17 +2298,17 @@ def build():
     para(doc, "ORCID iDs: Bui Quang Huy 0009-0000-5761-5098; "
               "Duong Minh Son 0009-0006-6485-7902.")
 
-    # ---------------- References (đọc references.bib, khớp số với bản PDF)
+                                                                           
     add_references(doc)
 
-    _renumber_springer(doc)   # đánh số mục kiểu Springer (1, 1.1, ...) thay I./A.
-    _enforce_font(doc)   # lượt cuối: đồng nhất Times New Roman toàn tài liệu
-    _linkify_citations(doc, len(CITE_ORDER))   # [n] → click nhảy tới reference
-    _fit_tables(doc)     # khóa bảng trong lề, không tràn
+    _renumber_springer(doc)                                                       
+    _enforce_font(doc)                                                       
+    _linkify_citations(doc, len(CITE_ORDER))                                   
+    _fit_tables(doc)                                     
     doc.save(OUT_DOCX)
     print(f"Đã ghi {OUT_DOCX}  ({s['n']}/18 dataset)")
-    # echo bảng rank CHÍNH THỨC (locked-7 từ friedman_ranking.csv) nếu có,
-    # tránh nhầm với avg_rank fallback nội bộ (thiếu RIME).
+                                                                          
+                                                           
     rank_show = s["rank7"] if s.get("stats") else s["avg_rank"]
     print("Average rank (locked-7):\n" + rank_show.round(2).to_string())
     print(f"Margin vs AOA: {s['margin_aoa']:.2f} pts | feat reduction vs AOA "

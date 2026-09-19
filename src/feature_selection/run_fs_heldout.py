@@ -1,36 +1,3 @@
-"""Fold-honest held-out generalization run cho RG-SCSO (R3b).
-
-ĐỘNG CƠ (2026-07-08): confound audit phát hiện `relevance_prior` tính MI trên
-TOÀN BỘ (X, y) — gồm nhãn test fold — nên chỉ RG-SCSO hưởng một leak transductive
-(mean Spearman ρ_full vs ρ_train = 0.75, nặng trên gene-set). Pilot fold-honest
-(80/20 held-out, budget-matched) cho RG-SCSO 7 WIN / 0 tie / 1 LOSS vs SCSO ⇒
-win THẬT, không phải artifact. Run này sản xuất BẢNG GENERALIZATION chính thức để:
-    (a) chứng minh không leak (MI prior chỉ tính trên train-80),
-    (b) trả lời reviewer "no generalization study",
-    (c) cho effect size THỰC TẾ (held-out) bên cạnh in-sample CV.
-
-GIAO THỨC (khóa trước khi chạy — pre-registration, spec 8.1/4.2):
-    Với mỗi (algorithm, dataset, run_id):
-      seed = RANDOM_SEED_BASE + run_id
-      1. Outer split 80/20 stratified (random_state=seed) -> (Xtr, ytr), (Xte, yte).
-      2. TÌM KIẾM + FITNESS chỉ trên (Xtr, ytr):
-           - fitness = KNN 5-fold CV TRONG train-80 (StandardScaler fit per-fold).
-           - RG-SCSO: prior relevance ρ_static = MI(Xtr, ytr) — KHÔNG nhìn held-out.
-      3. Chốt subset (RG-SCSO: best_mask; còn lại: binarize_threshold(best_solution)).
-      4. BÁO CÁO: accuracy trên HELD-OUT-20 (fit KNN+scaler trên train-80[selected],
-         score trên held-out-20[selected]). Metric of record = heldout_accuracy.
-    Budget khớp baseline (pop_size × max_iter đúng config.py). Không đổi thuật toán,
-    dataset, seed, kiểm định sau khi thấy số. Giữ song song bảng in-sample R3 gốc
-    làm main results; bảng này là generalization validation.
-
-Output (append từng dòng, resumable như runner gốc):
-    experiments/results_fs_heldout/fs_heldout_results.csv
-    experiments/results_fs_heldout/fs_heldout_summary.csv
-
-Chạy:  caffeinate -i python -m src.feature_selection.run_fs_heldout
-       python -m src.feature_selection.run_fs_heldout --summary-only
-       python -m src.feature_selection.run_fs_heldout --smoke   # smoke test nhanh
-"""
 
 from __future__ import annotations
 
@@ -71,7 +38,7 @@ SEARCH_LB = -1.0
 SEARCH_UB = 1.0
 TEST_SIZE = 0.2
 
-# Bộ thuật toán KHỚP main results R3 (bulletproof so sánh cùng đối thủ).
+                                                                        
 MEALPY_BASELINES = ["PSO", "GWO", "AOA", "COA", "RIME"]
 ALL_ALGORITHMS = ["RG-SCSO", "SCSO"] + MEALPY_BASELINES
 
@@ -107,8 +74,6 @@ def _heldout_accuracy(
     y_test: np.ndarray,
     k_neighbors: int = KNN_NEIGHBORS,
 ) -> float:
-    """Accuracy trên held-out: fit StandardScaler+KNN trên train-80[selected],
-    score trên held-out-20[selected]. Không rò rỉ — scaler/KNN chỉ thấy train."""
     selected = np.flatnonzero(mask)
     if selected.size == 0:
         return 0.0
@@ -127,7 +92,7 @@ def _run_single_task(algorithm: str, dataset: str, run_id: int) -> dict:
     )
     dim = x_train.shape[1]
 
-    # Fitness + search CHỈ trên train-80 (fold-honest).
+                                                       
     obj_func = make_fitness_function(x_train, y_train, seed=seed)
 
     if algorithm == "RG-SCSO":
@@ -142,7 +107,7 @@ def _run_single_task(algorithm: str, dataset: str, run_id: int) -> dict:
             pop_size=POPULATION_SIZE,
             max_iter=MAX_ITERATION,
             seed=seed,
-            X=x_train,  # prior MI chỉ nhìn train-80
+            X=x_train,                              
             y=y_train,
             eval_mask=eval_mask,
         ).optimize()

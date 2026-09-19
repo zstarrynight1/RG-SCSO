@@ -1,14 +1,3 @@
-"""Đo đa dạng quần thể + tỉ lệ bit đóng băng theo vòng lặp (phòng thủ tử huyệt
-§1.1 cân bằng E&E, §1.2 đóng băng bit trong Diem_yeu_RG-SCSO.md).
-
-So RG-SCSO ở γ ∈ {0.0, 0.5, 1.0}: γ=0 là V-shaped thuần (không relevance), γ=0.5
-là mặc định, γ=1.0 là bias cực đại. Nếu γ cao KHÔNG làm sụp đa dạng / đóng băng
-bit sớm hơn rõ rệt so với γ=0 → cơ chế RMS an toàn về exploration (bác bỏ tử huyệt).
-Ngược lại → phát hiện trung thực, cần sàn p_min.
-
-Output: experiments/results_diversity/diversity_history.csv (trung bình theo run).
-Chạy:   .venv/bin/python measure_diversity.py [--smoke]
-"""
 
 from __future__ import annotations
 
@@ -27,7 +16,7 @@ OUT_DIR = os.path.join("experiments", "results_diversity")
 OUT_CSV = os.path.join(OUT_DIR, "diversity_history.csv")
 SEARCH_LB, SEARCH_UB = -1.0, 1.0
 
-DATASETS = ["Zoo", "WDBC", "ColonCancer"]   # thấp / trung / siêu cao chiều
+DATASETS = ["Zoo", "WDBC", "ColonCancer"]                                  
 GAMMAS = [0.0, 0.5, 1.0]
 N_RUNS = 3
 

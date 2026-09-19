@@ -1,21 +1,3 @@
-"""Phase R5 — sinh hình cho bài RG-SCSO (IEEE Transactions).
-
-Bốn hình, tất cả lưu CẢ .pdf (vector, cho LaTeX) VÀ .png (300 dpi) vào figures/:
-    1. concept.pdf      — schematic washout vs RG-SCSO (vẽ tay bằng matplotlib).
-    2. cd_diagram.pdf   — Critical-Difference (Friedman + Nemenyi) trên 18 dataset.
-    3. convergence.pdf  — mean best fitness theo iteration (low-dim + high-dim).
-    4. mechanism.pdf    — overlap feature RG-SCSO chọn với top-MI vs baseline.
-
-Hình 1-2 chỉ cần artifact CÓ SẴN (fs_results.csv / friedman_ranking.csv) → chạy
-được ngay. Hình 3-4 cần convergence-curve + mask KHÔNG lưu trong fs_results.csv,
-nên đọc từ figures/fig_capture.npz do `capture_fig_data.py` tái tạo (deterministic,
-seed 42+run_id — chỉ để VẼ, không đổi số báo cáo). Thiếu file → bỏ qua + cảnh báo.
-
-NGUYÊN TẮC: số trên hình sinh tự động từ artifact, KHÔNG hardcode. Màu 1 thuật
-toán = 1 màu cố định ở mọi hình (đối chiếu chéo dễ khi reviewer soi).
-
-Chạy: .venv/bin/python make_figures.py
-"""
 
 from __future__ import annotations
 
@@ -23,7 +5,7 @@ import os
 
 import matplotlib
 
-matplotlib.use("Agg")  # headless, CPU-only, không mở cửa sổ
+matplotlib.use("Agg")                                       
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -33,12 +15,12 @@ FS_CSV = os.path.join("experiments", "results_fs", "fs_results.csv")
 RANK_CSV = os.path.join("experiments", "results_fs", "friedman_ranking.csv")
 CAPTURE_NPZ = os.path.join(FIG_DIR, "fig_capture.npz")
 
-# Bộ 7 thuật toán khóa (pre-registered) + năm để chú thích.
+                                                           
 LOCKED = ["RG-SCSO", "SCSO", "AOA", "COA", "GWO", "PSO", "RIME"]
 YEAR = {"RG-SCSO": "ours", "SCSO": "2022", "AOA": "2021", "COA": "2023",
         "GWO": "2014", "PSO": "1995", "RIME": "2023"}
 
-# Màu cố định: RG-SCSO đỏ nổi bật, SCSO xanh (baseline gốc), còn lại phân biệt.
+                                                                               
 COLORS = {
     "RG-SCSO": "#d62728", "SCSO": "#1f77b4", "AOA": "#2ca02c",
     "COA": "#9467bd", "GWO": "#8c564b", "PSO": "#e377c2", "RIME": "#ff7f0e",
@@ -61,9 +43,7 @@ def _save(fig: plt.Figure, name: str) -> None:
     print(f"  ✓ figures/{name}.pdf + .png")
 
 
-# ----------------------------------------------------------------- 1. concept
 def fig_concept() -> None:
-    """Schematic 2 tầng: pipeline thường (washout) vs RG-SCSO (per-feature R)."""
     fig, (ax_top, ax_bot) = plt.subplots(2, 1, figsize=(7.0, 4.2))
 
     def box(ax, x, w, label, fc, tc="black"):
@@ -79,7 +59,7 @@ def fig_concept() -> None:
     for ax in (ax_top, ax_bot):
         ax.set_xlim(0, 10); ax.set_ylim(0, 1); ax.axis("off")
 
-    # --- Top: conventional pipeline ---
+                                        
     ax_top.text(0.0, 0.92, "(a) Conventional continuous-to-binary pipeline",
                 fontsize=9, fontweight="bold")
     box(ax_top, 0.2, 2.0, "Continuous\nsearch operator", "#eaf2fb")
@@ -90,7 +70,7 @@ def fig_concept() -> None:
     ax_top.text(4.1, 0.16, "quantization discards fine adjustments  →  WASHOUT",
                 ha="center", fontsize=8, color="#b22222", style="italic")
 
-    # --- Bottom: RG-SCSO ---
+                             
     ax_bot.text(0.0, 0.92, "(b) RG-SCSO: sensitivity range → per-feature bit-flip",
                 fontsize=9, fontweight="bold")
     box(ax_bot, 0.2, 2.0, "SCSO position\nupdate  (range R)", "#eaf2fb")
@@ -98,7 +78,7 @@ def fig_concept() -> None:
     box(ax_bot, 2.9, 2.6, "RMS: relevance-\nmodulated V-transfer", "#e8f6ea", )
     arrow(ax_bot, 5.6, 6.2)
     box(ax_bot, 6.2, 1.8, "Binary mask", "#eaf2fb")
-    # relevance field feeding RMS + UMR
+                                       
     ax_bot.add_patch(plt.Rectangle((2.9, 0.72), 2.6, 0.16, facecolor="#fff4d6",
                                    edgecolor="black", lw=0.8))
     ax_bot.text(4.2, 0.80, "ρ: mutual-information relevance field", ha="center",
@@ -113,22 +93,18 @@ def fig_concept() -> None:
     _save(fig, "concept")
 
 
-# ---------------------------------------------------------------- 2. CD diagram
 def _nemenyi_q(k: int) -> float:
-    """Giá trị tới hạn Nemenyi q_alpha (alpha=0.05) theo số thuật toán k."""
     table = {2: 1.960, 3: 2.343, 4: 2.569, 5: 2.728, 6: 2.850, 7: 2.949,
              8: 3.031, 9: 3.102, 10: 3.164}
     return table[k]
 
 
 def fig_cd() -> None:
-    """Critical-Difference diagram (Demšar 2006): trục rank, thanh nối các nhóm
-    KHÔNG khác biệt có ý nghĩa (chênh rank < CD)."""
     df = pd.read_csv(FS_CSV)
     df = df[df["algorithm"].isin(LOCKED)]
     piv = df.groupby(["dataset", "algorithm"])["accuracy"].mean().unstack()[LOCKED]
-    ranks = piv.rank(axis=1, ascending=False)  # rank 1 = accuracy cao nhất
-    avg = ranks.mean().sort_values()           # thứ tự tốt→tệ
+    ranks = piv.rank(axis=1, ascending=False)                              
+    avg = ranks.mean().sort_values()                          
     k, N = piv.shape[1], piv.shape[0]
     CD = _nemenyi_q(k) * np.sqrt(k * (k + 1) / (6.0 * N))
 
@@ -137,7 +113,7 @@ def fig_cd() -> None:
     ax.set_xlim(lo - 0.5, hi + 0.5)
     ax.set_ylim(0, 1)
     ax.axis("off")
-    # trục rank (1 tốt nhất bên trái)
+                                     
     axis_y = 0.78
     ax.plot([lo, hi], [axis_y, axis_y], "k-", lw=1.2)
     for r in range(lo, hi + 1):
@@ -148,12 +124,12 @@ def fig_cd() -> None:
 
     names = list(avg.index)
     half = (len(names) + 1) // 2
-    # nửa tốt hơn (rank nhỏ) gắn nhãn bên trái, nửa còn lại bên phải
+                                                                    
     for i, a in enumerate(names):
         r = avg[a]
-        if i < half:  # trái
+        if i < half:        
             xtext, yr = lo - 0.4, axis_y - 0.10 - 0.11 * i
-        else:         # phải
+        else:               
             xtext, yr = hi + 0.4, axis_y - 0.10 - 0.11 * (len(names) - 1 - i)
         ha = "right" if i < half else "left"
         ax.plot([r, r], [axis_y, yr], color=COLORS[a], lw=1.1)
@@ -164,7 +140,7 @@ def fig_cd() -> None:
                 fontweight="bold" if a == "RG-SCSO" else "normal",
                 color=COLORS[a] if a == "RG-SCSO" else "black")
 
-    # thanh CD: nhóm các thuật toán liên tiếp có chênh rank <= CD
+                                                                 
     bar_y = axis_y - 0.05
     groups = []
     for i in range(len(names)):
@@ -173,14 +149,14 @@ def fig_cd() -> None:
             j += 1
         if j > i:
             groups.append((avg[names[i]], avg[names[j]]))
-    # loại nhóm con bị bao
+                          
     groups = [g for g in groups if not any(g2[0] <= g[0] and g[1] <= g2[1]
                                            and g2 != g for g2 in groups)]
     for gi, (r0, r1) in enumerate(groups):
         yy = bar_y - 0.045 * gi
         ax.plot([r0 - 0.03, r1 + 0.03], [yy, yy], "k-", lw=2.6, solid_capstyle="round")
 
-    # thước CD ở góc trên trái
+                              
     ax.plot([lo, lo + CD], [0.96, 0.96], "k-", lw=1.6)
     ax.plot([lo, lo], [0.945, 0.975], "k-", lw=1.0)
     ax.plot([lo + CD, lo + CD], [0.945, 0.975], "k-", lw=1.0)
@@ -191,17 +167,10 @@ def fig_cd() -> None:
     print(f"    (Nemenyi CD={CD:.3f}, k={k}, N={N}; groups joined = not sig. diff.)")
 
 
-# ----------------------------------------------------------- 2b. cd, held-out
 HELDOUT_RANK_CSV = os.path.join("experiments", "results_fs_heldout", "friedman_ranking.csv")
 
 
 def fig_cd_heldout() -> None:
-    """Critical-Difference diagram trên RANKING HELD-OUT (leak-free), thay cho
-    bản in-sample làm bằng chứng chính ở main text (RG-SCSO_MASTER_FINAL_
-    COMPLETE.md Section 15 / Section 32 item 4: "Held-out phải là evidence
-    chính; main CD diagram phải ưu tiên held-out"). Cùng công thức Nemenyi,
-    cùng style, chỉ khác nguồn rank (friedman_ranking.csv của held-out thay
-    vì in-sample)."""
     if not os.path.exists(HELDOUT_RANK_CSV):
         print("  ⚠ friedman_ranking.csv (held-out) chưa có → bỏ qua cd_diagram_heldout.")
         return
@@ -269,14 +238,13 @@ def fig_cd_heldout() -> None:
           f"groups joined = not sig. diff.)")
 
 
-# --------------------------------------------------------------- 3. convergence
 def fig_convergence() -> None:
     if not os.path.exists(CAPTURE_NPZ):
         print("  ⚠ figures/fig_capture.npz chưa có → bỏ qua convergence "
               "(chạy capture_fig_data.py trước).")
         return
     d = np.load(CAPTURE_NPZ, allow_pickle=True)
-    curves = d["curves"].item()          # curves[dataset][algo] = (n_runs, T)
+    curves = d["curves"].item()                                               
     conv_ds = list(d["conv_datasets"])
     n_runs = int(d["n_runs"])
 
@@ -285,7 +253,7 @@ def fig_convergence() -> None:
         ax = axes[0][ci]
         for a in LOCKED:
             if ds in curves and a in curves[ds]:
-                arr = np.asarray(curves[ds][a])         # (runs, T)
+                arr = np.asarray(curves[ds][a])                    
                 mean = arr.mean(axis=0)
                 it = np.arange(1, len(mean) + 1)
                 ax.plot(it, mean, color=COLORS[a], lw=1.4 if a == "RG-SCSO" else 1.0,
@@ -302,22 +270,22 @@ def fig_convergence() -> None:
     _save(fig, "convergence")
 
 
-# --------------------------------- 4b. convergence, feature-selection objective
 CONVERGENCE_FS_CSV = os.path.join(
     "experiments", "results_convergence", "convergence_curves.csv"
 )
 
 
 def fig_convergence_fs() -> None:
-    """Convergence trên CHÍNH objective feature-selection (khác fig_convergence()
-    ở trên, vốn dùng dữ liệu capture cũ từ benchmark liên tục). Nguồn:
-    run_convergence_curves.py — RG-SCSO/SCSO/AOA, 3 dataset (Zoo/WDBC/ColonCancer),
-    5 run, minh họa hành vi tìm kiếm, KHÔNG phải một claim thống kê mới."""
     if not os.path.exists(CONVERGENCE_FS_CSV):
         print("  ⚠ convergence_curves.csv chưa có → bỏ qua fig_convergence_fs "
               "(chạy run_convergence_curves.py trước).")
         return
     df = pd.read_csv(CONVERGENCE_FS_CSV)
+    if "nfe" not in df.columns:
+        print("  ⚠ convergence_curves.csv chưa có cột 'nfe' (bản cũ, trước "
+              "IJCS P0-6 fix) → bỏ qua fig_convergence_fs (chạy lại "
+              "run_convergence_curves.py để tái tạo với cột nfe).")
+        return
     datasets = ["Zoo", "WDBC", "ColonCancer"]
     algos = ["RG-SCSO", "SCSO", "AOA"]
     n_runs = df["run_id"].nunique()
@@ -327,12 +295,12 @@ def fig_convergence_fs() -> None:
         ax = axes[0][ci]
         for a in algos:
             sub = df[(df.dataset == ds) & (df.algorithm == a)]
-            mean = sub.groupby("iteration")["fitness"].mean()
+            mean = sub.groupby("nfe")["fitness"].mean()
             ax.plot(mean.index, mean.values, color=COLORS[a],
                      lw=1.4 if a == "RG-SCSO" else 1.0, label=a,
                      zorder=3 if a == "RG-SCSO" else 2)
         ax.set_title(ds, fontsize=9)
-        ax.set_xlabel("Iteration", fontsize=8.5)
+        ax.set_xlabel("NFE", fontsize=8.5)
         if ci == 0:
             ax.set_ylabel("Mean best fitness", fontsize=8.5)
         ax.tick_params(labelsize=7.5)
@@ -344,13 +312,7 @@ def fig_convergence_fs() -> None:
     _save(fig, "convergence_fs")
 
 
-# --------------------------------------- 4b. accuracy-parsimony trade-off
 def fig_accuracy_parsimony_tradeoff() -> None:
-    """Held-out accuracy vs. mean selected-feature FRACTION (nfeat/ntot,
-    normalized so datasets with 8 vs. 3571 features are comparable), one
-    point per algorithm, averaged across all 18 datasets. RG-SCSO_MASTER_
-    FINAL_COMPLETE.md Section 24, Figure 4 -- plotted entirely from existing
-    held-out data (build_heldout_table.load()), no new experiment."""
     import build_heldout_table as _heldout
 
     hs = _heldout.load()
@@ -365,9 +327,7 @@ def fig_accuracy_parsimony_tradeoff() -> None:
     y_min, y_max = min(ys), max(ys)
     x_span, y_span = x_max - x_min, y_max - y_min
 
-    # Generous, even padding on every side (not just the side a label
-    # happens to overflow into) -- a fixed points-offset label near any
-    # edge of the data range would otherwise sit outside the axes frame.
+
     x_pad, y_pad = x_span * 0.16, y_span * 0.14
     ax.set_xlim(x_min - x_pad, x_max + x_pad)
     ax.set_ylim(y_min - y_pad, y_max + y_pad)
@@ -376,10 +336,8 @@ def fig_accuracy_parsimony_tradeoff() -> None:
         ax.scatter(x, y, s=60 if a == "RG-SCSO" else 46,
                    color=COLORS[a], zorder=3 if a == "RG-SCSO" else 2,
                    edgecolors="black", linewidths=0.6)
-        # Flip the label to whichever side of the marker has more room
-        # left before the axes edge, so a point near the left or right
-        # boundary (e.g. AOA at the far right) never has its text pushed
-        # past the frame.
+
+
         near_right = (x_max + x_pad - x) < 0.22 * (x_span + 2 * x_pad)
         near_left = (x - (x_min - x_pad)) < 0.14 * (x_span + 2 * x_pad)
         if near_right and not near_left:
@@ -400,16 +358,11 @@ def fig_accuracy_parsimony_tradeoff() -> None:
     _save(fig, "accuracy_parsimony_tradeoff")
 
 
-# ------------------------------------------------- 4c. threshold heatmap
 THRESHOLD_CSV = os.path.join("experiments", "results_threshold",
                               "threshold_sensitivity_results.csv")
 
 
 def fig_threshold_heatmap() -> None:
-    """Heatmap accuracy theo (dataset x tau), số feature trung bình ghi kèm
-    trong ô (cùng tinh thần "accuracy (features)" đã dùng ở Table 1/4/5) --
-    trực quan hóa dữ liệu threshold-sensitivity đã có ở Supplementary Table
-    (RG-SCSO_MASTER_FINAL_COMPLETE.md Section 24, Figure 6)."""
     if not os.path.exists(THRESHOLD_CSV):
         print("  ⚠ threshold_sensitivity_results.csv chưa có → bỏ qua threshold_heatmap.")
         return
@@ -440,15 +393,7 @@ def fig_threshold_heatmap() -> None:
     _save(fig, "threshold_heatmap")
 
 
-# ------------------------------------------------------ 4d. graphical abstract
 def fig_graphical_abstract() -> None:
-    """Elsevier Graphical Abstract for the ASOC-target manuscript (RG-SCSO_
-    MASTER_FINAL_COMPLETE.md §35b): a single portrait top-to-bottom flow,
-    reusing fig_concept()'s box()/arrow() drawing language but restructured
-    from two side-by-side panels into one vertical pipeline, since a GA is
-    read as one image, not a two-part comparison. Raster export is sized to
-    land at exactly 531x1328 px (dpi=200, figsize=531/200 x 1328/200 in),
-    the pixel spec quoted in the master plan; also saves a vector PDF."""
     dpi = 200
     fig, ax = plt.subplots(figsize=(531 / dpi, 1328 / dpi))
     ax.set_xlim(0, 10)
@@ -486,9 +431,8 @@ def fig_graphical_abstract() -> None:
 
     fig.subplots_adjust(left=0.02, right=0.98, top=0.98, bottom=0.02)
     os.makedirs(FIG_DIR, exist_ok=True)
-    # Fixed pixel spec (531x1328) requires the untrimmed canvas -- the
-    # module-wide savefig.bbox="tight" rcParam would recompute the bbox from
-    # content extents and drift off-spec, so it's disabled for this export.
+
+
     with plt.rc_context({"savefig.bbox": None}):
         fig.savefig(os.path.join(FIG_DIR, "graphical_abstract.pdf"))
         fig.savefig(os.path.join(FIG_DIR, "graphical_abstract.png"), dpi=dpi)
@@ -497,15 +441,11 @@ def fig_graphical_abstract() -> None:
     print("  ✓ figures/graphical_abstract.pdf + .png + .tiff (531x1328 px)")
 
 
-# ------------------------------------------------ 5. diversity / bit-freezing
 DIVERSITY_CSV = os.path.join("experiments", "results_diversity", "diversity_history.csv")
 GAMMA_COLORS = {0.0: "#1f77b4", 0.5: "#d62728", 1.0: "#2ca02c"}
 
 
 def fig_diversity() -> None:
-    """Đa dạng quần thể (Hamming kỳ vọng) + tỉ lệ bit đóng băng theo vòng lặp,
-    ở γ ∈ {0, 0.5, 1.0} — bằng chứng thực nghiệm cho §1.1/§1.2 (Diem_yeu_RG-SCSO.md):
-    kiểm tra RMS có làm sụp đa dạng / đóng băng bit sớm hơn V-shaped thuần không."""
     if not os.path.exists(DIVERSITY_CSV):
         print("  ⚠ diversity_history.csv chưa có → bỏ qua fig_diversity "
               "(chạy measure_diversity.py trước).")
@@ -534,33 +474,15 @@ def fig_diversity() -> None:
     _save(fig, "diversity")
 
 
-# ----------------------------------------------------------------- 4. mechanism
 STABILITY_CSV = os.path.join("experiments", "results_stability", "stability_index_results.csv")
 
 
 def fig_mechanism() -> None:
-    """2-panel mechanism-evidence figure (user-requested denser main-text
-    figure, merging two comparisons into one display-item to stay within
-    Scientific Reports' 8-item cap while showing more evidence).
-
-    (a) Enrichment của tập feature được chọn trong top-MI, chuẩn hóa theo
-    CHANCE. precision@|S| thô lệ thuộc |S| (chọn nhiều → chance cao); chance
-    của phép chọn ngẫu nhiên |S| feature so với top-|S| MI chính là |S|/N. Ta
-    vẽ LIFT = precision ÷ (|S|/N): =1 nghĩa ngẫu nhiên, >1 nghĩa giàu feature
-    liên quan. |S| lấy từ fs_results.csv (per-run, cùng seed → khớp
-    deterministic).
-
-    (b) Nogueira stability index (Phi) qua RG-SCSO/SCSO/AOA trên 5 dataset
-    đại diện, từ experiments/results_stability/stability_index_results.csv
-    (Diem_yeu_RG-SCSO.md §2.2) — trực quan hóa phát hiện: RG-SCSO ổn định
-    hơn SCSO cùng họ trên mọi dataset, rõ nhất ở 3 dataset chiều thấp, nhưng
-    gần mức ngẫu nhiên trên cả 2 dataset gene-expression.
-    """
     if not os.path.exists(CAPTURE_NPZ):
         print("  ⚠ figures/fig_capture.npz chưa có → bỏ qua mechanism.")
         return
     d = np.load(CAPTURE_NPZ, allow_pickle=True)
-    overlap = d["overlap"].item()        # overlap[dataset][algo] = (n_runs,) precision@|S|
+    overlap = d["overlap"].item()                                                          
     mech_ds = list(d["mech_datasets"])
     n_runs = int(d["n_runs"])
     algos = [a for a in ["RG-SCSO", "SCSO"] if any(a in overlap.get(ds, {}) for ds in mech_ds)]
@@ -568,7 +490,6 @@ def fig_mechanism() -> None:
     df = pd.read_csv(FS_CSV)
 
     def _lift(ds: str, a: str) -> np.ndarray:
-        """precision ÷ chance per-run; |S| khớp theo run_id đã sort."""
         sub = df[(df.dataset == ds) & (df.algorithm == a)].sort_values("run_id")
         n_total = int(sub.n_total_features.iloc[0])
         nsel = sub.n_selected_features.to_numpy(dtype=float)
@@ -625,6 +546,45 @@ def fig_mechanism() -> None:
     _save(fig, "mechanism")
 
 
+def fig_washout() -> None:
+    delta = 0.2                                                            
+
+    def sigmoid(x):
+        return 1.0 / (1.0 + np.exp(-x))
+
+    def v_shaped(x):
+        return np.abs(np.tanh(x))
+
+    x = np.linspace(-4.0, 4.0, 800)
+    leverage_s = np.abs(sigmoid(x + delta) - sigmoid(x))
+    leverage_v = np.abs(v_shaped(x + delta) - v_shaped(x))
+
+    fig, (ax_t, ax_l) = plt.subplots(1, 2, figsize=(7.0, 2.8))
+
+    ax_t.plot(x, sigmoid(x), color=COLORS["SCSO"], lw=1.3, label="S-shaped (sigmoid)")
+    ax_t.plot(x, v_shaped(x), color=COLORS["RG-SCSO"], lw=1.3, label="V-shaped (|tanh|)")
+    ax_t.set_xlabel("x", fontsize=8.5)
+    ax_t.set_ylabel("T(x)", fontsize=8.5)
+    ax_t.set_title("Transfer functions", fontsize=9)
+    ax_t.tick_params(labelsize=7.5)
+    ax_t.legend(fontsize=6.5, loc="lower right", framealpha=0.9)
+    ax_t.grid(True, ls=":", lw=0.5, alpha=0.6)
+
+    ax_l.plot(x, leverage_s, color=COLORS["SCSO"], lw=1.3, label="S-shaped")
+    ax_l.plot(x, leverage_v, color=COLORS["RG-SCSO"], lw=1.3, label="V-shaped")
+    ax_l.axvspan(-4.0, -2.0, color="grey", alpha=0.12)
+    ax_l.axvspan(2.0, 4.0, color="grey", alpha=0.12, label="saturation region")
+    ax_l.set_xlabel("x", fontsize=8.5)
+    ax_l.set_ylabel(f"|T(x+δ)−T(x)|,  δ={delta}", fontsize=8.5)
+    ax_l.set_title("Leverage (washout)", fontsize=9)
+    ax_l.tick_params(labelsize=7.5)
+    ax_l.legend(fontsize=6.5, loc="upper right", framealpha=0.9)
+    ax_l.grid(True, ls=":", lw=0.5, alpha=0.6)
+
+    fig.tight_layout()
+    _save(fig, "washout")
+
+
 def main() -> None:
     print("Sinh hình RG-SCSO →", FIG_DIR)
     fig_concept()
@@ -637,6 +597,7 @@ def main() -> None:
     fig_mechanism()
     fig_diversity()
     fig_graphical_abstract()
+    fig_washout()
     print("Xong.")
 
 

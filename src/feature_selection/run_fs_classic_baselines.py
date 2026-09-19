@@ -1,36 +1,3 @@
-"""Baseline filter/embedded kinh điển (Q1 review Priority 1) — kiểm định câu hỏi
-cốt lõi mà tiêu đề "parsimonious feature selection" phải trả lời: một phương
-pháp rẻ hơn RẤT NHIỀU so với swarm wrapper 15.000 evaluations có đạt độ nhỏ
-gọn/accuracy tương đương hay không?
-
-NĂM phương pháp, tất cả đánh giá bằng CÙNG protocol với bài chính (KNN k=5,
-5-fold CV, StandardScaler fit riêng mỗi fold):
-
-    MI-threshold : ρ_j = MI(X_j;y)/H(y) > 0.5 — đúng ngưỡng trung tính RG-SCSO
-                   dùng, KHÔNG search, chi phí gần như 0.
-    mRMR         : greedy Max-Relevance Min-Redundancy (relevance = MI, độ dư
-                   thừa = |Pearson correlation| giữa các feature đã chọn),
-                   dừng bằng CV-forward-stepwise (patience trên validation
-                   accuracy) — KHÔNG cố định K trước.
-    ReliefF      : dùng lại _relieff_prior() (đã có trong relevance.py cho thí
-                   nghiệm robustness), chọn tăng dần theo điểm ReliefF, dừng
-                   bằng CÙNG cơ chế CV-forward-stepwise như mRMR.
-    LASSO        : LogisticRegressionCV(penalty="l1"), feature có hệ số khác 0
-                   (tối đa trị tuyệt đối qua các lớp với multiclass).
-    SFS          : sklearn SequentialFeatureSelector (forward), giới hạn
-                   n_features_to_select để khả thi trên tập gene-expression
-                   nhiều chiều (xem MAX_SFS_FEATURES).
-
-30 run độc lập (seed = BASE + run_id) để có mean±std như bài chính — dù các
-phương pháp này không stochastic search, CV-fold splitting + MI estimator vẫn
-có phương sai đáng báo cáo. Quy mô PILOT trên 5 dataset đại diện (khớp
-ablation/robustness) để khả thi về compute; mở rộng ra 18 dataset là bước
-tiếp theo nếu tín hiệu sơ bộ ủng hộ đưa vào bài chính thức.
-
-Output: experiments/results_fs_classic/fs_classic_results.csv
-Chạy:   .venv/bin/python -m src.feature_selection.run_fs_classic_baselines
-        [--smoke] [--datasets ...] [--runs N] [--methods ...]
-"""
 
 from __future__ import annotations
 
@@ -60,14 +27,12 @@ RESULTS_CSV = os.path.join(OUTPUT_DIR, "fs_classic_results.csv")
 DEFAULT_DATASETS = ["Zoo", "Sonar", "WDBC", "ColonCancer", "Leukemia"]
 METHODS = ("MI-threshold", "mRMR", "ReliefF-baseline", "LASSO", "SFS")
 
-# Trần feature cho SFS (greedy O(d) fit MỖI bước -> O(d x K) fit tổng cộng);
-# không giới hạn thì ColonCancer/Leukemia (2000-3571 feature) bất khả thi
-# trong ngân sách 1 lượt chạy. Trần chọn xấp xỉ mức RG-SCSO thực tế chọn.
+
 MAX_SFS_FEATURES = 25
-# Pool ứng viên cho SFS trên dataset nhiều chiều (xem docstring _select_sfs).
+                                                                             
 SFS_CANDIDATE_POOL = 80
-# Trần cho vòng lặp mRMR/ReliefF-greedy (patience-based nhưng vẫn cần chặn
-# trên để không chạy quá độ dài trên dataset siêu nhiều chiều).
+                                                                          
+                                                               
 MAX_GREEDY_FEATURES = 150
 PATIENCE = 8
 TOL = 1e-3
@@ -79,8 +44,6 @@ def _load(name: str) -> tuple[np.ndarray, np.ndarray]:
 
 
 def _cv_acc(X: np.ndarray, y: np.ndarray, idx: np.ndarray, seed: int) -> float:
-    """5-fold CV KNN accuracy trên tập con feature `idx`, scaler fit riêng mỗi
-    fold — khớp fitness.py::_cv_accuracy của bài chính (không leakage)."""
     if idx.size == 0:
         return 0.0
     skf = StratifiedKFold(n_splits=KFOLD, shuffle=True, random_state=seed)
@@ -95,10 +58,6 @@ def _cv_acc(X: np.ndarray, y: np.ndarray, idx: np.ndarray, seed: int) -> float:
 
 def _greedy_forward(scores_order: np.ndarray, X: np.ndarray, y: np.ndarray, seed: int,
                      max_features: int = MAX_GREEDY_FEATURES) -> np.ndarray:
-    """Thêm feature lần lượt theo `scores_order` (đã sắp giảm dần độ ưu tiên),
-    dừng khi CV accuracy không cải thiện > TOL trong PATIENCE bước liên tiếp
-    (forward-stepwise CV, không cố định K trước — khớp tinh thần mRMR/ReliefF
-    gốc: chọn TỚI KHI hết lợi ích biên, không phải một K tùy ý)."""
     cap = min(max_features, len(scores_order))
     selected: list[int] = []
     best_acc = 0.0
@@ -129,10 +88,6 @@ def _select_mi_threshold(X: np.ndarray, y: np.ndarray, seed: int) -> np.ndarray:
 
 
 def _select_mrmr(X: np.ndarray, y: np.ndarray, seed: int) -> np.ndarray:
-    """Greedy mRMR-FCQ: relevance = MI(X_j;y); độ dư thừa = |Pearson corr| với
-    feature ĐÃ chọn (proxy chuẩn cho continuous feature, O(d^2) chấp nhận
-    được qua ma trận, tránh O(d^2) lời gọi MI riêng lẻ bất khả thi trên
-    ColonCancer/Leukemia)."""
     d = X.shape[1]
     relevance = mutual_info_classif(X, y, random_state=seed)
     corr = np.corrcoef(X, rowvar=False)
@@ -163,7 +118,7 @@ def _select_mrmr(X: np.ndarray, y: np.ndarray, seed: int) -> np.ndarray:
 
 
 def _select_relieff(X: np.ndarray, y: np.ndarray, seed: int) -> np.ndarray:
-    w = _relieff_prior(X, y, seed)  # điểm 0.5-centered, cao = liên quan hơn
+    w = _relieff_prior(X, y, seed)                                          
     order = np.argsort(-w)
     return _greedy_forward(order, X, y, seed)
 
@@ -184,14 +139,6 @@ def _select_lasso(X: np.ndarray, y: np.ndarray, seed: int) -> np.ndarray:
 
 
 def _select_sfs(X: np.ndarray, y: np.ndarray, seed: int) -> np.ndarray:
-    """Forward SFS. sklearn's SequentialFeatureSelector re-scores EVERY
-    remaining candidate at each step (O(k x d x cv) fits) — infeasible as-is
-    on gene-expression data (d up to 3571): 40 steps x ~3500 candidates x
-    3-fold would be ~400k KNN fits per run. We pre-filter the candidate POOL
-    to the top-`SFS_CANDIDATE_POOL` features by MI (a standard, disclosed
-    practical trick for making greedy wrapper selection tractable on high-d
-    data) and run genuine forward SFS only within that pool; this is a
-    protocol choice reported in the paper, not a silent shortcut."""
     n_target = max(1, min(MAX_SFS_FEATURES, X.shape[1] - 1))
     pool_size = min(SFS_CANDIDATE_POOL, X.shape[1])
     if X.shape[1] > pool_size:

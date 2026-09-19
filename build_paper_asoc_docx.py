@@ -1,29 +1,16 @@
-"""Sinh bản thảo Word (.docx) cho Applied Soft Computing (Elsevier) -- SINGLE
-SOURCE OF TRUTH cho target ASOC, song song với build_paper_asoc.py (bản
-LaTeX cùng target). Cấu trúc và nội dung khớp với bản LaTeX (đã verify kỹ số
-liệu ở đó); file này chỉ chuyển sang định dạng python-docx. Mirror trực tiếp
-build_paper_scirep_docx.py (bản Word cho Scientific Reports), cùng các thay
-đổi cấu trúc đã áp dụng ở build_paper_asoc.py: Research Questions, Related
-Work riêng (bảng literature-positioning), 2 hình promoted vào main text
-(convergence_fs, threshold_heatmap), Conclusion riêng (limitations + Future
-Work 5 mục), CRediT statement.
-
-Graphical abstract và Highlights KHÔNG nhúng trong file này (đúng quy ước đã
-chọn cho bản .tex: đây là 2 hạng mục nộp riêng trong hệ thống Elsevier,
-không phải section của bản thảo).
-
-Chạy:  python build_paper_asoc_docx.py
-"""
 
 from __future__ import annotations
 
 import os
 
+import numpy as np
 import pandas as pd
 from docx import Document
 from docx.enum.table import WD_TABLE_ALIGNMENT
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.shared import Mm, Pt, RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.shared import Inches, Mm, Pt, RGBColor
 
 from build_paper_structure import (
     BODY_PT,
@@ -62,8 +49,7 @@ from build_paper_tex import (
 )
 import build_heldout_table as _heldout
 
-# Tái dùng nguyên vẹn các bảng đã có docx-mirror ở bản SciRep -- cùng số
-# liệu, cùng cách render, không viết lại.
+
 from build_paper_scirep import THRESHOLD_CSV
 from build_paper_scirep_docx import (
     CLASSIC_CSV,
@@ -78,27 +64,37 @@ from build_paper_scirep_docx import (
 
 OUT_DOCX = "RG-SCSO_ASOC.docx"
 
+
+_orig_para = para
+
+
+def para(doc, text, size=BODY_PT, italic=False, align=WD_ALIGN_PARAGRAPH.JUSTIFY):
+    p = _orig_para(doc, text, size=size, italic=italic, align=align)
+    p.paragraph_format.line_spacing_rule = WD_LINE_SPACING.ONE_POINT_FIVE
+    p.paragraph_format.space_after = Pt(10)
+    return p
+
+LAMBDA_CSV = os.path.join(
+    "experiments", "results_lambda", "lambda_sensitivity_results.csv"
+)
+
 LITPOS_ROWS = [
-    ("Seyyedabbasi & Kiani", "2022", "Base continuous SCSO (no FS)", "Baseline (Table 1)", "scso"),
-    ("bSCSO", "2023", "Binary wrapper FS, standard transfer", "Same-family baseline (Discussion)", "bscso"),
-    ("Binary SCSO (biomedical)", "2023", "Binary wrapper FS, standard transfer", "Same-family baseline (Discussion)", "scsofs2"),
-    ("Adaptive SCSO", "2024", "Binary wrapper FS, standard transfer", "Same-family baseline (Discussion)", "scsofs3"),
-    ("IMSCSO", "2024", "Continuous search (multi-strategy)", "No — global optimization only, no FS", "imscso2024"),
-    ("SCSO+Lens-OBL+SSA", "2024", "Continuous search (lens-OBL init)", "No — global optimization only, no FS", "scsolensobl2024"),
-    ("Improved SCSO", "2024", "Continuous search dynamics", "No — global optimization only, no FS", "improvedscso2024"),
-    ("MESCSO", "2025", "Continuous search (multi-strategy)", "No — global optimization only, no FS", "mescso2025"),
+    ("Seyyedabbasi & Kiani", "2023", "Base continuous SCSO (no FS)", "Baseline (Table 1)", "scso"),
+    ("bSCSO", "2023", "Binary wrapper FS, standard transfer", "Motivates re-implemented configs below, not individually reproduced", "bscso"),
+    ("Binary SCSO (biomedical)", "2023", "Binary wrapper FS, standard transfer", "Motivates re-implemented configs below, not individually reproduced", "scsofs2"),
+    ("Adaptive SCSO", "2024", "Binary wrapper FS, standard transfer", "Motivates re-implemented configs below, not individually reproduced", "scsofs3"),
+    ("IMSCSO", "2024", "Continuous search (multi-strategy)", "No, global optimization only, no FS", "imscso2024"),
+    ("SCSO+Lens-OBL+SSA", "2024", "Continuous search (lens-OBL init)", "No, global optimization only, no FS", "scsolensobl2024"),
+    ("Improved SCSO", "2024", "Continuous search dynamics", "No, global optimization only, no FS", "improvedscso2024"),
+    ("MESCSO", "2025", "Continuous search (multi-strategy)", "No, global optimization only, no FS", "mescso2025"),
 ]
 
-# Thứ tự trích dẫn RIÊNG cho bản ASOC -- KHÔNG giống SCIREP_CITE_ORDER vì
-# Related Work sắp xếp lại theo taxonomy (relevance-guided mechanisms trước
-# SCSO variants), đổi thứ tự xuất hiện lần đầu của neri/ludwig2025guided so
-# với bscso/scsofs2/... Rút ra CƠ HỌC từ chính RG-SCSO_ASOC.tex đã compile
-# (grep toàn bộ \cite{} theo thứ tự xuất hiện), không đếm tay, tránh sai sót.
+
 ASOC_CITE_ORDER = [
     "guyon", "mrmr", "bgwo", "pso", "mafarja", "aoa", "coa", "rime", "tf",
     "scso", "neri", "ludwig2025guided", "bscso", "scsofs2", "scsofs3",
     "imscso2024", "mescso2025", "scsolensobl2024", "improvedscso2024",
-    "kraskov", "gwo", "holm", "demsar",
+    "kraskov", "gwo", "holm", "demsar", "islam2017tvtf", "teng2017avbpso",
 ]
 
 
@@ -108,7 +104,7 @@ def _cnum(key: str) -> str:
 
 def _c(*keys: str) -> str:
     nums = sorted(int(_cnum(k)) for k in keys)
-    return "[" + ", ".join(str(n) for n in nums) + "]"
+    return ", ".join(f"[{n}]" for n in nums)
 
 
 def add_references_asoc(doc) -> None:
@@ -141,15 +137,6 @@ def add_references_asoc(doc) -> None:
 
 
 def _renumber_caption(doc, replacements: dict) -> None:
-    """The 4 table-adding functions reused verbatim from build_paper_scirep_
-    docx.py (_add_heldout_combined_table, add_extended_ablation_table,
-    add_classic_baselines_table, add_classifier_robustness_table) carry
-    hardcoded "Table N" captions matching the SciRep document's table order.
-    ASOC's Related Work promotes a new Table 1 (literature positioning)
-    ahead of all of them and inserts a Threshold sensitivity table, so every
-    number shifts. caption() puts the whole caption in a single run, so a
-    plain substring replace on the most-recently-added paragraph is exact
-    and does not touch any other paragraph in the document."""
     p = doc.paragraphs[-1]
     text = p.runs[0].text
     for old, new in replacements.items():
@@ -158,10 +145,6 @@ def _renumber_caption(doc, replacements: dict) -> None:
 
 
 def add_literature_positioning_table(doc) -> None:
-    """Docx mirror of literature_positioning_table() in build_paper_scirep.py
-    -- promoted into the ASOC main-text Related Work section (not
-    Supplementary, unlike the SciRep version), so column citation keys are
-    resolved through ASOC_CITE_ORDER's numbering here."""
     cols = ["Method", "Year", "What it modifies", "Comparable to this protocol?"]
     t = doc.add_table(rows=1, cols=len(cols))
     _ieee_table(t)
@@ -175,7 +158,7 @@ def add_literature_positioning_table(doc) -> None:
         cells[2].paragraphs[0].add_run(mod).font.size = Pt(8)
         cells[3].paragraphs[0].add_run(comp).font.size = Pt(8)
     caption(doc, "Table 1 Positioning of RG-SCSO against recent SCSO-family "
-                 "literature cited in this paper. The four 2024-2025 "
+                 "literature cited in this paper. The four 2024–2025 "
                  "continuous-search variants (IMSCSO, SCSO+Lens-OBL+SSA, "
                  "Improved SCSO, MESCSO) improve exploration/exploitation "
                  "dynamics in continuous space but are global optimization "
@@ -183,18 +166,17 @@ def add_literature_positioning_table(doc) -> None:
                  "comparable under this paper's binary FS protocol; they "
                  "are cited to establish that none of them touches the "
                  "binarization interface itself. The three binary SCSO "
-                 "feature selectors (bSCSO and two further variants) are "
-                 "directly comparable and are included as same-family "
-                 "baselines (Discussion).")
+                 "feature selectors listed here motivate two representative "
+                 "configurations we directly re-implement and evaluate in "
+                 "Results and Discussion, a standard S-shaped transfer and "
+                 "a V-shaped transfer combined with opposition-based "
+                 "learning, the two most commonly reused binarization "
+                 "recipes in this literature, rather than a claimed "
+                 "one-to-one reproduction of any single one of these three "
+                 "papers' exact reported parameters.")
 
 
 def add_threshold_sensitivity_table(doc) -> None:
-    """Docx mirror of threshold_sensitivity_table() in build_paper_scirep.py
-    -- promoted into ASOC main-text Results (not Supplementary). No Phi
-    cross-reference to a stability table here: the docx builder, unlike the
-    tex one, has no Supplementary companion and no stability-index table at
-    all, so Phi is described inline instead of via a dangling \\ref-style
-    pointer."""
     if not os.path.exists(THRESHOLD_CSV):
         return
     th = pd.read_csv(THRESHOLD_CSV)
@@ -202,7 +184,7 @@ def add_threshold_sensitivity_table(doc) -> None:
         return
     taus = sorted(th["tau"].unique())
     datasets = sorted(th["dataset"].unique())
-    cols = ["Dataset", "tau", "Mean Acc.", "Mean #Feat.", "Phi"]
+    cols = ["Dataset", "τ", "Mean Acc.", "Mean #Feat.", "Phi"]
     t = doc.add_table(rows=1, cols=len(cols))
     _ieee_table(t)
     t.alignment = WD_TABLE_ALIGNMENT.CENTER
@@ -227,16 +209,66 @@ def add_threshold_sensitivity_table(doc) -> None:
                 accr.bold = True
             cells[3].paragraphs[0].add_run(f"{nfeat:.1f}").font.size = Pt(8)
             cells[4].paragraphs[0].add_run(f"{phi:.3f}").font.size = Pt(8)
-    caption(doc, "Table 5 Threshold sensitivity (tau in {0.4, 0.5, 0.6} "
+    caption(doc, "Table 5 Threshold sensitivity (τ in {0.4, 0.5, 0.6} "
                  "replacing the fixed 0.5 preferred-bit threshold; 30 "
                  "independent runs per cell, same protocol and datasets as "
                  "the main ablation). Highest accuracy per dataset in bold. "
-                 "No single tau dominates uniformly: tau=0.5, the value "
+                 "No single τ dominates uniformly: τ=0.5, the value "
                  "deployed throughout this paper, attains the highest "
                  "accuracy on two of five datasets; mean selected-feature "
-                 "count falls monotonically as tau increases on every "
+                 "count falls monotonically as τ increases on every "
                  "dataset, at a modest, dataset-dependent, non-uniform "
                  "accuracy cost. Phi is the Nogueira stability index.")
+
+
+def add_lambda_sensitivity_table(doc) -> None:
+    if not os.path.exists(LAMBDA_CSV):
+        return
+    lb = pd.read_csv(LAMBDA_CSV)
+    if lb.empty:
+        return
+    betas = sorted(lb["beta"].unique())
+    datasets = sorted(lb["dataset"].unique())
+    cols = ["Dataset", "λ", "Mean Acc.", "Mean #Feat."]
+    t = doc.add_table(rows=1, cols=len(cols))
+    _ieee_table(t)
+    t.alignment = WD_TABLE_ALIGNMENT.CENTER
+    t.autofit = True
+    _hdr(t, cols, 8)
+    for ds in datasets:
+        best_acc = max(
+            float(lb[(lb.dataset == ds) & (lb.beta == b_)]["mean_accuracy"].iloc[0])
+            for b_ in betas
+        )
+        for i, b_ in enumerate(betas):
+            r = lb[(lb.dataset == ds) & (lb.beta == b_)].iloc[0]
+            acc = float(r["mean_accuracy"])
+            nfeat = float(r["mean_n_selected"])
+            cells = t.add_row().cells
+            cells[0].paragraphs[0].add_run(ds if i == 0 else "").font.size = Pt(8)
+            cells[1].paragraphs[0].add_run(f"{b_:.3f}").font.size = Pt(8)
+            accr = cells[2].paragraphs[0].add_run(f"{acc:.4f}")
+            accr.font.size = Pt(8)
+            if abs(acc - best_acc) < 1e-9:
+                accr.bold = True
+            cells[3].paragraphs[0].add_run(f"{nfeat:.1f}").font.size = Pt(8)
+    caption(doc, "Table 10 Cardinality-weight sensitivity (λ in "
+                 "{0, 0.001, 0.005, 0.01, 0.02, 0.05} in Eq. (1); 30 "
+                 "independent runs per cell, same protocol and five of the "
+                 "18 datasets used elsewhere in this section). Highest "
+                 "accuracy per dataset in bold. Accuracy is essentially "
+                 "flat across the sweep: λ=0.01, the value deployed "
+                 "throughout this paper, attains the highest accuracy on "
+                 "one of five datasets and is within 0.3 percentage points "
+                 "of the best value on the remaining four, well inside the "
+                 "run-to-run standard deviation. Mean selected-feature "
+                 "count trends downward as λ increases on every "
+                 "dataset (cleanest on WDBC, noisier on the "
+                 "higher-dimensional ColonCancer and Sonar sets), so "
+                 "λ mainly trades a modest, dataset-dependent subset "
+                 "reduction against a negligible accuracy change; 0.01 "
+                 "sits inside this flat region rather than at either "
+                 "extreme.")
 
 
 _NOTATION_ROWS = [
@@ -245,10 +277,14 @@ _NOTATION_ROWS = [
     ("f(b)", "Fitness function, Eq. (1)"),
     ("Acc(b)", "Stratified 5-fold KNN accuracy on subset b"),
     ("|b|", "Number of selected features (subset size)"),
+    ("λ", "Cardinality weight in f(b) (deployed at 0.01; swept over "
+          "{0, 0.001, 0.005, 0.01, 0.02, 0.05})"),
     ("R(t)", "SCSO sensitivity range at iteration t"),
     ("S_M", "Maximum sensitivity range parameter (= 2)"),
     ("T_max", "Maximum number of iterations"),
-    ("T(·)", "Continuous-to-binary transfer function, T: R → [0,1]"),
+    ("T(·)", "Base/unmodulated continuous-to-binary transfer function, "
+             "T: R → [0,1] (Lemma 1, Proposition 2; NOT RG-SCSO's own "
+             "flip probability, which is pⱼ below)"),
     ("xⱼ", "Continuous position of feature j"),
     ("δⱼ", "Perturbation applied to xⱼ"),
     ("Δⱼ", "Induced change in bit-flip probability"),
@@ -273,22 +309,8 @@ _NOTATION_ROWS = [
 
 
 def add_notation_table(doc) -> None:
-    """Docx mirror of notation_table() in build_paper_scirep.py, per
-    MASTER_FINAL_COMPLETE.md Section 7 ("Notation consistency table --
-    BAT BUOC"), placed at the start of Methods as that section recommends
-    -- ASOC has no Supplementary companion in the docx, so unlike the tex
-    version (which places it in Supplementary as one of several promoted
-    items) this is main text only. Compiled directly from the symbols
-    actually used in Methods; T is genuinely overloaded (max-iteration
-    count in the sensitivity-range formula vs. the transfer function in
-    the washout subsection) and both uses are listed rather than silently
-    disambiguated, matching the tex version's own disclosure."""
-    # Two symbols need a real (non-single-letter) subscript that the
-    # shared ⱼ/^-exponent tokenizer doesn't cover: S_M (S sub M) and
-    # rho_static (rho sub "static") are genuine math subscripts. Unlike
-    # max_nfe/pop_size/max_iter below, which are literal code-parameter
-    # names (kept as plain underscored text, matching \mathrm{max\_nfe}
-    # in the tex source), these two must render as an actual subscript run.
+
+
     _MATH_SUBSCRIPT = {"S_M": ("S", "M"), "ρ_static": ("ρ", "static"),
                         "T_max": ("T", "max")}
 
@@ -316,6 +338,113 @@ def add_notation_table(doc) -> None:
                  "binary transfer function used throughout the washout "
                  "subsection) are kept as distinct symbols to avoid the "
                  "overloading that a single bare T would otherwise cause.")
+
+
+_COMPLEXITY_ROWS = [
+    ("RG-SCSO", "O(N·d)", "N + K (30 + 8 = 38)",
+     "O(dn log n) one-time MI-prior"),
+    ("SCSO", "O(N·d)", "N (30)", "–"),
+    ("AOA", "O(N·d)", "N (30)", "–"),
+    ("CoatiOA", "O(N·d)", "N (30)", "–"),
+    ("GWO", "O(N·d)", "N (30)", "–"),
+    ("PSO", "O(N·d)", "N (30)", "–"),
+    ("RIME", "O(N·d)", "N (30)", "–"),
+]
+
+
+def add_algorithm_box(doc) -> None:
+    caption(doc, "Algorithm 1 RG-SCSO")
+    alg = doc.add_table(rows=1, cols=1)
+    alg.style = "Table Grid"
+    acell = alg.rows[0].cells[0]
+    ap = acell.paragraphs[0]
+    ap.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    ar = ap.add_run(
+        "Input: training partition (X, y) of the current outer split; "
+        "population size N; iterations T_max; budget max_nfe; memetic "
+        "size K; bias strength γ; threshold τ\n"
+        "Output: best feature mask b*\n"
+        "1:  ρ_j ← normalized mutual information I(X_j; y) for all j, "
+        "computed on (X, y) only   ▷ static relevance field\n"
+        "2:  for all j: preferred bit pref_j ← 1 if ρ_j > τ else 0; "
+        "strength s_j ← 2|ρ_j − τ|\n"
+        "3:  initialize positions x_i ~ U(−1,1)^d, i = 1..N; binarize each "
+        "by RMS (lines 8–11); evaluate; set b*\n"
+        "4:  while nfe < max_nfe do\n"
+        "5:     R ← S_M · (1 − t/T_max)   ▷ sensitivity range contracts\n"
+        "6:     for each agent i = 1..N do\n"
+        "7:        update x_i by the SCSO position rule using range R\n"
+        "8:        for each feature j do\n"
+        "9:           p_base ← |tanh(x_ij)|   ▷ base transfer T(x_ij)\n"
+        "10:          p_j ← p_base(1 + γ·s_j) if the flip moves bit j "
+        "toward pref_j, else p_base(1 − γ·s_j)\n"
+        "11:          flip bit j with probability clip(p_j, 0, 1)\n"
+        "12:       evaluate mask; update b* if improved\n"
+        "13:    U ← K features whose ρ_j is closest to τ   ▷ UMR on "
+        "uncertain bits\n"
+        "14:    for each j ∈ U do\n"
+        "15:       flip bit j of b*; keep the flip only if fitness "
+        "improves\n"
+        "16: return b*")
+    ar.font.size = Pt(8.5)
+
+
+def add_complexity_table(doc) -> None:
+    cols = ["Algorithm", "Position-update cost/iter",
+            "Wrapper evaluations/iter", "Extra structural cost"]
+    t = doc.add_table(rows=1, cols=len(cols))
+    _ieee_table(t)
+    t.alignment = WD_TABLE_ALIGNMENT.CENTER
+    t.autofit = True
+    _hdr(t, cols, 8)
+    for algo, pos_cost, wrapper_evals, extra in _COMPLEXITY_ROWS:
+        cells = t.add_row().cells
+        name = cells[0].paragraphs[0].add_run(algo)
+        name.font.size = Pt(8)
+        if algo == "RG-SCSO":
+            name.bold = True
+        cells[1].paragraphs[0].add_run(pos_cost).font.size = Pt(8)
+        cells[2].paragraphs[0].add_run(wrapper_evals).font.size = Pt(8)
+        cells[3].paragraphs[0].add_run(extra).font.size = Pt(8)
+    caption(doc, "Table 9 Per-iteration computational cost of the seven "
+                 "compared algorithms. N = population size (30), d = "
+                 "search-space dimension (number of features), K = number "
+                 "of UMR memetic probes per iteration (8). Position-update "
+                 "cost is the standard O(N·d) class shared by every "
+                 "population-based metaheuristic compared here; none "
+                 "introduces an asymptotically different update rule. The "
+                 "wrapper evaluation itself, a stratified 5-fold KNN fit "
+                 "under the shared fitness function, is identical across "
+                 "all seven and, as noted above, dominates real-world cost "
+                 "as feature dimensionality grows; this table isolates the "
+                 "search mechanism's own footprint rather than "
+                 "re-ranking that shared, dominant term.")
+    para(doc, "Nominal fitness-evaluation budget is")
+    eqm(doc, [
+        mrun("N"), mrun(" × "), msub([mrun("T")], [mrun("max")]),
+        mrun(" = 30 × 500 = 15,000."),
+    ])
+    para(doc, "The two families of algorithms enforce this budget "
+              "differently, verified directly against the implementation "
+              "rather than against the simplified pseudocode above. "
+              "RG-SCSO maintains its own evaluation counter and checks it "
+              "before every individual evaluation, each population move "
+              "and each UMR probe, so its total, including its own "
+              "initialization, never exceeds exactly 15,000. The six "
+              "baselines (SCSO, and AOA/GWO/PSO/RIME/CoatiOA via the "
+              "mealpy library) instead run a fixed number of generations "
+              "of N = 30 evaluations each, plus one additional "
+              "initial-population evaluation before the first generation:")
+    eqm(doc, [
+        mrun("N"), mrun(" × "),
+        mdelim([msub([mrun("T")], [mrun("max")]), mrun(" + 1")]),
+        mrun(" = 30 × 501 = 15,030 evaluations in total,"),
+    ])
+    para(doc, "the standard convention for both our SCSO implementation "
+              "and mealpy. RG-SCSO's own cap is therefore exactly 15,000, "
+              "30 fewer evaluations than every baseline receives, never "
+              "more; UMR's extra per-iteration cost is absorbed within, "
+              "not added on top of, this cap.")
 
 
 def build() -> None:
@@ -353,8 +482,14 @@ def build() -> None:
     doc = Document()
     _sec0_a4(doc)
     _style_setup(doc)
-
-    # ---------------------------------------------------------- Title block
+                                                                           
+                                                                   
+    sec0 = doc.sections[0]
+    sec0.left_margin = Mm(20)
+    sec0.right_margin = Mm(20)
+    sec0.top_margin = Mm(20)
+    sec0.bottom_margin = Mm(20)
+                                                                            
     title = doc.add_paragraph()
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
     tr = title.add_run(
@@ -391,11 +526,11 @@ def build() -> None:
     afr.italic = True
     afr.font.size = Pt(9.5)
 
-    # -------------------------------------------------------------- Abstract
-    # 150-250 words, no p-value/Cohen's d/Friedman-rank, no citations --
-    # matches build_paper_asoc.py's tex abstract exactly (same content).
+
     ab = doc.add_paragraph()
     ab.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    ab.paragraph_format.left_indent = Inches(0.75)
+    ab.paragraph_format.right_indent = Inches(0.75)
     lead = ab.add_run("Abstract ")
     lead.bold = True
     lead.font.size = Pt(9)
@@ -414,27 +549,34 @@ def build() -> None:
         f"accuracy cost for it, using on average approximately "
         f"{100/hs_nf_ratio:.0f}% of the feature count selected by base "
         "SCSO, an advantage that remains evident across the reported "
-        "stress tests, including comparison against optimizers carrying published "
-        "adaptive transfers, against which RG-SCSO does not lead on "
+        "stress tests, including comparison against optimizers we "
+        "implement using published adaptive transfers, against which "
+        "RG-SCSO does not lead on "
         "accuracy yet still selects "
-        f"{adaptive['red_min']:.0f}-{adaptive['red_max']:.0f}% "
+        f"{adaptive['red_min']:.0f}–{adaptive['red_max']:.0f}% "
         "fewer features. Under a budget-matched, leak-free protocol, where the "
         "relevance prior, search, and cross-validated fitness are computed "
         "only on the training partition and never on held-out labels, this "
-        "compactness comes with the best mean held-out accuracy of any "
-        "method tested, with a consistent edge over the closest competitor. "
-        "A controlled ablation isolates the contribution of the relevance "
-        "modulation itself, and cross-classifier, cross-prior experiments "
-        "test the robustness of the mechanism. The binarization interface "
+        "compactness comes with the best mean held-out accuracy among the "
+        "seven population-based metaheuristics compared, with a consistent "
+        "edge over the closest competitor. "
+        "A controlled ablation and cross-classifier, cross-prior "
+        "experiments test the mechanism's robustness. The binarization "
+        "interface "
         "is the most reliable injection point for the relevance signal, "
         "though not the sparsest: LASSO is sparser on the two "
         "gene-expression sets, but accuracy is preserved, not improved, "
         "there, and parsimony without that extreme structure is the "
-        "transferable gain.")
+        "transferable gain. The validated contribution is where the "
+        "relevance signal is injected, not which signal is used: results "
+        "here use a mutual-information prior, and a weaker prior changes "
+        "the outcome.")
     abr = ab.add_run(abstract_body)
     abr.font.size = Pt(9)
 
     kw = doc.add_paragraph()
+    kw.paragraph_format.left_indent = Inches(0.75)
+    kw.paragraph_format.right_indent = Inches(0.75)
     kwl = kw.add_run("Keywords ")
     kwl.bold = True
     kwl.font.size = Pt(9)
@@ -444,7 +586,7 @@ def build() -> None:
     kwr.italic = True
     kwr.font.size = Pt(9)
 
-    # ------------------------------------------------------------ Introduction
+                                                                               
     doc.add_heading("1. Introduction", level=1)
     para(doc, "Feature selection removes irrelevant and redundant features "
               "to improve classifier accuracy, reduce overfitting, and "
@@ -480,8 +622,8 @@ def build() -> None:
               "transfer mechanisms; however, the explicit injection of a "
               "per-feature relevance prior into the binarization operator "
               "of SCSO-based feature selection remains insufficiently "
-              "investigated (Section 2 positions this gap against each "
-              "cited SCSO-family work in detail).")
+              "investigated. Section 2 positions this gap against each "
+              "cited SCSO-family work in detail.")
     para(doc, "We close this gap with RG-SCSO: a per-feature, "
               "relevance-modulated binarization in which a "
               "mutual-information relevance field biases each feature's "
@@ -539,7 +681,7 @@ def build() -> None:
         "memetic refinement on uncertain bits.",
         width_in=5.3))
 
-    # -------------------------------------------------------------- Related Work
+                                                                                 
     doc.add_heading("2. Related work", level=1)
     doc.add_heading("Binary transfer functions in swarm-based feature "
                      "selection", level=2)
@@ -586,18 +728,10 @@ def build() -> None:
               "positions each of these works against this claim directly.")
     doc.add_heading("Literature-positioning summary", level=2)
     para(doc, "Table 1 makes this gap concrete across every SCSO-family "
-              "work cited above: the three directly-comparable binary "
-              "feature selectors apply a standard, feature-agnostic "
-              "transfer with no relevance-aware step, and the four "
-              "continuous-search variants improve exploration/exploitation "
-              "dynamics without touching the binarization interface at "
-              "all. None of the eight prior works positioned here makes "
-              "the binarization operator itself per-feature and "
-              "relevance-aware. This is precisely the interface RG-SCSO "
-              "modifies.")
+              "work cited above; the caption details how each is scored.")
     full_width(doc, lambda: add_literature_positioning_table(doc))
 
-    # ----------------------------------------------------------------- Results
+                                                                               
     doc.add_heading("3. Results", level=1)
     doc.add_heading("Held-out generalization", level=2)
     para(doc, "RQ1 asks whether relevance-modulated binarization improves "
@@ -613,17 +747,38 @@ def build() -> None:
               "has transductive access to the test labels. Table 2 reports "
               "held-out accuracy over all seven algorithms and "
               f"{s['n']} datasets, at a fixed evaluation budget of "
-              "max_nfe = 15000 for every algorithm compared. RG-SCSO "
+              "15,000 fitness evaluations for every algorithm compared. "
+              "RG-SCSO "
               f"attains the best average "
               f"Friedman rank ({hs_rank.iloc[0]:.2f}, ahead of the "
               f"second-placed AOA at {hs_rank.iloc[1]:.2f}; "
-              f"chi-square={hs_stats.get('friedman_chi2', 0):.2f}, "
+              f"χ²={hs_stats.get('friedman_chi2', 0):.2f}, "
               "p < 0.001). A Holm-corrected Wilcoxon signed-rank test "
               f"across all pairwise comparisons gives RG-SCSO {hs_w} "
               f"significant wins, {hs_l} loss, and {hs_t} ties; the only "
               "close competitor is AOA, against which the advantage is "
               f"genuine but moderate (median |d|={hs_d_aoa:.2f}), RG-SCSO "
               "still leading on mean accuracy.")
+    _ci_rng = np.random.default_rng(42)
+
+    def _boot_ci(vals: np.ndarray, n_boot: int = 2000) -> tuple:
+        boots = np.array([_ci_rng.choice(vals, size=len(vals), replace=True).mean()
+                           for _ in range(n_boot)])
+        lo, hi = np.percentile(boots, [2.5, 97.5])
+        return float(vals.mean()), float(lo), float(hi)
+
+    _rg_m, _rg_lo, _rg_hi = _boot_ci(_hs["acc_mean"]["RG-SCSO"].to_numpy())
+    _aoa_m, _aoa_lo, _aoa_hi = _boot_ci(_hs["acc_mean"]["AOA"].to_numpy())
+    para(doc, "As a further, distribution-free uncertainty estimate "
+              "beyond the point ranks above, a dataset-level cluster "
+              "bootstrap (2000 resamples over the "
+              f"{s['n']} datasets) gives a 95% CI of "
+              f"[{_rg_lo:.3f}, {_rg_hi:.3f}] on RG-SCSO's mean held-out "
+              f"accuracy ({_rg_m:.3f}) and "
+              f"[{_aoa_lo:.3f}, {_aoa_hi:.3f}] for AOA "
+              f"({_aoa_m:.3f}); the intervals overlap, consistent with "
+              "the moderate effect size reported above rather than an "
+              "overwhelming one.")
     full_width(doc, lambda: (
         _add_heldout_combined_table(doc, _hs),
         _renumber_caption(doc, {"Table 1 Held-out": "Table 2 Held-out"}),
@@ -661,16 +816,20 @@ def build() -> None:
               "lower mean accuracy, so RG-SCSO is the most compact method "
               "that does not trade away accuracy to get there. On "
               f"ColonCancer it retains {colon.get('nf', float('nan')):.0f} of "
-              f"{colon.get('ntot', '--')} features versus "
+              f"{colon.get('ntot', '–')} features versus "
               f"{colon.get('nf_aoa', float('nan')):.0f} for AOA, at higher "
               "accuracy. This advantage remains evident across the reported "
               "stress tests: "
-              "against optimizers carrying published adaptive transfers "
-              "RG-SCSO does not lead on accuracy yet still "
+              "against optimizers we implement using published adaptive "
+              "transfers, RG-SCSO does not lead on accuracy yet still "
               f"selects {adaptive['red_min']:.0f}–{adaptive['red_max']:.0f}"
-              "% fewer features, and against same-family binary SCSO "
-              f"selectors {_c('bscso','scsofs2','scsofs3')} it is "
-              f"{scsofam_pct:.0f}% smaller at comparable accuracy."
+              "% fewer features, and against two directly re-implemented "
+              "same-family binary SCSO selectors (Methods) it is "
+              f"{scsofam_pct:.0f}% smaller in mean feature count aggregated "
+              f"across all {scsofam['n_ds']} datasets, at comparable "
+              "accuracy. A per-dataset average of the same percentage "
+              "instead would give a smaller figure, since it would weight "
+              "every dataset equally regardless of its feature-count scale."
               f"{inference_sentence}")
     full_width(doc, lambda: add_figure(
         doc, "accuracy_parsimony_tradeoff.png",
@@ -711,7 +870,7 @@ def build() -> None:
                   "from the in-sample rank in Table 3 just above.")
         full_width(doc, lambda: add_figure(
             doc, "cd_diagram_heldout.png",
-            "Fig. 3. Critical-difference (Nemenyi) diagram at alpha=0.05 "
+            "Fig. 3. Critical-difference (Nemenyi) diagram at α=0.05 "
             "over the held-out ranking (Table 2); algorithms not joined by "
             "a bar differ significantly in mean held-out rank.",
             width_in=5.3))
@@ -737,6 +896,18 @@ def build() -> None:
             add_extended_ablation_table(doc, s),
             _renumber_caption(doc, {"Table 3 Component": "Table 4 Component"}),
         ))
+        para(doc, "On ColonCancer specifically, the −UMR row (0.8815) is "
+                  "marginally higher than the deployed Final configuration "
+                  "(RMS+UMR, the −ORL row, 0.8809), a 0.0006-point gap "
+                  "that is not statistically "
+                  "significant (no † marker, Holm p=1.000). The final "
+                  "configuration is selected globally under the "
+                  "predefined ablation protocol rather than by picking "
+                  "the best-performing row per dataset: ORL is dropped "
+                  "because it is not load-bearing across the ablation as "
+                  f"a whole (degrades accuracy on {orl.get('n_deg', 0)}/"
+                  f"{orl.get('n_ds', 0)} datasets), not because RMS+UMR "
+                  "is uniformly optimal on every individual dataset.")
     else:
         para(doc, "The ablation study is reported in the final version.")
     para(doc, "RQ3 asks whether direct relevance injection at the "
@@ -763,16 +934,23 @@ def build() -> None:
               "beats it on both accuracy and parsimony.")
     full_width(doc, lambda: add_figure(
         doc, "convergence_fs.png",
-        "Fig. 4. Mean best fitness versus iteration, RG-SCSO vs. SCSO vs. "
-        "AOA, on Zoo (16 features), WDBC (30 features), and ColonCancer "
-        "(2000 features), mean over 5 runs, on the actual "
-        "feature-selection objective (illustrative, not a new statistical "
-        "claim). On Zoo the three algorithms converge along essentially "
-        "the same trajectory. On WDBC and ColonCancer, RG-SCSO both "
-        "converges faster and plateaus at a lower (better) fitness than "
-        "SCSO or AOA, which themselves plateau early at a distinctly "
-        "worse value rather than continuing to close the gap with more "
-        "iterations; the difference grows with dimensionality.",
+        "Fig. 4. Mean best fitness versus NFE, the number of fitness "
+        "evaluations, RG-SCSO vs. SCSO vs. AOA, on Zoo (16 features), WDBC "
+        "(30 features), and ColonCancer (2000 features), mean over 5 runs "
+        "on the feature-selection objective. NFE is the shared, "
+        "budget-matched resource; raw iteration count would not be "
+        "comparable, since RG-SCSO's memetic step spends more NFE per "
+        "iteration than SCSO or AOA. The curves are illustrative rather "
+        "than a new statistical claim. On Zoo the three algorithms "
+        "plateau within a narrow final band, mean fitness 0.022–0.024 at "
+        "NFE=15000, with "
+        "no meaningful separation. On WDBC and ColonCancer, RG-SCSO "
+        "plateaus earlier, by roughly NFE=5000, at a lower (better) "
+        "fitness than SCSO or AOA, which continue to decrease slowly and "
+        "still finish higher. The gap between RG-SCSO and the baselines "
+        "grows sharply with dimensionality: final mean fitness differs by "
+        "about 0.0006–0.001 on WDBC's 30 features versus about 0.04 on "
+        "ColonCancer's 2000 features.",
         width_in=5.3))
     para(doc, "We also test whether relevance guidance makes RG-SCSO "
               "preferentially retain high mutual-information features. "
@@ -819,24 +997,24 @@ def build() -> None:
     para(doc, "The 0.5 preferred-bit threshold that separates preferred "
               "from disfavored bits (Methods) is a convenience, not a "
               "theoretically grounded neutral point. This sweep "
-              "(tau in {0.4, 0.5, 0.6}, 30 independent runs per cell, same "
+              "(τ in {0.4, 0.5, 0.6}, 30 independent runs per cell, same "
               "protocol and datasets as the main ablation) tests whether "
               "that choice is at least empirically reasonable. No single "
-              "tau dominates uniformly: tau=0.5, the value deployed "
+              "τ dominates uniformly: τ=0.5, the value deployed "
               "throughout this paper, attains the highest accuracy on two "
               "of five datasets; mean selected-feature count falls "
-              "monotonically as tau increases on every dataset, at a "
+              "monotonically as τ increases on every dataset, at a "
               "modest, dataset-dependent, non-uniform accuracy cost.")
     full_width(doc, lambda: add_threshold_sensitivity_table(doc))
     full_width(doc, lambda: add_figure(
         doc, "threshold_heatmap.png",
         "Fig. 6. Mean held-out accuracy (color) and mean number of "
         "selected features (in parentheses) across the three preferred-bit "
-        "thresholds tested (tau in {0.4, 0.5, 0.6}), one row per dataset. "
+        "thresholds tested (τ in {0.4, 0.5, 0.6}), one row per dataset. "
         "Accuracy is essentially flat across thresholds on every dataset "
-        "(largest swing 0.011, ColonCancer tau=0.4 vs. tau=0.5), while the "
-        "selected-feature count falls monotonically as tau increases on "
-        "all five datasets, confirming tau=0.5 is not a fragile choice.",
+        "(largest swing 0.011, ColonCancer τ=0.4 vs. τ=0.5), while the "
+        "selected-feature count falls monotonically as τ increases on "
+        "all five datasets, confirming τ=0.5 is not a fragile choice.",
         width_in=4.0))
 
     doc.add_heading("Comparison with classical selectors", level=2)
@@ -846,8 +1024,10 @@ def build() -> None:
               "compares RG-SCSO against five classical filter, "
               "embedded, and wrapper selectors, mutual-information "
               "thresholding, mRMR, ReliefF, LASSO, and sequential forward "
-              "selection, under the identical fitness and evaluation "
-              "protocol. RG-SCSO significantly outperforms every classical "
+              "selection, under the same train/test splits and downstream "
+              "KNN evaluation protocol, with each selector operating "
+              "according to its own native selection procedure rather than "
+              "RG-SCSO's wrapper fitness. RG-SCSO significantly outperforms every classical "
               "baseline on the three lower-dimensional benchmark datasets "
               "(Zoo, Sonar, WDBC). On the two gene-expression (p >> n) "
               "datasets, this advantage does not hold: LASSO attains "
@@ -880,7 +1060,7 @@ def build() -> None:
         }),
     ))
 
-    # -------------------------------------------------------------- Discussion
+                                                                               
     doc.add_heading("4. Discussion", level=1)
     para(doc, "These results trace washout, a concrete failure mode of "
               "transfer-function-based binary feature selection, to its "
@@ -900,6 +1080,21 @@ def build() -> None:
               "explicit exploration-safety diagnostic. We report "
               "parsimony, not raw accuracy, as the transferable outcome of "
               "this choice.")
+    para(doc, "One pattern in Table 2 is worth flagging as descriptive "
+              "rather than a validated finding: RG-SCSO's held-out "
+              "accuracy margin over base SCSO is far larger on the three "
+              "datasets with deterministic Boolean or categorical "
+              "structure, M-of-n (+22.3 points), TicTacToe (+17.5), and "
+              "KrVsKpEW (+11.7), than on the continuous-valued "
+              "biomedical datasets, where the gap is typically 1–5 "
+              "points. A plausible explanation is that a mutual-"
+              "information field can lock onto a deterministic logical "
+              "rule more sharply than a noisy continuous measurement, but "
+              "this rests on only 3 of 18 datasets sharing that "
+              "structure, with no held-out test targeting the "
+              "explanation directly; we report the pattern rather than "
+              "claim it, and leave a controlled test of it to future "
+              "work.")
     para(doc, "Several boundaries delimit what these results establish. "
               "RG-SCSO inherits SCSO's continuous search dynamics "
               "unchanged, and the RMS rule carries a risk of its own: bias "
@@ -908,7 +1103,7 @@ def build() -> None:
               "diversity. We measured this directly rather than assuming "
               "it away: at an aggressive stress-test bias the risk is real "
               "and grows with dimensionality, but the conservative "
-              "gamma=0.5 this paper deploys keeps the frozen-bit fraction "
+              "γ=0.5 this paper deploys keeps the frozen-bit fraction "
               "below "
               f"{(diversity['max_frz_g5']*100 if diversity else 1.1):.1f}% "
               "throughout the run on every dataset tested. We also tested "
@@ -946,11 +1141,17 @@ def build() -> None:
     para(doc, "The "
               "main objective is also a KNN wrapper; under SVM, tested "
               f"directly on {svm16.get('n_ds', 16)} of the {s['n']} "
-              "datasets, and under Random Forest on the same five-dataset "
+              "datasets (the full per-dataset breakdown is in Supplementary "
+              "Information; the remaining two datasets are excluded from "
+              "the SVM check specifically because an RBF-kernel SVM refit "
+              "at every one of the wrapper's roughly 15,000 fitness "
+              "evaluations per run is intractable within budget on the "
+              "two largest-n datasets), and under Random Forest on the "
+              "same five-dataset "
               "subset as Table 7 in the Results, the parsimony advantage "
-              "is not a KNN artifact, though it is a more consistent gain "
-              "in subset size than in accuracy under Random Forest "
-              "specifically, and the ReliefF-prior degradation already "
+              "holds beyond KNN, though under Random Forest specifically "
+              "it is a more consistent gain "
+              "in subset size than in accuracy, and the ReliefF-prior degradation already "
               "established above reproduces under every wrapper tested. "
               "The selected subset is smaller and more consistent in size "
               "than competing algorithms', but not necessarily more "
@@ -988,8 +1189,8 @@ def build() -> None:
               "theoretical.")
     para(doc, "Finally, "
               "the accuracy claim is scoped, not universal: against binary "
-              "particle-swarm and grey-wolf optimizers carrying published "
-              "adaptive transfers, and against same-family binary SCSO "
+              "particle-swarm and grey-wolf optimizers we implement using "
+              "published adaptive transfers, and against same-family binary SCSO "
               "selectors, RG-SCSO does not lead on accuracy, and on the "
               "two gene-expression datasets specifically a classical "
               "LASSO baseline outperforms RG-SCSO outright, so "
@@ -999,7 +1200,7 @@ def build() -> None:
               "extreme structure. These boundaries are gathered together, "
               "with the future work they motivate, in Conclusion below.")
 
-    # -------------------------------------------------------------- Conclusion
+                                                                               
     doc.add_heading("5. Conclusion", level=1)
     para(doc, "The results support RG-SCSO as a relevance-guided binary "
               "feature-selection method whose primary advantage is "
@@ -1011,24 +1212,18 @@ def build() -> None:
               "algorithms compared, under a fixed, budget-matched, "
               "leak-free evaluation protocol (RQ1, RQ2).")
     para(doc, "This advantage is not universal, and the boundaries "
-              "established in Discussion above are real constraints on "
-              "the claim, not caveats to be read past. RG-SCSO does not "
-              "lead on accuracy against optimizers carrying published "
-              "adaptive continuous-space transfers or against "
-              "same-family binary SCSO selectors; on the two extreme "
-              "p >> n gene-expression datasets tested, a classical LASSO "
-              "baseline outperforms it outright on both accuracy and "
-              "feature count; its dependence on the underlying relevance "
-              "prior is genuine, since replacing mutual information with "
-              "a ReliefF prior removes the parsimony advantage entirely; "
-              "the 0.5 preferred-bit threshold, while empirically "
-              "reasonable across the range tested, is not a uniformly "
-              "optimal choice; and the benchmark itself, though spanning "
-              f"{feat_min}–{feat_max} features across biomedical, "
-              "gene-expression, and categorical domains, is drawn from a "
-              "single curated family of datasets, so behavior on "
-              "ultra-high-dimensional omics data of 10^4–10^5 features is "
-              "extrapolated rather than measured.")
+              "established in Discussion above are real constraints, not "
+              "caveats to be read past: RG-SCSO does not lead on accuracy "
+              "against adaptive-transfer or same-family SCSO baselines, "
+              "and LASSO outperforms it outright on the two extreme "
+              "p >> n gene-expression datasets; its parsimony depends on "
+              "the relevance prior's quality, since a ReliefF prior "
+              "removes the advantage entirely; the preferred-bit "
+              "threshold, while empirically reasonable, is not uniformly "
+              f"optimal; and the {feat_min}–{feat_max}-feature benchmark, "
+              "drawn from a single curated dataset family, leaves "
+              "behavior at 10^4–10^5 features extrapolated rather than "
+              "measured.")
     fw = doc.add_paragraph()
     _add_run_text(fw, "Future work ", bold=True)
     _add_run_text(fw, "includes: (i) adaptive, data-driven selection of the "
@@ -1048,11 +1243,12 @@ def build() -> None:
                 "to test whether the mechanism's benefit is specific to "
                 "the prior used here or transfers to others.")
 
-    # ----------------------------------------------------------------- Methods
+                                                                               
     doc.add_heading("6. Methods", level=1)
     para(doc, "Table 8 collects the notation used throughout this section "
               "for reference.")
     full_width(doc, lambda: add_notation_table(doc))
+    full_width(doc, lambda: add_algorithm_box(doc))
     doc.add_heading("Problem formulation", level=2)
     para(doc, "We encode a candidate subset as a binary mask b in {0,1}^d "
               "over the d features, where bⱼ = 1 marks feature j as "
@@ -1060,13 +1256,17 @@ def build() -> None:
               "trade-off between predictive error and subset cardinality:")
     eqm(doc, [
         mrun("f"), mdelim([mrun("b")]),
-        mrun(" = 0.99"), mdelim([mrun("1 − Acc"), mdelim([mrun("b")])]),
-        mrun(" + 0.01"), mfrac([mrun("|b|")], [mrun("d")]),
+        mrun(" = (1 − "), mrun("λ"), mrun(")"),
+        mdelim([mrun("1 − Acc"), mdelim([mrun("b")])]),
+        mrun(" + "), mrun("λ"), mfrac([mrun("|b|")], [mrun("d")]),
+        mrun(",   λ = 0.01"),
     ])
     para(doc, "where Acc(b) is the stratified 5-fold KNN accuracy (k = 5) "
-              "computed on the selected features alone. Every baseline in "
+              "computed on the selected features alone and λ is the "
+              "cardinality weight (Table 10, later in this section, reports "
+              "a sensitivity sweep over λ). Every baseline in "
               "this study optimizes this same objective with the same "
-              "0.01 cardinality weight; RG-SCSO is granted no structural "
+              "λ = 0.01; RG-SCSO is granted no structural "
               "advantage on subset size from the fitness function itself, "
               "so any parsimony gap reported below reflects the search "
               "mechanism, not a differently weighted objective. SCSO "
@@ -1120,6 +1320,19 @@ def build() -> None:
     para(doc, "in a flat region, where ‖T′‖∞ ≤ ε, the leverage collapses "
               "to |Δⱼ| ≤ ε·|δⱼ| (proof in the Supplementary Information "
               "PDF distributed with this submission).", italic=True)
+    full_width(doc, lambda: add_figure(
+        doc, "washout.png",
+        "Fig. 7. Illustration of Lemma 1. Left: the two standard transfers, "
+        "S-shaped (sigmoid) and V-shaped (|tanh|). Right: the induced "
+        "leverage |T(x+δ)−T(x)| for a fixed perturbation δ=0.2, plotted "
+        "against the coordinate x. Both transfers saturate away from the "
+        "origin (shaded region), where leverage falls toward zero "
+        "regardless of which optimizer produced the perturbation; V-shaped "
+        "attains a higher peak leverage near the origin but saturates over "
+        "a narrower range than S-shaped. RG-SCSO's flip-probability "
+        "modulation bypasses this transfer entirely (Remark below), so its "
+        "leverage does not collapse in the shaded region.",
+        width_in=5.3))
     rem = doc.add_paragraph()
     rem.add_run("Remark (why RG-SCSO is exempt). ").bold = True
     rem.add_run("RG-SCSO breaks the premise of the lemma: instead of "
@@ -1131,18 +1344,50 @@ def build() -> None:
         msub([mrun("s")], [mrun("j")]), mrun("·V"),
         mdelim([msub([mrun("x")], [mrun("j")])]),
     ], note="independent of T′.")
+    rem1b = doc.add_paragraph()
+    rem1b.add_run("This exemption has one boundary case worth flagging: it "
+                  "holds where the clip in Eq. (2) is inactive. If "
+                  "V(xⱼ)(1+γσⱼsⱼ) already falls outside [0,1], the clip "
+                  "absorbs the modulation and pⱼ saturates regardless of "
+                  "γ, so RG-SCSO is not immune to washout at that extreme. "
+                  "It is immune only to the slope-driven collapse that "
+                  "constrains the base transfer everywhere short of it.")
+    rem2 = doc.add_paragraph()
+    _add_run_text(rem2, "The base transfer T still appears inside RG-SCSO's "
+                  "own rule as one multiplicative factor (Eq. (2) below), "
+                  "but Proposition 2, which follows next, characterizes "
+                  "only the base operator's transition probability T(xⱼ(t)) "
+                  "itself, not RG-SCSO's realized flip probability pⱼ, "
+                  "which this Remark has just shown is exempt from Lemma "
+                  "1's bound by construction.", italic=True)
 
     prop = doc.add_paragraph()
-    prop.add_run("Proposition 2 (Transition probability and cumulative "
-                  "leverage). ").bold = True
-    _add_run_text(prop, "Under the V-shaped binarization rule used "
-                  "throughout this paper, bit j flips at iteration t with "
-                  "probability exactly T(xⱼ(t)), so the one-step "
-                  "bit-transition probability coincides with the flip "
-                  "probability, P(bⱼ(t+1)≠bⱼ(t) | xⱼ(t)) = T(xⱼ(t)). Lemma "
+    prop.add_run("Proposition 2 (Transition probability under the base "
+                  "V-shaped transfer). ").bold = True
+    _add_run_text(prop, "This proposition characterizes only the base, "
+                  "unmodulated V-shaped transfer introduced above (the "
+                  "NoRMS reference operator used in the ablation); "
+                  "RG-SCSO's own operator is exempt from it by "
+                  "construction, per the Remark above. Under this "
+                  "unmodulated V-shaped binarization rule, bit j flips at "
+                  "iteration t with probability T(xⱼ(t)), so the base "
+                  "operator's one-step bit-transition probability "
+                  "coincides with T,", italic=True)
+    eqm(doc, [
+        msub([mrun("P")], [mrun("base")]),
+        mdelim([
+            msub([mrun("b")], [mrun("j")]), mrun("(t+1)≠"),
+            msub([mrun("b")], [mrun("j")]), mrun("(t) | "),
+            msub([mrun("x")], [mrun("j")]), mrun("(t)"),
+        ]),
+        mrun(" = T"),
+        mdelim([msub([mrun("x")], [mrun("j")]), mrun("(t)")]),
+    ])
+    prop1b = doc.add_paragraph()
+    _add_run_text(prop1b, "Lemma "
                   "1's bound on Δⱼ is therefore, without further "
                   "assumption, already a bound on the one-step change in "
-                  "transition probability,", italic=True)
+                  "the base operator's transition probability,", italic=True)
     eqm(doc, [
         mdelim([mrun("ΔP"), mdelim([
             msub([mrun("b")], [mrun("j")]), mrun("(t+1)≠"),
@@ -1249,19 +1494,28 @@ def build() -> None:
               "EMA credit-assignment term from accepted fitness "
               "improvements was examined and dropped, as the ablation "
               "shows no accuracy gain on any dataset. A second, smaller "
-              "component, uncertainty-targeted memetic refinement (UMR), "
-              "spends a fixed local-search budget where this prior is "
-              "least decisive: each iteration, the K features whose "
-              "relevance is closest to 0.5 are greedily flipped on the "
-              f"incumbent best mask {_c('neri')} and the flip is kept "
-              "only if fitness improves.", size=BODY_PT)
+              "component, uncertainty-guided memetic refinement (UMR), "
+              "spends a fixed local-search budget on the K features whose "
+              "relevance sits closest to 0.5, the boundary where the "
+              "prior is least decisive: each iteration, these features "
+              f"are greedily flipped on the incumbent best mask "
+              f"{_c('neri')} and the flip is kept only if fitness "
+              "improves. Discussion reports a control showing this "
+              "targeting rule is not always what drives UMR's benefit.",
+              size=BODY_PT)
 
     doc.add_heading("Algorithm and computational cost", level=2)
     para(doc, "Every fitness evaluation, whether from population moves, "
               "memetic probes, or initialization, is counted against a "
-              "single budget max_nfe = pop_size × max_iter = 15000, "
-              "identical to the baselines, so UMR grants no extra "
-              "evaluations.")
+              "single budget,")
+    eqm(doc, [
+        mrun("N"), mrun(" × "), msub([mrun("T")], [mrun("max")]),
+        mrun(" = 15,000,"),
+    ])
+    para(doc, "so UMR's extra probes are drawn from this same fixed total "
+              "rather than added on top of it; the exact accounting "
+              "against every baseline, verified on the implementation "
+              "rather than assumed, is given below.")
 
     para(doc, "The per-iteration cost is dominated by the N + K wrapper "
               "evaluations, each a KNN fit under fixed folds; the "
@@ -1278,6 +1532,18 @@ def build() -> None:
               "tested (Supplementary Information) are consistent with "
               "this expectation, and we make no runtime-speedup claim for "
               "RG-SCSO over same-budget baselines.")
+    full_width(doc, lambda: add_complexity_table(doc))
+
+    doc.add_heading("Cardinality-weight sensitivity", level=2)
+    para(doc, "The λ = 0.01 cardinality weight in Eq. (1) was fixed before "
+              "the full run, together with every other hyperparameter "
+              "(Statistics and reproducibility, below). To check that this "
+              "choice is not load-bearing, we reran the full protocol on "
+              "five representative datasets (Zoo, Sonar, WDBC, "
+              "ColonCancer, Leukemia; 30 independent runs each) at five "
+              "additional λ values spanning zero cardinality penalty to "
+              "5× the deployed weight. Table 10 reports the sweep.")
+    full_width(doc, lambda: add_lambda_sensitivity_table(doc))
 
     doc.add_heading("Datasets, baselines, and protocol", level=2)
     para(doc, f"The benchmark spans {s['n']} preprocessed datasets of "
@@ -1310,8 +1576,26 @@ def build() -> None:
               "version-controlled before the full run and left unmodified "
               "after results were observed; all randomness is seeded "
               "deterministically and shared across algorithms.")
+    para(doc, "Two further baselines used in Discussion isolate specific "
+              "alternative explanations for RG-SCSO's parsimony and are "
+              "run under the identical protocol above (same 18 "
+              "datasets, 30 runs, matched budget), not drawn from prior "
+              "publications: adaptive continuous-space transfer "
+              "functions, specifically bPSO and bGWO equipped with the "
+              f"time-varying transfer of Islam et al. {_c('islam2017tvtf')} "
+              f"and the V4 transfer of Teng et al. {_c('teng2017avbpso')}; "
+              "and two directly re-implemented same-family binary SCSO "
+              "selectors, with a standard S-shaped and a "
+              "V-shaped-plus-opposition-based-learning transfer "
+              "respectively.")
+    para(doc, "The relevance prior, the binarization threshold τ, the "
+              "cardinality weight λ, and every other hyperparameter are "
+              "fixed or estimated using only the training partition of "
+              "each outer split; none is tuned, selected, or recomputed "
+              "using held-out labels at any stage of the search, "
+              "evaluation, or hyperparameter sweep.")
 
-    # ---------------------- Statements and Declarations + References
+                                                                     
     doc.add_heading("CRediT authorship contribution statement", level=1)
     para(doc, "Bui Quang Huy: Conceptualization, Methodology, Software, "
               "Validation, Formal analysis, Writing – original draft. "
@@ -1323,10 +1607,8 @@ def build() -> None:
     doc.add_heading("Data availability", level=1)
     para(doc, "The datasets are publicly available benchmarks (UCI and "
               "standard microarray sets). The source code, the "
-              "preregistration, the per-run seeds, and the raw results are "
-              "available in an anonymized repository "
-              "(https://anonymous.4open.science/r/RG-SCSO-8BC0/) and will "
-              "be released in a public, citable repository upon "
+              "preregistration, the per-run seeds, and the raw results "
+              "will be released in a public, citable repository upon "
               "acceptance.")
 
     doc.add_heading("Funding", level=1)

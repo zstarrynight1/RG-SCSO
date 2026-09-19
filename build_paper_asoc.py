@@ -1,32 +1,3 @@
-"""Sinh bản thảo LaTeX cho Applied Soft Computing (Elsevier) -- SINGLE SOURCE
-OF TRUTH cho target ASOC, song song với build_paper_scirep.py (Scientific
-Reports). KHÔNG chạy thí nghiệm mới: mọi số liệu đọc động từ đúng các CSV/hàm
-build_paper_scirep.py đã dùng, tái sử dụng trực tiếp các hàm sinh bảng/hình đã
-verify ở đó (import, không copy-paste) để đảm bảo số liệu khớp tuyệt đối giữa
-2 bản.
-
-Khác biệt cấu trúc so với build_paper_scirep.py (theo RG-SCSO_MASTER_FINAL_
-COMPLETE.md, chỉ áp dụng phần đã fact-check, KHÔNG áp dụng các claim sai như
-"lowest mean feature count" -- vẫn dùng khung đã verify "second-smallest,
-trailing only COA"):
-  - \\documentclass{elsarticle} (không phải sn-jnl), \\bibliographystyle{elsarticle-num}.
-  - Research Questions (RQ1-4) cuối Introduction, có cross-reference tới đúng
-    bảng/hình trả lời từng RQ trong Results.
-  - Section Related Work RIÊNG (3 subsection theo taxonomy + bảng literature-
-    positioning được ĐƯA VÀO main text, không còn ở Supplementary).
-  - 2 hình được đưa từ Supplementary vào main text: convergence_fs.pdf,
-    threshold_heatmap.pdf (ASOC không có giới hạn cứng 8 display-item như
-    Scientific Reports).
-  - Conclusion section RIÊNG (tách khỏi Discussion), có limitations liệt kê
-    rõ + Future Work 5 mục.
-  - CRediT authorship contribution statement thay cho "Author contributions".
-  - Graphical abstract (figures/graphical_abstract.png, 531x1328px) trong
-    frontmatter; Highlights là file riêng (RG-SCSO_ASOC_Highlights.txt),
-    không nhúng trong .tex (đúng quy ước Elsevier: Highlights là 1 hạng mục
-    nộp riêng trong hệ thống, không phải 1 section của bản thảo).
-
-Chạy:  python build_paper_asoc.py
-"""
 
 from __future__ import annotations
 
@@ -57,8 +28,7 @@ from build_paper_tex import (
 )
 import build_heldout_table as _heldout
 
-# Tái dùng NGUYÊN VẸN mọi hàm sinh bảng/khối văn bản đã verify ở bản SciRep --
-# đảm bảo số liệu khớp 100% giữa 2 target, không tính lại/gõ lại.
+
 from build_paper_scirep import (
     CLASSIC_CSV,
     SIGNAL_POS_CSV,
@@ -127,11 +97,7 @@ def build() -> None:
     else:
         inference_sentence = ""
 
-    # ------------------------------------------------------------- Abstract
-    # 150-250 words, không p-value/Cohen's d/Friedman-rank, không citation,
-    # không notation phức tạp (RG-SCSO_MASTER_FINAL_COMPLETE.md Sec 26) --
-    # dùng đúng khung đã fact-check "second-smallest, trailing only COA",
-    # KHÔNG dùng claim "lowest mean feature count" (sai, COA còn ít hơn).
+
     abstract = (
         "Wrapper feature selection with swarm intelligence typically searches "
         "continuously and crosses into the binary domain via a fixed transfer "
@@ -165,7 +131,7 @@ def build() -> None:
         "without that extreme structure is the transferable gain."
     )
 
-    # --------------------------------------------------------- Introduction
+                                                                            
     introduction = rf"""Feature selection removes irrelevant and redundant features to improve
 classifier accuracy, reduce overfitting, and lower computational cost, a
 payoff that is greatest for high-dimensional, small-sample problems such as
@@ -241,7 +207,7 @@ binary transfer functions in swarm-based feature selection, (ii)
 relevance-guided search mechanisms, and (iii) SCSO variants
 (Section~\ref{{sec:relwork}})."""
 
-    # ------------------------------------------------------- Related Work
+                                                                          
     related_work = rf"""\subsection{{Binary transfer functions in swarm-based feature selection}}
 Swarm-intelligence wrapper selectors, including grey wolf~\cite{{bgwo}},
 particle swarm~\cite{{pso}}, whale~\cite{{mafarja}}, and several recent
@@ -290,7 +256,7 @@ per-feature and relevance-aware -- the interface RG-SCSO modifies.
 
 {literature_positioning_table()}"""
 
-    # -------------------------------------------------------------- Results
+                                                                            
     fr_p_str = pcmp(hs_stats.get("friedman_p", 1)) if hs_stats else "<10^{{-3}}"
     fr_chi2_str = f"={hs_stats.get('friedman_chi2', 0):.2f}" if hs_stats else ""
     scsofam_pct_str = (f"{min(scsofam['red'].values()):.0f}"
@@ -386,11 +352,7 @@ per-feature and relevance-aware -- the interface RG-SCSO modifies.
         "established above reproduces under every wrapper tested."
     )
 
-    # threshold_sensitivity_table()'s caption cross-references tab:stability
-    # (stability_index_table()'s label), which stays in Supplementary here
-    # while this table is promoted to main text -- patch the dangling \ref
-    # locally rather than editing the shared function (would break its
-    # SciRep use, where both tables share one Supplementary document).
+
     threshold_tab_asoc = (
         threshold_sensitivity_table() if os.path.exists(THRESHOLD_CSV) else ""
     ).replace(
@@ -549,7 +511,7 @@ $\tau=0.5$ is not a fragile choice.}}
 
 {classifier_robust_tab}"""
 
-    # ------------------------------------------------------------ Discussion
+                                                                             
     discussion = rf"""These results trace washout, a concrete failure mode of
 transfer-function-based binary feature selection, to its source and cure it
 by moving the relevance signal directly inside the binarization operator
@@ -645,7 +607,7 @@ small-sample data; we scope its transferable benefit to parsimony on
 datasets without that extreme structure. These boundaries are gathered
 together, with the future work they motivate, in Conclusion below."""
 
-    # ------------------------------------------------------------ Conclusion
+                                                                             
     conclusion = rf"""The results support RG-SCSO as a relevance-guided binary
 feature-selection method whose primary advantage is improved subset
 parsimony with competitive predictive performance under the tested
@@ -844,7 +806,8 @@ available feature rather than genuine instability.}}
 \begin{{algorithmic}}[1]
   \REQUIRE training partition $(X,y)$ (never the held-out fold; see Methods
     below for the fold-honest protocol); population size $N$; iterations
-    $T$; budget $\mathrm{{max\_nfe}}$; memetic size $K$; bias strength $\gamma$
+    $T_{{\max}}$; budget $\mathrm{{max\_nfe}}$; memetic size $K$; bias
+    strength $\gamma$
   \ENSURE best feature mask $b^\ast$
   \STATE $\rho_j \leftarrow$ normalized mutual information $I(X_j;y)$,
     computed on $(X,y)$ only, $\forall j$ \hfill$\triangleright$ static
@@ -854,14 +817,14 @@ available feature rather than genuine instability.}}
   \STATE initialize positions $x_i \sim \mathcal{{U}}(-1,1)^d$, $i=1,\dots,N$;
     binarize each by RMS; evaluate; set $b^\ast$
   \WHILE{{$\mathrm{{nfe}} < \mathrm{{max\_nfe}}$}}
-    \STATE $R \leftarrow S_M\,(1-t/T)$ \hfill$\triangleright$ sensitivity range contracts
+    \STATE $R \leftarrow S_M\,(1-t/T_{{\max}})$ \hfill$\triangleright$ sensitivity range contracts
     \FOR{{each agent $i=1,\dots,N$}}
       \STATE update $x_i$ by the SCSO position rule using range $R$
       \FOR{{each feature $j$}}
-        \STATE $p \leftarrow |\tanh(x_{{ij}})|$ \hfill$\triangleright$ V-shaped transfer
-        \STATE $p \leftarrow p\,(1+\gamma s_j)$ if the flip moves bit $j$ toward
-          $\hat{{b}}_j$, else $p\,(1-\gamma s_j)$
-        \STATE flip bit $j$ with probability $\mathrm{{clip}}(p,0,1)$
+        \STATE $p_{{\text{{base}}}} \leftarrow |\tanh(x_{{ij}})|$ \hfill$\triangleright$ base transfer $T(x_{{ij}})$
+        \STATE $p_j \leftarrow p_{{\text{{base}}}}\,(1+\gamma s_j)$ if the flip moves bit $j$ toward
+          $\hat{{b}}_j$, else $p_{{\text{{base}}}}\,(1-\gamma s_j)$
+        \STATE flip bit $j$ with probability $\mathrm{{clip}}(p_j,0,1)$
       \ENDFOR
       \STATE evaluate mask; update $b^\ast$ if improved
     \ENDFOR
@@ -912,17 +875,31 @@ $|\Delta_j|\le\varepsilon\,|\delta_j|$ (proof in Supplementary Information).
 \noindent\textbf{{Remark (why RG-SCSO is exempt).}} RG-SCSO breaks the premise
 of the lemma: instead of routing information through the coordinate, it
 modulates the flip probability directly at the transfer output,
-$\Delta_j=\pm\,\gamma\,s_j\,V(x_j)$, independent of $T'$.
+$\Delta_j=\pm\,\gamma\,s_j\,V(x_j)$, independent of $T'$. The base transfer
+$T$ still appears inside RG-SCSO's own rule as one multiplicative factor
+(Eq.~\ref{{eq:rms}} below), but Proposition~2, which follows next,
+characterizes only the base operator's transition probability
+$T(x_j^{{(t)}})$ itself, not RG-SCSO's realized flip probability $p_j$, which
+this Remark has just shown is exempt from Lemma~1's bound by construction.
 
-\begin{{proposition}}[Transition probability and cumulative leverage]
-Under the V-shaped binarization rule used throughout this paper, bit $j$
-flips at iteration $t$ with probability exactly $T(x_j^{{(t)}})$, so the
-one-step bit-transition probability coincides with the flip probability,
-$P\big(b_j^{{(t+1)}}\ne b_j^{{(t)}}\mid x_j^{{(t)}}\big)=T(x_j^{{(t)}})$. Lemma~1's
+\begin{{proposition}}[Transition probability under the base V-shaped transfer]
+This proposition characterizes only the base, unmodulated V-shaped transfer
+introduced above (the NoRMS reference operator used in the ablation);
+RG-SCSO's own operator is exempt from it by construction, per the Remark
+above. Under this unmodulated V-shaped binarization rule, bit $j$
+flips at iteration $t$ with probability $T(x_j^{{(t)}})$, so the base
+operator's one-step bit-transition probability coincides with $T$,
+$P_{{\text{{base}}}}\big(b_j^{{(t+1)}}\ne b_j^{{(t)}}\mid x_j^{{(t)}}\big)=T(x_j^{{(t)}})$.
+Lemma~1's
 bound on $\Delta_j$ is therefore, without further assumption, already a
-bound on the one-step change in transition probability, and this bound
+bound on the one-step change in the base operator's transition probability,
+and this bound
 composes linearly over $N$ repeated samples of the same bit in the flat,
-saturated regime (proof in Supplementary Information). This is a local,
+saturated regime (proof in Supplementary Information). For RG-SCSO itself,
+this base probability $T(x_j^{{(t)}})$ is subsequently modulated by the
+relevance-modulated rule $p_j$ of Eq.~\ref{{eq:rms}} below, so RG-SCSO's
+actual one-step transition probability is $p_j$, not $T(x_j^{{(t)}})$ alone.
+This is a local,
 one-step-composable sensitivity bound, not a convergence guarantee or a
 proof that continuous-space enhancements are ineffective; the full scope
 discussion is in Supplementary Information.
@@ -1021,9 +998,8 @@ The authors declare no competing interests.
 \section*{{Data availability}}
 The datasets are publicly available benchmarks (UCI and standard microarray
 sets). The source code, the locked preregistration, the per-run seeds, and
-the raw results are available in an anonymized repository
-(\url{{https://anonymous.4open.science/r/RG-SCSO}}) and will be released in a
-public, citable repository upon acceptance.
+the raw results will be released in a public, citable repository upon
+acceptance.
 
 \section*{{Funding}}
 No funding was received for this work.
@@ -1032,19 +1008,14 @@ No funding was received for this work.
 
 \end{{document}}
 """
-    # Float-drift fix (see Supplementary write, below): force pending
-    # figures/tables to resolve before crossing a \section boundary, so a
-    # promoted table (e.g. the literature-positioning table) never queues
-    # past the subsection that introduces it.
+
+
     tex = re.sub(r"\\section\{", r"\\FloatBarrier\n\\section{", tex)
 
     with open(OUT_TEX, "w") as fh:
         fh.write(tex)
 
-    # --------------------------------------------------- Supplementary Info
-    # Giống hệt cấu trúc Supplementary của bản SciRep, TRỪ 3 phần đã chuyển
-    # vào main text ASOC (literature positioning, threshold sensitivity,
-    # convergence-on-FS-objective) để không lặp nội dung.
+
     washout_tab_placeholder = washout_table(s)
     rf_robustness_placeholder = rf_robustness_table()
     from build_paper_scirep import (
@@ -1108,12 +1079,16 @@ each decays away from the origin ($\sigma'(x)\le e^{{-|x|}}$,
 $\big||\tanh|'(x)\big|\le 4\,e^{{-2|x|}}$). Substituting
 $\|T'\|_\infty\le\varepsilon$ on a flat interval establishes the claim.
 
-\textbf{{Proof of Proposition 2 (Transition probability and cumulative
-leverage).}} The identity $P\big(b_j^{{(t+1)}}\ne b_j^{{(t)}}\mid
+\textbf{{Proof of Proposition 2 (Transition probability under the base
+V-shaped transfer).}} The identity $P_{{\text{{base}}}}\big(b_j^{{(t+1)}}\ne
+b_j^{{(t)}}\mid
 x_j^{{(t)}}\big)=T(x_j^{{(t)}})$ follows directly from the definition of the
-V-shaped flip rule (a bit is flipped, independently at each iteration, with
-probability equal to the transfer value); no further argument is required
-because transition and flip are the same event under this rule. The
+\emph{{base, unmodulated}} V-shaped flip rule (a bit is flipped, independently
+at each iteration, with probability equal to the transfer value); no further
+argument is required because transition and flip are the same event under
+this base rule. RG-SCSO's own rule replaces this base probability with the
+relevance-modulated $p_j$ of Eq.~(2) of the main text, so this identity does
+not apply to RG-SCSO directly (see Remark, main text). The
 one-step bound $\big|\Delta P\big(b_j^{{(t+1)}}\ne b_j^{{(t)}}\big)\big|\le
 \|T'\|_\infty\,|\delta_j|$ is then Lemma~1 restated in this coincidence.
 Summing the per-step bound over $t=1,\dots,N$ and applying the triangle
@@ -1299,11 +1274,8 @@ mean in-sample rank.}}
 
 \end{{document}}
 """
-    # Float-drift fix: pending figures/tables can queue past several
-    # \section boundaries under heavy float density, leaving section
-    # headings visually empty while their content lands pages later (or
-    # even before the heading that introduces it). \FloatBarrier before
-    # every \section forces all pending floats to resolve first.
+
+
     supp = re.sub(r"\\section\{", r"\\FloatBarrier\n\\section{", supp)
 
     with open(OUT_SUPP_TEX, "w") as fh:

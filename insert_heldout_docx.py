@@ -1,21 +1,5 @@
-"""In-place XML surgery: chèn phần Held-Out Generalization vào RG-SCSO_IEEE_draft.docx.
-
-KHÔNG regenerate docx (file hand-edited, chứa OMML). Chỉ clone element có sẵn để
-giữ nguyên style tay của user, rồi chèn trước "VI. Conclusion":
-    - Heading 2  "G. Generalization under a Leak-Free Hold-Out"
-    - 3 đoạn prose (protocol / results / effect-size honesty)
-    - Caption "TABLE VI ..." + bảng accuracy held-out (clone Table II, cùng cột/thứ tự)
-và chèn 1 đoạn disclosure MI-on-full vào cuối IV.C Protocol.
-
-MỌI SỐ auto-sinh từ artifact (friedman_*, wilcoxon_vs_rgscso.csv, fs_heldout_results.csv,
-results_fs cho contrast in-sample) — KHÔNG gõ tay. Backup ra /tmp trước khi ghi.
-
-Chạy:  PYTHONPATH=. .venv/bin/python insert_heldout_docx.py
-"""
 
 from __future__ import annotations
-
-
 
 
 import copy
@@ -30,7 +14,7 @@ BACKUP = "/tmp/RG-SCSO_IEEE_draft.docx.heldout_backup"
 HELDOUT = "experiments/results_fs_heldout"
 INSAMPLE = "experiments/results_fs"
 
-# Cột đúng thứ tự Table II (song song để đối chiếu cell-to-cell).
+                                                                 
 ALGOS = ["RG-SCSO", "SCSO", "AOA", "COA", "GWO", "PSO", "RIME"]
 
 
@@ -40,7 +24,7 @@ def load_numbers() -> dict:
     fr = pd.read_csv(f"{HELDOUT}/friedman_summary.csv").iloc[0]
     wil = pd.read_csv(f"{HELDOUT}/wilcoxon_vs_rgscso.csv")
     ins = pd.read_csv(f"{INSAMPLE}/wilcoxon_vs_rgscso.csv")
-    # Base = significant wins (mark '+'), khớp cách paper báo median|d|=2.15 ở IV/V.
+                                                                                    
     insample_d = ins[ins["mark"] == "+"]["cohens_d"].abs().median()
 
     acc_mean = df.pivot_table(index="dataset", columns="algorithm", values="heldout_accuracy", aggfunc="mean")
@@ -75,7 +59,6 @@ _SUP = str.maketrans("-0123456789", "⁻⁰¹²³⁴⁵⁶⁷⁸⁹")
 
 
 def _sci(p: float) -> str:
-    """'2.5 × 10⁻¹²' — khớp convention paper (p = 2.4 × 10⁻¹³)."""
     exp = int(f"{p:.0e}".split("e")[1])
     mant = p / 10 ** exp
     return f"{mant:.1f} × 10{str(exp).translate(_SUP)}"
@@ -155,11 +138,6 @@ _M = "{http://schemas.openxmlformats.org/officeDocument/2006/math}"
 
 
 def set_text(el, text: str) -> None:
-    """Đặt text cho paragraph clone, giữ format run[0], bỏ run thừa.
-
-    QUAN TRỌNG: source prose para chứa inline OMML (m:oMath) — phải xóa để clone
-    không mang phương trình lạc; oMath là sibling của w:r, set text không đụng tới.
-    """
     for tag in ("oMath", "oMathPara"):
         for m in el.findall(f".//{_M}{tag}"):
             m.getparent().remove(m)
@@ -174,14 +152,13 @@ def set_text(el, text: str) -> None:
 
 
 def fill_table(tbl_el, n: dict) -> None:
-    """Repopulate bảng clone (Table II) bằng số held-out; bold best mỗi hàng."""
     from docx.table import Table
     tbl = Table(tbl_el, None)
     datasets = sorted(n["acc_mean"].index)
     for i, ds in enumerate(datasets, start=1):
         row = tbl.rows[i].cells
         row[0].paragraphs[0].runs[0].text = ds
-        # #F cell
+                 
         fcell = row[1].paragraphs[0]
         fcell.runs[0].text = str(int(n["ntot"][ds]))
         best = n["acc_mean"].loc[ds, ALGOS].max()
@@ -197,15 +174,11 @@ def fill_table(tbl_el, n: dict) -> None:
 
 
 def load_insample_rime() -> pd.Series:
-    """Mean #features in-sample của RIME per dataset (điền cột thiếu ở Table III)."""
     df = pd.read_csv(f"{INSAMPLE}/fs_results.csv")
     return df[df.algorithm == "RIME"].groupby("dataset")["n_selected_features"].mean()
 
 
 def fix_table3_add_rime(t3_el, rime: pd.Series) -> None:
-    """Đồng bộ Table III (in-sample #features): thêm cột RIME cuối (sau PSO) để khớp
-    Table II/VI/VII (7 thuật toán). Clone cột cuối giữ nguyên style tay của user.
-    RIME không phải ít nhất ở bất kỳ hàng nào (đã kiểm) ⇒ không đụng bold cột cũ."""
     from docx.oxml.ns import qn
     from docx.text.paragraph import Paragraph
 
@@ -213,7 +186,7 @@ def fix_table3_add_rime(t3_el, rime: pd.Series) -> None:
     grid.append(copy.deepcopy(grid.findall(qn("w:gridCol"))[-1]))
     for idx, tr in enumerate(t3_el.findall(qn("w:tr"))):
         tcs = tr.findall(qn("w:tc"))
-        new_tc = copy.deepcopy(tcs[-1])  # clone ô PSO (giữ width/border/font)
+        new_tc = copy.deepcopy(tcs[-1])                                       
         tcs[-1].addnext(new_tc)
         par = Paragraph(new_tc.find(qn("w:p")), None)
         for r in par.runs[1:]:
@@ -228,7 +201,6 @@ def fix_table3_add_rime(t3_el, rime: pd.Series) -> None:
 
 
 def _drop_column(tbl_el, c: int) -> None:
-    """Xóa cột index c khỏi tbl element (cả gridCol lẫn tc mỗi hàng)."""
     from docx.oxml.ns import qn
     grid = tbl_el.find(qn("w:tblGrid"))
     grid.remove(grid.findall(qn("w:gridCol"))[c])
@@ -238,10 +210,8 @@ def _drop_column(tbl_el, c: int) -> None:
 
 
 def fill_nfeat_table(tbl_el, n: dict) -> None:
-    """Table VII: clone Table II, bỏ cột #F → Dataset + 7 algo, 1 giá trị #feat/cell,
-    bold = ít nhất mỗi hàng (↓)."""
     from docx.table import Table
-    _drop_column(tbl_el, 1)  # bỏ #F
+    _drop_column(tbl_el, 1)         
     tbl = Table(tbl_el, None)
     datasets = sorted(n["nf_ds"].index)
     for i, ds in enumerate(datasets, start=1):
@@ -251,7 +221,7 @@ def fill_nfeat_table(tbl_el, n: dict) -> None:
         for j, a in enumerate(ALGOS, start=1):
             v = n["nf_ds"].loc[ds, a]
             runs = cells[j].paragraphs[0].runs
-            for r in runs[1:]:  # bỏ run ±std của bản clone accuracy
+            for r in runs[1:]:                                      
                 r._r.getparent().remove(r._r)
             runs[0].text = f"{v:.1f}"
             runs[0].bold = abs(v - least) < 1e-9
@@ -266,12 +236,12 @@ def main() -> None:
 
     d = Document(DOCX)
 
-    # Đồng bộ Table III: thêm cột RIME (khớp Table II/VI/VII 7 thuật toán).
+                                                                           
     fix_table3_add_rime(d.tables[3]._tbl, load_insample_rime())
 
     ps = d.paragraphs
 
-    # nguồn clone
+                 
     src_head = None
     src_prose = None
     src_cap = None
@@ -282,9 +252,9 @@ def main() -> None:
             src_prose = p._p
         if p.text.startswith("TABLE V "):
             src_cap = p._p
-    tbl_src = d.tables[2]._tbl  # Table II
+    tbl_src = d.tables[2]._tbl            
 
-    # anchor
+            
     concl = next(p._p for p in ps if p.text.strip() == "VI. Conclusion and Future Work")
     metrics = next(p._p for p in ps if p.text.strip() == "D. Metrics and Statistical Analysis")
 
@@ -293,10 +263,10 @@ def main() -> None:
         set_text(el, text)
         return el
 
-    # (1) disclosure vào cuối IV.C Protocol (trước "D. Metrics")
+                                                                
     metrics.addprevious(clone_para(src_prose, disclosure))
 
-    # (2) subsection G trước "VI. Conclusion" — theo thứ tự
+                                                           
     concl.addprevious(clone_para(src_head, "G. Generalization under a Leak-Free Hold-Out"))
     concl.addprevious(clone_para(src_prose, protocol_p))
     concl.addprevious(clone_para(src_prose, results_p))
@@ -312,7 +282,7 @@ def main() -> None:
     fill_table(new_tbl, n)
     concl.addprevious(new_tbl)
 
-    # Table VII — #features held-out (bảng riêng, 7 algo, ↓ ít nhất)
+                                                                    
     cap7 = clone_para(
         src_cap,
         "TABLE VII  Held-Out Setting: Mean Number of Selected Features over 30 Runs "

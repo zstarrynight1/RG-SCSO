@@ -1,4 +1,3 @@
-"""Class trừu tượng chung cho mọi optimizer (SCSO, ECL-SCSO, baseline tự code)."""
 
 from __future__ import annotations
 
@@ -10,12 +9,6 @@ import numpy as np
 
 
 class BaseOptimizer(ABC):
-    """Interface đồng nhất mà mọi optimizer phải kế thừa.
-
-    Đảm bảo pipeline downstream (benchmark, feature selection) gọi mọi
-    thuật toán theo cùng 1 cách, không cần biết chi tiết cài đặt bên trong
-    từng thuật toán.
-    """
 
     def __init__(
         self,
@@ -37,11 +30,9 @@ class BaseOptimizer(ABC):
         self.rng = np.random.default_rng(seed)
 
     def _init_population(self) -> np.ndarray:
-        """Khởi tạo quần thể uniform ngẫu nhiên trong [lb, ub]."""
         return self.lb + self.rng.random((self.pop_size, self.dim)) * (self.ub - self.lb)
 
     def _clip(self, x: np.ndarray) -> np.ndarray:
-        """Giữ solution trong biên [lb, ub] (xử lý boundary violation)."""
         return np.clip(x, self.lb, self.ub)
 
     def _evaluate_population(self, population: np.ndarray) -> np.ndarray:
@@ -49,20 +40,9 @@ class BaseOptimizer(ABC):
 
     @abstractmethod
     def optimize(self) -> dict:
-        """Chạy optimizer.
-
-        Returns:
-            dict với keys:
-                best_solution (np.ndarray): solution tốt nhất tìm được.
-                best_fitness (float): giá trị fitness tốt nhất.
-                convergence_curve (list[float]): best fitness ở MỖI vòng lặp,
-                    độ dài = max_iter.
-                runtime (float): thời gian chạy, tính bằng giây.
-        """
         raise NotImplementedError
 
     def _timed(self, run_fn: Callable[[], dict]) -> dict:
-        """Helper đo runtime, dùng trong subclass: `return self._timed(self._run)`."""
         start = time.perf_counter()
         result = run_fn()
         result["runtime"] = time.perf_counter() - start

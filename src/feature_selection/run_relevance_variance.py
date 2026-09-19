@@ -1,30 +1,3 @@
-"""Phân tích variance của relevance field ρ trên dataset gene-expression n
-nhỏ (Q1 review Priority 6 / W9) — ColonCancer (n=62) và Leukemia (n=72) có
-p >> n (2000/3571 feature), nên ρ_j = MI(X_j;y)/H(y) tính lại trên từng
-train-fold có nguy cơ overfitting/bất ổn định cao nhưng bài chính CHỈ đánh
-giá gián tiếp qua accuracy hạ nguồn, chưa đo trực tiếp độ ổn định của CHÍNH
-relevance field.
-
-PHƯƠNG PHÁP: bootstrap resampling (n_boot lần, mỗi lần lấy mẫu CÓ HOÀN LẠI
-kích thước n từ chính dataset), tính lại ρ trên mỗi resample, rồi báo cáo:
-    - Spearman correlation trung bình giữa các cặp ρ resample (ổn định thứ
-      hạng feature qua các lần resample).
-    - Jaccard overlap trung bình của tập "top-K feature liên quan nhất"
-      (K = round(mean RG-SCSO subset size trên dataset đó, đọc từ
-      fs_results.csv nếu có, fallback 50) giữa các cặp resample — đo trực
-      tiếp độ ổn định của CHÍNH tập feature mà RMS sẽ ưu tiên giữ lại.
-    - Std của ρ_j từng feature qua các resample (trung bình toàn bộ feature).
-
-So sánh thêm với 3 dataset THẤP chiều/mẫu lớn hơn (Sonar n=208, WDBC n=569,
-Zoo n=101) để có đường tham chiếu — nếu ColonCancer/Leukemia RÕ RỆT kém ổn
-định hơn, đây là bằng chứng trực tiếp cho rủi ro overfitting relevance field
-mà W9 nêu; nếu KHÔNG khác biệt đáng kể, rủi ro W9 nêu không được xác nhận
-thực nghiệm trên dữ liệu này.
-
-Output: experiments/results_relevance_variance/relevance_variance_results.csv
-Chạy:   .venv/bin/python -m src.feature_selection.run_relevance_variance
-        [--smoke] [--datasets ...] [--n-boot N]
-"""
 
 from __future__ import annotations
 
@@ -53,9 +26,6 @@ def _load(name: str) -> tuple[np.ndarray, np.ndarray]:
 
 
 def _bootstrap_rhos(X: np.ndarray, y: np.ndarray, n_boot: int, seed: int) -> np.ndarray:
-    """Trả về ma trận (n_boot, n_features) — ρ tính lại trên mỗi resample có
-    hoàn lại kích thước n. Resample nào chỉ còn 1 class (hiếm với n nhỏ, lớp
-    thiểu số) được resample lại tới khi hợp lệ, tối đa 20 lần thử."""
     n = X.shape[0]
     rng = np.random.default_rng(seed)
     rhos = []
@@ -75,7 +45,7 @@ def _analyze(dataset: str, n_boot: int, top_k: int, seed: int) -> dict:
     k = min(top_k, d)
     rhos = _bootstrap_rhos(X, y, n_boot, seed)
 
-    # Spearman trung bình giữa mọi cặp resample (thứ hạng feature ổn định?).
+                                                                            
     n_pairs = 0
     spearman_sum = 0.0
     jaccard_sum = 0.0

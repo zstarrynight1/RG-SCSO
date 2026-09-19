@@ -1,33 +1,3 @@
-"""Sinh bản thảo LaTeX cho Scientific Reports (Nature Portfolio) — SINGLE SOURCE
-OF TRUTH, tách biệt với build_paper_tex.py (bản Applied Intelligence).
-
-KHÔNG gõ tay số liệu: mọi con số đọc động từ artifact qua các hàm dùng chung
-import từ build_paper_tex.py / build_paper_structure.py / build_heldout_table.py.
-
-Yêu cầu Scientific Reports đã tra thật (nature.com, không đoán):
-  - Văn bản chính (Intro+Results+Discussion, KHÔNG tính Abstract/Methods/
-    References/figure legends) tối đa 4.500 từ.
-  - Tối đa ~11 trang in.
-  - Abstract tối đa 200 từ, KHÔNG cấu trúc (không mục con).
-  - Tiêu đề tối đa 20 từ.
-  - Tối đa 6 từ khóa.
-  - Tối đa 8 hình+bảng gộp lại trong TOÀN BÀI.
-  - Cấu trúc: Title/Abstract → Introduction → Results (có mục con được) →
-    Discussion (KHÔNG mục con) → Methods (đặt CUỐI, không tính vào giới hạn
-    4.500 từ) → Data availability/Author contributions/Competing interests →
-    References → (Supplementary Information riêng, không tính vào bài chính).
-
-Chiến lược cắt: giữ đúng 8 hình+bảng trong bài chính (concept fig, CD diagram,
-mechanism fig 2-panel [enrichment + stability index] = 3 hình; held-out
-accuracy+nfeat gộp 1 bảng, rank, ablation, classic-baselines, classifier-
-robustness = 5 bảng) — TẤT CẢ dựa trên held-out (leak-free) làm bằng chứng
-chính, không lặp lại bảng in-sample. Mọi thứ còn lại (bảng dataset, bảng
-in-sample, hình convergence/diversity, chi tiết per-dataset của robustness/
-stability, phụ lục cũ) chuyển sang Supplementary Information
-(build_paper_scirep_supp.tex, sinh cùng lúc) — KHÔNG xóa, chỉ chuyển vị trí.
-
-Chạy:  python build_paper_scirep.py
-"""
 
 from __future__ import annotations
 
@@ -68,8 +38,7 @@ from src.stats.statistical_tests import holm_correction
 OUT_TEX = "RG-SCSO_SciRep.tex"
 OUT_SUPP_TEX = "RG-SCSO_SciRep_Supplementary.tex"
 
-# Q1-review Loại B experiment outputs (added post-review; see
-# RG-SCSO_Q1_Review_Final.md Priority 1/2/3/6).
+
 CLASSIC_CSV = os.path.join("experiments", "results_fs_classic", "fs_classic_results.csv")
 SIGNAL_POS_CSV = os.path.join(
     "experiments", "results_fs_signal_position", "fs_signal_position_results.csv"
@@ -92,22 +61,15 @@ NFE_CONTROL_CSV = os.path.join(
 )
 FS_MAIN_CSV = os.path.join("experiments", "results_fs", "fs_results.csv")
 
-# Nhãn 2 hàng MỚI (Q1 review Priority 2), chèn vào bảng ablation chính sau
-# hàng "- UMR" — signal-position steps 2/3 (không có đối chiếu sẵn trong
-# ABL_CONFIG_ORDER, KHÔNG như steps 1/4/5 vốn là re-run y hệt 3 config cũ).
+
 SIGPOS_LABEL_TEX = {
     "2_MIInit_NoRMS": r"MI-guided init (no RMS)",
     "3_MIObjective_NoRMS": r"MI-weighted objective (no RMS)",
 }
-SIGPOS_FINAL_STEP = "5_RMS_UMR_Full"  # == deployed "- ORL (final)" 2-component RG-SCSO
+SIGPOS_FINAL_STEP = "5_RMS_UMR_Full"                                                   
 
 
 def classic_baselines_table(s: dict) -> str:
-    """NEW main-text table (Q1 review Priority 1): RG-SCSO vs. five classical
-    filter/embedded/wrapper selectors on the same 5-dataset ablation pilot,
-    identical fitness/eval protocol. Honest disclosure, not softened: RG-SCSO
-    wins the 3 lower-dimensional datasets; LASSO/mRMR win the two
-    gene-expression (p>>n) datasets with far fewer features."""
     ds_list = s["abl_datasets"]
     cb = pd.read_csv(CLASSIC_CSV)
     main = pd.read_csv(FS_MAIN_CSV)
@@ -158,13 +120,6 @@ def classic_baselines_table(s: dict) -> str:
 
 
 def extended_ablation_table(s: dict) -> str:
-    """Main-text component-ablation table, extended with 2 rows from the
-    Q1-review Priority-2 signal-position experiment (where else could the
-    relevance signal be injected, besides the binarization interface?).
-    Steps 1/4/5 of that experiment are re-runs, through an independent
-    harness, of the existing NoImprovement/NoUMR/NoORL(final) configs
-    (cross-harness accuracy agrees to within <=0.5pp on all 5 datasets, a
-    wiring sanity check, not re-derived here) — only steps 2/3 add new rows."""
     ds_list = s["abl_datasets"]
     sp = pd.read_csv(SIGNAL_POS_CSV)
 
@@ -242,8 +197,6 @@ def extended_ablation_table(s: dict) -> str:
 
 
 def shuffle_mi_table() -> str:
-    """Supplementary table (Q1 review Priority 3): causal intervention on the
-    relevance field via feature-identity permutation / sign inversion."""
     sm = pd.read_csv(SHUFFLE_MI_CSV)
     algos = ["RG-SCSO-MI", "RG-SCSO-ShuffledMI", "RG-SCSO-InvertedMI"]
     label = {"RG-SCSO-MI": "Real MI", "RG-SCSO-ShuffledMI": "Shuffled MI",
@@ -284,8 +237,6 @@ def shuffle_mi_table() -> str:
 
 
 def nested_cv_table() -> str:
-    """Supplementary table (Q1 review Priority 6): genuine outer-fold nested
-    CV pilot, vs. the main study's single 80/20 held-out split."""
     nc = pd.read_csv(NESTED_CV_CSV)
     algos = ["RG-SCSO", "SCSO", "AOA"]
     ds_list = sorted(nc["dataset"].unique())
@@ -321,8 +272,6 @@ def nested_cv_table() -> str:
 
 
 def relevance_variance_table() -> str:
-    """Supplementary table (Q1 review Priority 6): bootstrap stability of the
-    MI relevance field itself."""
     rv = pd.read_csv(RELEVANCE_VAR_CSV)
     cols = "lccc"
     head = r"Dataset & Mean Spearman & Mean top-$K$ Jaccard & Mean std($\rho_j$) \\"
@@ -358,12 +307,6 @@ WILC_CSV = os.path.join(FS_DIR, "wilcoxon_vs_rgscso.csv")
 
 
 def rank_table_with_effect_size(s: dict) -> str:
-    """Replaces the shared rank_table(s) (build_paper_tex.py, read-only, not
-    modified here) with a version that adds a median |Cohen's d| column --
-    the effect sizes are already computed and used in prose (median |d|) but
-    Table 2 itself never surfaced them as a column (RG-SCSO_MASTER_FINAL_
-    COMPLETE.md audit finding). Same display-item count: replaces Table 2,
-    does not add a 9th item."""
     has = s.get("stats")
     ranking = s["rank7"].sort_values() if has else s["avg_rank"]
     d_by_baseline = {}
@@ -379,7 +322,7 @@ def rank_table_with_effect_size(s: dict) -> str:
         elif has:
             wtl = "{}/{}/{}".format(*s["sig_wtl"].get(a, (0, 0, 0)))
             dv = d_by_baseline.get(a, float("nan"))
-            d_str = f"{dv:.2f}" if dv == dv else "--"  # NaN check
+            d_str = f"{dv:.2f}" if dv == dv else "--"             
         else:
             wtl, d_str = "\\textit{[pending]}", "--"
         name = f"{esc(a)} ({YEAR.get(a, '?')})"
@@ -408,14 +351,6 @@ def rank_table_with_effect_size(s: dict) -> str:
 
 
 def literature_positioning_table() -> str:
-    """Supplementary table (RG-SCSO_MASTER_FINAL_COMPLETE.md, item S9):
-    compact positioning of every recent SCSO-family work already cited in
-    this paper -- visualizes the claim already made in the Introduction ("no
-    prior SCSO feature selector makes the binarization operator itself
-    per-feature and relevance-aware") with a compiled table instead of only
-    prose. Static compilation from references.bib entries already cited
-    elsewhere in this paper -- no new experimental data, citation keys/years/
-    journals verified against references.bib before writing."""
     rows = [
         ("Seyyedabbasi \\& Kiani~\\cite{scso}", "2022", "Base continuous SCSO (no FS)", "Baseline (Table~1)"),
         ("bSCSO~\\cite{bscso}", "2023", "Binary wrapper FS, standard transfer", "Same-family baseline (Discussion)"),
@@ -451,12 +386,6 @@ def literature_positioning_table() -> str:
 
 
 def rf_robustness_table() -> str:
-    """Supplementary table (Diem_yeu_RG-SCSO.md §2.5): Random Forest wrapper,
-    the classifier family the reviewer flagged as missing. Reuses the exact
-    protocol and algorithm set already validated for the KNN/SVM robustness
-    table (robustness_baselines above), just a third wrapper value; the
-    underlying harness (src/feature_selection/run_fs_robustness.py) already
-    supported wrapper="RF", it had simply never been run."""
     if not os.path.exists(ROBUST_CSV):
         return ""
     rob = pd.read_csv(ROBUST_CSV)
@@ -509,13 +438,6 @@ def rf_robustness_table() -> str:
 
 
 def stability_index_table() -> str:
-    """Supplementary table (Diem_yeu_RG-SCSO.md §2.2): does RG-SCSO select
-    largely the SAME subset across independent runs, or just a subset of the
-    same SIZE? Nogueira, Sechidis \\& Brown (2018)~\\cite{nogueira2018stability}
-    Phi -- the standard generalization of the Kuncheva (2007) consistency
-    index to variable subset size, since RG-SCSO's subset size is not fixed
-    across runs. Phi in [-1,1]; 1 = identical subset every run, 0 = no more
-    consistent than selecting the same number of features at random."""
     if not os.path.exists(STABILITY_CSV):
         return ""
     st = pd.read_csv(STABILITY_CSV)
@@ -569,14 +491,6 @@ def stability_index_table() -> str:
 
 
 def notation_table() -> str:
-    """Supplementary table (RG-SCSO_MASTER_FINAL_COMPLETE.md Section 7):
-    compiled directly from the symbols actually used in Methods (Problem
-    formulation / Theoretical motivation / The RG-SCSO mechanism / Algorithm
-    and computational cost) -- no symbol invented that is not already in the
-    paper. Note: $T$ is genuinely overloaded in the source paper (transfer
-    function $T:\\mathbb{R}\\to[0,1]$ in the washout subsection vs. max
-    iterations in $R(t)=S_M-S_M t/T$) -- both uses are listed rather than
-    silently disambiguated."""
     rows = [
         ("$d$", "Total number of features (search-space dimension)"),
         ("$b\\in\\{0,1\\}^d$", "Candidate binary feature-subset mask"),
@@ -630,14 +544,6 @@ def notation_table() -> str:
 
 
 def threshold_sensitivity_table() -> str:
-    """Supplementary table (RG-SCSO_MASTER_FINAL_COMPLETE.md item 12/32.1):
-    the 0.5 preferred-bit threshold is a convenience, not a theoretically
-    grounded neutral point (Methods) -- this sweep (tau in {0.4,0.5,0.6},
-    30 runs/cell, same 5-dataset protocol as every other pilot this
-    session) tests whether that choice is at least empirically reasonable.
-    No single tau dominates uniformly; tau=0.5 attains the best accuracy on
-    2/5 datasets, and mean feature count falls monotonically as tau rises
-    on all 5, a modest, non-uniform accuracy trade-off."""
     if not os.path.exists(THRESHOLD_CSV):
         return ""
     th = pd.read_csv(THRESHOLD_CSV)
@@ -687,18 +593,6 @@ def threshold_sensitivity_table() -> str:
 
 
 def nfe_control_table() -> str:
-    """Supplementary table (RG-SCSO_MASTER_FINAL_COMPLETE.md item 10/32.2):
-    isolates whether UMR's benefit comes from TARGETING relevance-uncertain
-    features specifically, or merely from the extra evaluation budget it
-    spends anywhere, by replacing UMR's targeted K-feature selection with K
-    uniformly random features at matched NFE (paired-seed, 30 runs/cell,
-    same 5-dataset protocol). Does NOT contradict the existing UMR-vs-no-UMR
-    ablation (Table 3, still valid): this isolates targeting specifically,
-    not UMR's existence. Honest finding: the untargeted control
-    significantly beats targeted UMR on both accuracy and feature count on
-    the two gene-expression datasets, where UMR's contribution is largest,
-    and ties it on the other three -- targeting is not shown to be the
-    source of UMR's benefit where that benefit matters most."""
     if not os.path.exists(NFE_CONTROL_CSV):
         return ""
     nf = pd.read_csv(NFE_CONTROL_CSV)
@@ -776,12 +670,6 @@ def nfe_control_table() -> str:
 
 
 def heldout_combined_table(hs: dict) -> str:
-    """Merges the former separate held-out accuracy table and held-out
-    feature-count table into one combined table (accuracy with mean selected
-    feature count in parentheses) -- frees a main-text display-item slot,
-    used by classifier_robustness_table() below, while keeping the same
-    information. Cell format matches the convention already established in
-    classic_baselines_table() ("acc (nfeat)")."""
     algos = hs["algos"]
     cols = "l" + "c" * len(algos)
     head = " & ".join(["Dataset"] + [esc(a) for a in algos])
@@ -819,12 +707,6 @@ def heldout_combined_table(hs: dict) -> str:
 
 
 def classifier_robustness_table() -> str:
-    """NEW main-text table, using the slot freed by heldout_combined_table()
-    above: a compact, dataset-averaged summary of the KNN/SVM/RF robustness
-    check (RF added this session; run counts differ by wrapper, disclosed
-    explicitly rather than hidden). Full per-dataset detail for all three
-    wrappers remains in Supplementary Information (robustness_baselines() /
-    robustness_svm16() / rf_robustness_table())."""
     if not os.path.exists(ROBUST_CSV):
         return ""
     rob = pd.read_csv(ROBUST_CSV)
@@ -925,7 +807,7 @@ def build() -> None:
     else:
         inference_sentence = ""
 
-    # ------------------------------------------------------------- Abstract
+                                                                            
     abstract = (
         "Wrapper feature selection with swarm intelligence typically searches "
         "continuously and crosses into the binary domain via a fixed transfer "
@@ -956,7 +838,7 @@ def build() -> None:
         "transferable gain."
     )
 
-    # --------------------------------------------------------- Introduction
+                                                                            
     introduction = rf"""Feature selection removes irrelevant and redundant features to improve
 classifier accuracy, reduce overfitting, and lower computational cost, a
 payoff that is greatest for high-dimensional, small-sample problems such as
@@ -1016,7 +898,7 @@ a full statistical treatment, a component ablation, and a size-fair
 enrichment analysis correlating the observed parsimony with relevance
 guidance."""
 
-    # -------------------------------------------------------------- Results
+                                                                            
     fr_p_str = pcmp(hs_stats.get("friedman_p", 1)) if hs_stats else "<10^{-3}"
     fr_chi2_str = f"={hs_stats.get('friedman_chi2', 0):.2f}" if hs_stats else ""
     scsofam_pct_str = (f"{min(scsofam['red'].values()):.0f}"
@@ -1190,7 +1072,7 @@ than the enrichment analysis alone would suggest.
 
 {classifier_robust_tab}"""
 
-    # ------------------------------------------------------------ Discussion
+                                                                             
     discussion = rf"""These results trace washout, a concrete failure mode of
 transfer-function-based binary feature selection, to its source and cure it
 by moving the relevance signal directly inside the binarization operator
@@ -1590,15 +1472,14 @@ Duong Minh Son \href{{https://orcid.org/0009-0006-6485-7902}}{{0009-0006-6485-79
 
 \end{{document}}
 """
-    # Float-drift fix: force pending figures/tables to resolve before
-    # crossing a \section boundary (prevents a float queuing several
-    # sections past the heading that introduces it).
+
+
     tex = re.sub(r"\\section\{", r"\\FloatBarrier\n\\section{", tex)
 
     with open(OUT_TEX, "w") as fh:
         fh.write(tex)
 
-    # --------------------------------------------------- Supplementary Info
+                                                                            
     washout_tab_placeholder = washout_table(s)
     rf_robustness_placeholder = rf_robustness_table()
     supp = rf"""%=======================================================================
@@ -1902,10 +1783,8 @@ mean in-sample rank.}}
 
 \end{{document}}
 """
-    # Float-drift fix (see OUT_TEX write, above) applied to the
-    # Supplementary too -- this is the document where it mattered most: many
-    # small tables/figures in quick succession were queuing floats several
-    # \section headings ahead of (or behind) the section that introduces them.
+
+
     supp = re.sub(r"\\section\{", r"\\FloatBarrier\n\\section{", supp)
 
     with open(OUT_SUPP_TEX, "w") as fh:

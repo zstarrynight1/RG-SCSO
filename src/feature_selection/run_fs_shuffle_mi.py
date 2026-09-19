@@ -1,31 +1,3 @@
-"""Can thiệp nhân quả lên relevance prior (Q1 review Priority 3) — kiểm định
-liệu claim "causally linked to relevance guidance" có đứng vững hay không.
-
-Ý TƯỞNG: size-fair top-MI enrichment (mục Mechanism trong bài chính) chỉ là
-BẰNG CHỨNG TƯƠNG QUAN — RG-SCSO chọn nhiều feature MI cao hơn ngẫu nhiên,
-nhưng không chứng minh MI THẬT SỰ là NGUYÊN NHÂN gây ra độ nhỏ gọn/accuracy
-quan sát được. Để kiểm định nhân quả thật, can thiệp trực tiếp lên CHÍNH
-ánh xạ relevance rồi xem hiệu năng có sụp đổ không:
-
-    RG-SCSO(MI thật)      : ρ_j = I(X_j;y)/H(y)              — baseline
-    RG-SCSO(MI xáo trộn)  : permute(ρ) giữa các feature       — phá vỡ ánh xạ
-                             feature<->relevance, GIỮ NGUYÊN phân phối ρ
-    RG-SCSO(MI đảo cực)   : 1 - ρ                              — feature liên
-                             quan thật thành "nhiễu" theo RMS và ngược lại
-
-Nếu MI thật > MI xáo trộn/đảo cực về accuracy VÀ độ nhỏ gọn một cách có ý
-nghĩa thống kê (Wilcoxon+Holm, so target = MI thật), claim nhân quả mới có
-cơ sở giữ trong bài; nếu KHÔNG khác biệt, "causal" phải hạ xuống "correlational".
-
-Giao thức KHỚP bảng chính: KNN wrapper, 5-fold CV, fitness = 0.99·err +
-0.01·tỉ_lệ, biên [-1,1], pop=30, iter=500, seed = BASE + run_id, 30 run, trên
-5 dataset đại diện (khớp tập ablation/robustness để nhất quán và tiết kiệm
-compute — mở rộng ra 18 dataset là bước tiếp theo nếu kết quả sơ bộ ủng hộ).
-
-Output: experiments/results_fs_shuffle_mi/fs_shuffle_mi_results.csv
-Chạy:   .venv/bin/python -m src.feature_selection.run_fs_shuffle_mi [--smoke]
-        [--datasets ...] [--runs N]
-"""
 
 from __future__ import annotations
 
@@ -54,10 +26,10 @@ RESULTS_CSV = os.path.join(OUTPUT_DIR, "fs_shuffle_mi_results.csv")
 
 SEARCH_LB, SEARCH_UB = -1.0, 1.0
 
-# Khớp tập ablation/robustness: đa dạng chiều/lớp/mẫu, tiết kiệm compute.
+                                                                         
 DEFAULT_DATASETS = ["Zoo", "Sonar", "WDBC", "ColonCancer", "Leukemia"]
 
-# algorithm-config -> prior method truyền cho RGSCSO(prior_method=...)
+                                                                      
 ALGOS = {
     "RG-SCSO-MI": "mi",
     "RG-SCSO-ShuffledMI": "shuffled_mi",

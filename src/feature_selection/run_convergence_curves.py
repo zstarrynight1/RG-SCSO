@@ -1,19 +1,3 @@
-"""Convergence curves (RG-SCSO_MASTER_FINAL_COMPLETE.md, item 24/Figure 5,
-also flagged 🟡6 in the "5 items quan trọng nhất") — mọi optimizer trong dự
-án này đã tự tính `convergence_curve` (best fitness mỗi vòng lặp) trong dict
-trả về của `.optimize()` / `run_mealpy_baseline()`, chỉ là không harness nào
-LƯU LẠI giá trị này trước đây (bị vứt bỏ sau mỗi run). File này KHÔNG đổi
-thuật toán nào, chỉ chạy vài run rồi ghi convergence_curve ra CSV.
-
-Quy mô: 3 dataset đại diện (thấp/trung/cao chiều: Zoo/WDBC/ColonCancer) x
-3 thuật toán (RG-SCSO, SCSO, AOA — 2 đối thủ gần nhất theo Table 2 ranking)
-x 5 run (đủ cho minh họa hội tụ, không phải claim thống kê nên không cần 30).
-
-Output: experiments/results_convergence/convergence_curves.csv
-        (columns: algorithm, dataset, run_id, iteration, fitness)
-Chạy:   .venv/bin/python -m src.feature_selection.run_convergence_curves
-        [--smoke] [--datasets ...] [--runs N]
-"""
 
 from __future__ import annotations
 
@@ -79,16 +63,21 @@ def _run_single(task: dict) -> list[dict]:
     elif algo == "SCSO":
         result = SCSO(obj_func, dim, SEARCH_LB, SEARCH_UB, POPULATION_SIZE,
                        MAX_ITERATION, seed).optimize()
-    else:  # AOA — mealpy baseline
+    else:                         
         result = run_mealpy_baseline(algo, obj_func, dim=dim, lb=SEARCH_LB,
                                       ub=SEARCH_UB, pop_size=POPULATION_SIZE,
                                       max_iter=MAX_ITERATION, seed=seed)
 
     curve = result["convergence_curve"]
+
+
+    nfe_curve = result.get("nfe_curve")
+    if nfe_curve is None:
+        nfe_curve = [POPULATION_SIZE * (it + 1) for it in range(len(curve))]
     return [
         {"algorithm": algo, "dataset": ds, "run_id": run_id, "iteration": it,
-         "fitness": float(f)}
-        for it, f in enumerate(curve)
+         "nfe": int(nfe), "fitness": float(f)}
+        for it, (f, nfe) in enumerate(zip(curve, nfe_curve))
     ]
 
 

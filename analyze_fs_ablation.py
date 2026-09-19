@@ -1,13 +1,3 @@
-"""Phân tích ablation: mỗi removal (NoRMS/NoORL/NoUMR) vs Full, paired theo seed
-(run_id) trên từng dataset. Wilcoxon signed-rank + Holm + Cohen's d.
-
-Quy tắc (Falsifiability, spec 8.1/4.2): thành phần LOAD-BEARING nếu gỡ ra làm
-accuracy GIẢM CÓ Ý NGHĨA (p_holm<0.05, delta>0) trên >=1 dataset. Nếu gỡ ra
-KHÔNG bao giờ giảm significant -> KHÔNG load-bearing -> CẮT (không giữ trang trí).
-
-Output: experiments/results_fs/fs_ablation_summary.csv
-Chạy: .venv/bin/python analyze_fs_ablation.py
-"""
 
 from __future__ import annotations
 
@@ -37,9 +27,9 @@ def main() -> None:
                     .sort_values("run_id")["accuracy"].to_numpy())
             rem = (df[(df.config_name == removal) & (df.dataset == ds)]
                    .sort_values("run_id")["accuracy"].to_numpy())
-            delta = full - rem  # >0 => gỡ thành phần làm TỆ đi
+            delta = full - rem                                 
             if np.allclose(delta, 0.0):
-                p = 1.0  # mọi run bằng nhau (vd Leukemia bão hòa)
+                p = 1.0                                           
             else:
                 p = wilcoxon(full, rem, zero_method="wilcox").pvalue
             rows.append(dict(

@@ -1,13 +1,3 @@
-"""One-shot appearance-order reference renumber for RG-SCSO_IEEE_draft.docx.
-
-Confirmed by user: renumber the docx so [n] follows FIRST-APPEARANCE order in the
-docx itself (true IEEE), and slot in 3 new refs. This diverges docx numbering from
-the old .tex/PDF (which followed tex CITE_ORDER) — accepted.
-
-Does NOT touch any OMML/equation. Body cites are plain text within single runs
-(verified). Reference entries are manual "[n]" labels. Backup already at
-/tmp/RG-SCSO_IEEE_draft.PRE_RENUMBER.docx.
-"""
 import copy
 import re
 
@@ -17,13 +7,12 @@ from docx.oxml.ns import nsdecls, qn
 
 SRC = "RG-SCSO_IEEE_draft.docx"
 
-# old -> new for the 19 existing refs (derived from appearance sequence
-# 1,2,3,4,5,6,7,8,12,[Islam],[Teng],14,15,16,17,13,[Ludwig],9,10,11,18,19)
+
 REMAP = {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8,
          9: 18, 10: 19, 11: 20, 12: 9, 13: 16, 14: 12,
          15: 13, 16: 14, 17: 15, 18: 21, 19: 22}
 
-# new reference LIST order: (kind, key). old N -> entry object; new -> build it.
+                                                                                
 NEW_ISLAM = ('new', 'islam')
 NEW_TENG = ('new', 'teng')
 NEW_LUDWIG = ('new', 'ludwig')
@@ -93,17 +82,17 @@ def main():
     ref_paras = [p for p in ps[ref_start:] if re.match(r'\s*\[\d+\]', p.text)]
     assert len(ref_paras) == 19, f"expected 19 refs, got {len(ref_paras)}"
 
-    # locate the two prose insertion-point paragraphs by content (robust to index)
+                                                                                  
     p_transfer = next(p for p in ps if p.text.startswith(
         "The transfer function itself has been studied"))
     p_priors = next(p for p in ps if p.text.startswith(
         "Two further ingredients inform our design"))
 
-    # template for prose paragraphs = a Normal body paragraph
+                                                             
     src_pPr = p_transfer._p.find(qn('w:pPr'))
     src_rPr = p_transfer.runs[0]._r.find(qn('w:rPr'))
 
-    # ---- STEP 1: remap body cites (everything before References) ----
+                                                                       
     remapped = 0
     for p in ps[:ref_start]:
         for r in p.runs:
@@ -114,7 +103,7 @@ def main():
                     remapped += 1
     print("STEP1 body runs remapped:", remapped)
 
-    # ---- STEP 2: insert 2 prose paragraphs ----
+                                                 
     def make_prose(after_p, text):
         newp = parse_xml(f'<w:p {nsdecls("w")}></w:p>')
         newp.append(copy.deepcopy(src_pPr))
@@ -126,14 +115,14 @@ def main():
         newp.append(r)
         after_p._p.addnext(newp)
 
-    make_prose(p_transfer, PROSE_ISLAM)   # after II-B Transfer Functions
-    make_prose(p_priors, PROSE_LUDWIG)    # after II-D Relevance Priors
+    make_prose(p_transfer, PROSE_ISLAM)                                  
+    make_prose(p_priors, PROSE_LUDWIG)                                 
     print("STEP2 inserted 2 prose paragraphs")
 
-    # ---- STEP 3: reorder + relabel reference list, insert 3 new entries ----
-    old_ps = [p._p for p in ref_paras]          # index 0..18 == old ref 1..19
+                                                                              
+    old_ps = [p._p for p in ref_paras]                                        
     parent = old_ps[0].getparent()
-    anchor = old_ps[0].getprevious()            # the "References" heading _p
+    anchor = old_ps[0].getprevious()                                         
     for op in old_ps:
         parent.remove(op)
 
@@ -164,7 +153,7 @@ def main():
         prev = _p
     print("STEP3 reference list rebuilt:", len(ordered), "entries")
 
-    # ---- verify equations untouched ----
+                                          
     eq_after = count_eq(doc)
     print("equations before:", eq_before, "after:", eq_after,
           "-> DELTA", (eq_after[0] - eq_before[0], eq_after[1] - eq_before[1]))

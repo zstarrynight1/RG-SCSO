@@ -1,21 +1,3 @@
-"""R2 PILOT — kiểm định go/no-go cho RG-SCSO TRƯỚC khi mở full run.
-
-QUAN TRỌNG (spec 4.2 + nguyên tắc "làm 1 lần duy nhất"): đây là PILOT, KHÔNG
-phải số báo cáo trong paper. Mục đích duy nhất: quyết định có đủ tín hiệu để
-chạy full experiment hay không. Số liệu chính thức của paper đến từ full run
-`run_feature_selection.py` dưới protocol đã khóa (EXPERIMENT_PROTOCOL.md).
-
-Thiết kế: 5 dataset (2 gene high-dim + 3 spread) × PILOT_RUNS run độc lập, so
-RG-SCSO với SCSO (base) và AOA (đang dẫn FS). Dùng ĐÚNG config gốc (pop=30,
-max_iter=500, seed=RANDOM_SEED_BASE+run_id, cùng fitness/CV) để pilot có tính
-dự báo cho full run.
-
-STOP-GATE ĐĂNG KÝ TRƯỚC: RG-SCSO phải vượt CẢ SCSO LẪN AOA (theo mean accuracy)
-trên >= GATE_MIN / 5 dataset. Không đạt -> DỪNG, báo user, chỉnh THIẾT KẾ cơ
-chế (không tinh chỉnh seed/param), rồi validate lại.
-
-Chạy: python -m src.feature_selection.run_fs_pilot
-"""
 
 from __future__ import annotations
 
@@ -44,7 +26,7 @@ SEARCH_LB, SEARCH_UB = -1.0, 1.0
 PILOT_DATASETS = ["Leukemia", "ColonCancer", "Sonar", "WDBC", "Zoo"]
 PILOT_ALGORITHMS = ["RG-SCSO", "SCSO", "AOA"]
 PILOT_RUNS = 10
-GATE_MIN = 3  # RG-SCSO phải vượt cả SCSO lẫn AOA trên >= GATE_MIN/5 dataset
+GATE_MIN = 3                                                                
 
 
 def _load(name: str) -> tuple[np.ndarray, np.ndarray]:
@@ -92,7 +74,6 @@ def _run_single(algorithm: str, dataset: str, run_id: int) -> dict:
 
 
 def evaluate_gate(df: pd.DataFrame) -> bool:
-    """In bảng mean accuracy và kiểm tra stop-gate. Trả về True nếu ĐẠT."""
     mean_acc = df.groupby(["dataset", "algorithm"])["accuracy"].mean().unstack()
     mean_nf = df.groupby(["dataset", "algorithm"])["n_selected_features"].mean().unstack()
     print("\n=== MEAN ACCURACY (pilot) ===")

@@ -1,29 +1,3 @@
-"""Ablation cô lập VỊ TRÍ tiêm tín hiệu relevance (Q1 review Priority 2 / W7)
-— lỗ hổng causal được đánh giá là LỚN NHẤT của bài: hiện tại bài chỉ so sánh
-*relevance-guided binarization* vs. *relevance-agnostic binarization*, chưa
-trả lời được câu hỏi cốt lõi mà bài tuyên bố: "đưa MI vào binarization
-operator có thực sự quan trọng hơn đưa MI vào initialization hay objective
-hay không?"
-
-CHUỖI 5 BƯỚC (đúng theo đề xuất review, Priority 2):
-    1. Random init,      no RMS   (= NoImprovement, đã có trong ablation chính)
-    2. MI-guided init,   no RMS   (MỚI — tín hiệu ở INITIALIZATION)
-    3. MI-weighted obj.,  no RMS  (MỚI — tín hiệu ở OBJECTIVE)
-    4. MI-guided transfer (RMS), no UMR (= NoUMR, đã có trong ablation chính)
-    5. RMS + UMR          (= Full, đã có trong ablation chính)
-
-Nếu bước #2 hoặc #3 đạt độ nhỏ gọn tương đương bước #4/#5, novelty trung tâm
-của bài ("đặt tín hiệu ở binarization interface quan trọng hơn init/objective")
-sẽ suy yếu đáng kể — đây CHÍNH LÀ điều thí nghiệm này kiểm định trung thực,
-không phải điều được giả định trước.
-
-Giao thức khớp bảng ablation chính: KNN, 5-fold CV, seed = BASE + run_id, 30
-run, trên 5 dataset đại diện (Leukemia, ColonCancer, Sonar, WDBC, Zoo).
-
-Output: experiments/results_fs_signal_position/fs_signal_position_results.csv
-Chạy:   .venv/bin/python -m src.feature_selection.run_fs_signal_position
-        [--smoke] [--datasets ...] [--runs N]
-"""
 
 from __future__ import annotations
 
@@ -46,7 +20,7 @@ RESULTS_CSV = os.path.join(OUTPUT_DIR, "fs_signal_position_results.csv")
 SEARCH_LB, SEARCH_UB = -1.0, 1.0
 DEFAULT_DATASETS = ["Leukemia", "ColonCancer", "Sonar", "WDBC", "Zoo"]
 
-# step_name -> kwargs cho RGSCSOSignalPosition (thứ tự khớp đúng 5 bước review).
+                                                                                
 STEPS = {
     "1_RandomInit_NoRMS": dict(injection="transfer", use_rms=False, use_orl=False, use_umr=False),
     "2_MIInit_NoRMS": dict(injection="init", use_orl=False, use_umr=False),

@@ -1,20 +1,3 @@
-"""Ablation study cho RG-SCSO trên feature selection — chứng minh mỗi thành
-phần (C1/C2/C3) LOAD-BEARING (Falsifiability Test của Q1_BLUEPRINT).
-
-5 cấu hình (bật/tắt độc lập 3 thành phần quanh cấu hình Full):
-    Full          : RMS on,  ORL on,  UMR on
-    NoRMS         : RMS off (V-shaped thuần, không relevance) — C1
-    NoORL         : ORL off (prior tĩnh thuần, không học online) — C2
-    NoUMR         : UMR off (không memetic refinement) — C3
-    NoImprovement : tất cả off (≈ binary SCSO V-shaped trần)
-
-Mỗi cấu hình × mỗi dataset × NUM_INDEPENDENT_RUNS run. Nếu gỡ 1 thành phần mà
-accuracy KHÔNG giảm có ý nghĩa thống kê -> thành phần đó KHÔNG load-bearing ->
-theo nguyên tắc nghiêm khắc, CẮT BỎ khỏi thuật toán cuối (không giữ trang trí).
-
-Output: experiments/results_fs/fs_ablation_results.csv
-Chạy: python -m src.feature_selection.run_fs_ablation
-"""
 
 from __future__ import annotations
 
@@ -35,7 +18,7 @@ RESULTS_CSV = os.path.join(OUTPUT_DIR, "fs_ablation_results.csv")
 
 SEARCH_LB, SEARCH_UB = -1.0, 1.0
 
-# Dataset đại diện (spread độ chiều): 2 gene high-dim + 3 low/mid.
+                                                                  
 ABLATION_DATASETS = ["Leukemia", "ColonCancer", "Sonar", "WDBC", "Zoo"]
 
 ABLATION_CONFIGS = {

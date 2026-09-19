@@ -1,25 +1,3 @@
-"""Nested cross-validation pilot (Q1 review Priority 6) — chuẩn mạnh hơn cho
-một wrapper metaheuristic so với hold-out 80/20 đơn lẻ hiện tại: outer CV ->
-inner FS optimization (search + fitness) -> outer test, lặp lại trên MỌI outer
-fold thay vì một lần chia duy nhất, để loại trừ khả năng kết quả held-out phụ
-thuộc vào MAY RỦI của đúng 1 lần chia 80/20.
-
-THIẾT KẾ (pilot, KHÔNG thay thế held-out 80/20 chính — bổ sung xác nhận):
-    outer : StratifiedKFold k=5 (mỗi fold lượt lần lượt làm test, 4 fold còn
-            lại làm train — KHÔNG chỉ 1 lần 80/20).
-    inner : y hệt bảng chính — fitness = KNN 5-fold CV TRÊN CHÍNH outer-train
-            (RG-SCSO: prior MI cũng CHỈ tính trên outer-train, không leak).
-    scope : 3 dataset đại diện (Zoo thấp chiều, WDBC trung bình, ColonCancer
-            gene-expression cao chiều) x RG-SCSO/SCSO/AOA x 5 run — quy mô
-            PILOT có chủ đích (mỗi run đã tốn 5x compute so với held-out 1-split
-            vì phải chạy search TRÊN MỌI outer fold); mở rộng ra 18 dataset x
-            30 run là bước tiếp theo nếu pilot cho tín hiệu nhất quán với
-            held-out 80/20 đã có.
-
-Output: experiments/results_fs_nested_cv/fs_nested_cv_results.csv
-Chạy:   .venv/bin/python -m src.feature_selection.run_fs_nested_cv [--smoke]
-        [--datasets ...] [--runs N] [--outer-k K]
-"""
 
 from __future__ import annotations
 

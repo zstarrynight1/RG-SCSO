@@ -1,4 +1,3 @@
-"""Unit test cơ bản cho ECL-SCSO (Phase 1, mục 3.5 trong PROJECT_SPEC.md)."""
 
 from __future__ import annotations
 
@@ -17,7 +16,6 @@ SEED = 42
 
 
 def sphere(x: np.ndarray) -> float:
-    """f(x) = sum(x_i^2), global minimum f(0,...,0) = 0."""
     return float(np.sum(x**2))
 
 

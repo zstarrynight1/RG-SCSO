@@ -1,38 +1,3 @@
-"""Phase 3 — chạy feature selection: ECL-SCSO + SCSO gốc + 9 baseline (mealpy)
-trên 18 dataset UCI đã chuẩn hóa (`data/processed/*.csv`), mỗi cặp
-(algorithm, dataset) chạy NUM_INDEPENDENT_RUNS lần độc lập, seed =
-RANDOM_SEED_BASE + run_id để reproducible.
-
-GHI CHÚ THIẾT KẾ QUAN TRỌNG:
-    - Mỗi đánh giá fitness (KNN + 5-fold CV) tốn vài-trăm ms đến ~90ms tùy
-      dataset — ĐẮT hơn nhiều so với hàm benchmark toán học ở Phase 2. Ước
-      tính tổng thời gian cho toàn bộ grid (11 thuật toán x 18 dataset x 30
-      run, pop=30, max_iter=500 đúng config.py) là ~475 giờ CPU (~59 giờ
-      wall-clock với 8 worker song song, ~2.5 ngày). Đã xác nhận với người
-      dùng chạy đúng config gốc trong nền nhiều ngày.
-    - Vì 1 dataset (WaveformEW, n=5000) có thể tốn ~23 phút CHO MỖI run, nếu
-      gộp 30 run vào 1 task multiprocessing thì 1 task có thể chiếm 1 worker
-      suốt ~11.6 giờ, làm mất cân bằng tải. Do đó task được chia ở granularity
-      (algorithm, dataset, run_id) — mỗi task chỉ chạy 1 seed — để 8 worker
-      được tận dụng đều hơn và tiến độ ghi CSV theo từng dòng (resilient nếu
-      bị ngắt giữa chừng, không mất hết kết quả).
-    - Search space liên tục cho mỗi dataset: dim = n_features, lb=-1, ub=1
-      (convention phổ biến trong literature binary-wrapper-FS qua sigmoid
-      transfer function, ví dụ binary GWO của Emary et al.) — KHÔNG có trong
-      spec gốc nên ghi rõ ở đây làm tài liệu đối chiếu.
-
-Output (ghi tăng dần — append từng dòng ngay khi 1 task xong, KHÔNG đợi toàn
-bộ job hoàn tất, để không mất dữ liệu nếu job bị ngắt giữa chừng):
-    experiments/results_fs/fs_results.csv
-        cột: algorithm, dataset, run_id, fitness, accuracy,
-             n_selected_features, n_total_features, runtime_seconds
-    experiments/results_fs/fs_summary.csv (tính lại từ fs_results.csv sau khi
-        toàn bộ job xong, hoặc chạy riêng `--summary-only` để tính từ kết quả
-        hiện có bất kỳ lúc nào trong lúc job đang chạy)
-
-Chạy: python -m src.feature_selection.run_feature_selection
-      python -m src.feature_selection.run_feature_selection --summary-only
-"""
 
 from __future__ import annotations
 
@@ -70,10 +35,7 @@ SUMMARY_CSV = os.path.join(OUTPUT_DIR, "fs_summary.csv")
 SEARCH_LB = -1.0
 SEARCH_UB = 1.0
 
-# Bộ thuật toán RÚT GỌN (Phase 3 redesign): giữ base SCSO + các baseline mạnh/gần
-# đây, bỏ nhóm yếu thua nhất quán (GA, WOA, HHO, SSA, OOA). Kết quả cũ của
-# SCSO/PSO/GWO/AOA/COA trên 18 dataset trong fs_results.csv TÁI DÙNG được (cùng
-# protocol) — runner tự bỏ qua task đã xong, nên chỉ RG-SCSO cần chạy mới.
+
 MEALPY_BASELINES = ["PSO", "GWO", "AOA", "COA", "RIME"]
 ALL_ALGORITHMS = ["RG-SCSO", "SCSO"] + MEALPY_BASELINES
 
@@ -108,11 +70,8 @@ def _run_single_task(algorithm: str, dataset: str, run_id: int) -> dict:
     obj_func = make_fitness_function(X, y, seed=seed)
 
     if algorithm == "RG-SCSO":
-        # Binary-native: chấm trực tiếp trên mask, chốt kết quả từ best_mask
-        # (KHÔNG qua binarize_threshold của vị trí liên tục như baseline).
-        # RG-SCSO cuối = 2 thành phần (RMS + UMR): dùng default use_orl=False của
-        # RGSCSO — C2/ORL đã CẮT sau ablation R4 (không load-bearing). Số main run
-        # vì thế KHỚP đúng thuật toán mô tả trong bài (bulletproof cho reviewer).
+
+
         def eval_mask(mask: np.ndarray) -> float:
             return evaluate_binary_mask(mask, X, y, seed=seed)["fitness"]
 
@@ -165,8 +124,6 @@ def _run_single_task(algorithm: str, dataset: str, run_id: int) -> dict:
 
 
 def _existing_completed_keys() -> set[tuple[str, str, int]]:
-    """Đọc fs_results.csv hiện có (nếu job được chạy lại sau khi bị ngắt) để
-    bỏ qua các task đã hoàn thành, không chạy lại từ đầu."""
     if not os.path.exists(RESULTS_CSV):
         return set()
     df = pd.read_csv(RESULTS_CSV)

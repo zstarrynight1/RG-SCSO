@@ -1,16 +1,3 @@
-"""Bộ hàm benchmark dùng cho Phase 2.
-
-Ưu tiên CEC2017 qua thư viện `opfunu` (hỗ trợ tốt bằng Python thuần, đã xác
-minh cài đặt + chạy được trên máy này). Nếu `opfunu` không import được,
-fallback dùng 10 hàm benchmark cổ điển (Sphere, Rastrigin, Ackley, Griewank,
-Rosenbrock, Schwefel, Zakharov, Michalewicz, Levy, Dixon-Price).
-
-CEC2017 chính thức gồm 29 hàm (F1, F3-F30 theo đánh số trong technical
-report gốc — F2 bị loại khỏi bộ vì hành vi không ổn định ở dimension cao).
-`opfunu` re-index liền mạch các hàm còn lại thành F1..F29, KHÔNG có F30 —
-đây không phải lỗi, mà do cách đánh số lại sau khi loại F2 (đã xác minh: gọi
-F1..F29 đều chạy được, F30 không tồn tại trong thư viện).
-"""
 
 from __future__ import annotations
 
@@ -36,7 +23,7 @@ class BenchmarkFunction:
     dim: int
     lb: np.ndarray
     ub: np.ndarray
-    f_global: float  # giá trị tối ưu toàn cục lý thuyết (None nếu không xác định cụ thể theo dim)
+    f_global: float                                                                               
 
 
 def using_cec2017() -> bool:
@@ -102,7 +89,7 @@ def _build_classic_functions(dim: int) -> dict[str, BenchmarkFunction]:
         i = np.arange(2, len(x) + 1)
         return float((x[0] - 1.0) ** 2 + np.sum(i * (2.0 * x[1:] ** 2 - x[:-1]) ** 2))
 
-    # (name, func, lb, ub, f_global)
+                                    
     specs = [
         ("Sphere", sphere, -100.0, 100.0, 0.0),
         ("Rastrigin", rastrigin, -5.12, 5.12, 0.0),
@@ -111,7 +98,7 @@ def _build_classic_functions(dim: int) -> dict[str, BenchmarkFunction]:
         ("Rosenbrock", rosenbrock, -5.0, 10.0, 0.0),
         ("Schwefel", schwefel, -500.0, 500.0, 0.0),
         ("Zakharov", zakharov, -5.0, 10.0, 0.0),
-        ("Michalewicz", michalewicz, 0.0, np.pi, None),  # global min phụ thuộc dim
+        ("Michalewicz", michalewicz, 0.0, np.pi, None),                            
         ("Levy", levy, -10.0, 10.0, 0.0),
         ("DixonPrice", dixon_price, -10.0, 10.0, 0.0),
     ]
@@ -129,16 +116,12 @@ def _build_classic_functions(dim: int) -> dict[str, BenchmarkFunction]:
 
 
 def get_function_names(dim: int = 30) -> list[str]:
-    """Danh sách tên hàm benchmark (rẻ — KHÔNG khởi tạo object nặng), dùng để
-    liệt kê task cho multiprocessing worker (mỗi worker tự build lại function
-    bằng `build_function`, tránh phải pickle object/closure qua process)."""
     if _HAS_OPFUNU:
         return [f"CEC2017_F{i}" for i in range(1, N_CEC2017_FUNCTIONS + 1)]
     return list(_build_classic_functions(dim=dim).keys())
 
 
 def build_function(name: str, dim: int = 30) -> BenchmarkFunction:
-    """Tạo (hoặc tái tạo) 1 BenchmarkFunction từ tên."""
     if name.startswith("CEC2017_F"):
         if not _HAS_OPFUNU:
             raise RuntimeError("opfunu chưa được cài, không thể build hàm CEC2017.")
