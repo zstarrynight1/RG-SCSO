@@ -694,7 +694,7 @@ def heldout_combined_table(hs: dict) -> str:
         "training split only; dataset feature counts are given in "
         "Supplementary Table~S1). Standard deviations are omitted here for "
         "compactness; per-run raw results, from which they can be "
-        "recomputed exactly, are in the public repository (Data "
+        "recomputed exactly, are in the repository (Data "
         "availability). \\textbf{Bold} = best accuracy per dataset."
     )
     return (

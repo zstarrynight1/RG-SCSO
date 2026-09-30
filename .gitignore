@@ -49,3 +49,10 @@ sitecustomize_macos27.py
 # Internal revision checklist and local backups -- not for the public repo.
 RG-SCSO_IJCS_Master_Fix_Checklist_v2.md
 *.bak
+
+# SOP academic-audit process reports & workflow (internal self-review, not
+# part of the public reproducibility package).
+RG-SCSO_IJCS_SOP1_AUDIT_REPORT_*.md
+00_MASTER_WORKFLOW_A-Z.md
+SOP_1_*.md
+*.bak2

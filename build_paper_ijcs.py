@@ -468,7 +468,8 @@ the broader recent SCSO literature that adds chaotic initialization,
 differential mutation, or hybridized search
 strategies~\cite{{imscso2024,mescso2025,scsolensobl2024,improvedscso2024}}
 improves continuous-space search dynamics while leaving the binarization
-interface itself untouched -- none of these works, to our knowledge, makes
+interface itself untouched -- across the SCSO-family literature we screened,
+we found none that makes
 the binarization operator itself per-feature and relevance-aware.
 Table~\ref{{tab:litpos}} below positions each of these works against this
 claim directly.
@@ -830,7 +831,11 @@ Information, is directionally consistent with the single-split held-out
 estimate above, though underpowered at five runs per cell to confirm
 significance independently.
 
-External validity has its own limits: the benchmark spans
+External validity has its own limits. Generalization here is assessed in the
+sense appropriate to a supervised feature-selection benchmark -- held-out
+instances, cross-classifier, cross-prior, and cross-dimensionality evaluation;
+unseen-class generalization is not an applicable estimand for this task and is
+therefore not tested. The benchmark spans
 {feat_min} to {feat_max} features across biomedical, gene-expression, and
 categorical domains drawn from a single curated family of UCI and standard
 microarray sets. Its top end ({feat_max} features, Leukemia) is still an order
@@ -1177,8 +1182,13 @@ best mask~\cite{{neri}} and the flip is kept only if fitness improves.
 \subsection{{Algorithm and computational cost}}
 Every fitness evaluation, whether from population moves, memetic probes, or
 initialization, is counted against a single budget $\mathrm{{max\_nfe}}=\mathrm{{pop\_size}}\times
-\mathrm{{max\_iter}}=15000$, identical to the baselines, so UMR grants no extra
-evaluations (Algorithm~\ref{{alg:main}}).
+\mathrm{{max\_iter}}=15000$, so UMR grants no extra evaluations
+(Algorithm~\ref{{alg:main}}). RG-SCSO is hard-capped at exactly this figure,
+whereas the population-based baselines evaluate the initial population and then
+$T_{{\max}}$ iterations, i.e.\ $30\times501=15030$ evaluations by the standard
+mealpy convention; RG-SCSO therefore receives 30 \emph{{fewer}} evaluations than
+every baseline, never more, so its budget is conservative rather than
+advantageous.
 
 The per-iteration cost is dominated by the $N+K$ wrapper evaluations, each a
 KNN fit under fixed folds; the mutual-information prior adds a one-time
@@ -1238,15 +1248,23 @@ Not applicable. This study uses only publicly available benchmark datasets
 (UCI and standard microarray sets) and involves no human participants,
 human data, or animals.
 
+\subsection*{{Use of AI tools}}
+The authors used a generative AI assistant for language editing, code
+refactoring, and formatting of tables and figures. All experimental design,
+implementation, results, and scientific claims were produced and verified by
+the authors, who take full responsibility for the content of this manuscript.
+
 \subsection*{{Data Availability Statement}}
 The datasets analysed in this study are publicly available benchmarks (UCI
 and standard microarray sets); Supplementary Table~S1 lists each source. The
 source code, the locked preregistration, the per-run seeds, a complete
-hyperparameter table, a pinned dependency list, and the raw per-run results
-are available for review in an anonymized repository
-(\url{{https://anonymous.4open.science/r/RG-SCSO}}) and will be deposited in a
-public, citable repository with a permanent Zenodo DOI upon acceptance,
-permitting bit-for-bit reproduction of every number reported in this paper.
+hyperparameter table, a pinned dependency list (\texttt{{requirements.txt}}),
+an MIT \texttt{{LICENSE}}, and the raw per-run results are available for review
+in an anonymized repository (\url{{https://anonymous.4open.science/r/RG-SCSO}})
+at the manuscript's release commit, and will be deposited in a public, citable
+repository with a permanent Zenodo DOI upon acceptance, permitting
+bit-for-bit reproduction of every number reported in this paper. The exact
+software environment is pinned in \texttt{{requirements.txt}} (Python 3.10).
 
 % Note: sn-jnl.cls already sets \bibliographystyle{{sn-basic}} internally, so
 % an explicit \bibliographystyle here would trigger BibTeX's "Illegal, another

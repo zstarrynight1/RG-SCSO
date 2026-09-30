@@ -945,8 +945,9 @@ def build() -> None:
               "search strategies "
               f"{_c('imscso2024','mescso2025','scsolensobl2024','improvedscso2024')} "
               "improves continuous-space search dynamics while leaving the "
-              "binarization interface itself untouched, and none of these "
-              "works, to our knowledge, makes the binarization operator "
+              "binarization interface itself untouched; across the "
+              "SCSO-family literature we screened, we found none that makes "
+              "the binarization operator "
               "itself per-feature and relevance-aware. Table 1 below "
               "positions each of these works against this claim directly.")
     doc.add_heading("2.4 Literature-positioning summary", level=2)
@@ -1399,7 +1400,12 @@ def build() -> None:
               "with the single-split held-out estimate above, though "
               "underpowered at five runs per cell to confirm significance "
               "independently.")
-    para(doc, "External validity has its own limits: the "
+    para(doc, "External validity has its own limits. Generalization here is "
+              "assessed in the sense appropriate to a supervised "
+              "feature-selection benchmark — held-out instances, "
+              "cross-classifier, cross-prior, and cross-dimensionality "
+              "evaluation; unseen-class generalization is not an applicable "
+              "estimand for this task and is therefore not tested. The "
               "benchmark spans "
               f"{feat_min} to {feat_max} features across biomedical, "
               "gene-expression, and categorical domains drawn from a "
@@ -1861,17 +1867,28 @@ def build() -> None:
               "benchmark datasets (UCI and standard microarray sets) and "
               "involves no human participants, human data, or animals.")
 
+    doc.add_heading("Use of AI tools", level=2)
+    para(doc, "The authors used a generative AI assistant for language "
+              "editing, code refactoring, and formatting of tables and "
+              "figures. All experimental design, implementation, results, and "
+              "scientific claims were produced and verified by the authors, "
+              "who take full responsibility for the content of this "
+              "manuscript.")
+
     doc.add_heading("Data Availability Statement", level=2)
     para(doc, "The datasets analysed in this study are publicly available "
               "benchmarks (UCI and standard microarray sets); Supplementary "
               "Table S1 lists each source. The source code, the locked "
               "preregistration, the per-run seeds, a complete hyperparameter "
-              "table, a pinned dependency list, and the raw per-run results "
-              "are available for review in an anonymized repository "
-              "(https://anonymous.4open.science/r/RG-SCSO) and will be "
-              "deposited in a public, citable repository with a permanent "
-              "Zenodo DOI upon acceptance, permitting bit-for-bit reproduction "
-              "of every number reported in this paper.")
+              "table, a pinned dependency list (requirements.txt), an MIT "
+              "LICENSE, and the raw per-run results are available for review "
+              "in an anonymized repository "
+              "(https://anonymous.4open.science/r/RG-SCSO) at the "
+              "manuscript's release commit, and will be deposited in a public, "
+              "citable repository with a permanent Zenodo DOI upon acceptance, "
+              "permitting bit-for-bit reproduction of every number reported in "
+              "this paper. The exact software environment is pinned in "
+              "requirements.txt (Python 3.10).")
 
     add_references_asoc(doc)
     _linkify_citations(doc, len(ASOC_CITE_ORDER))

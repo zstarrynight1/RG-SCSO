@@ -70,11 +70,23 @@ python -m src.feature_selection.run_fs_heldout
 # Regenerate every figure from the experiment CSVs
 python make_figures.py
 
-# Regenerate the manuscript (LaTeX + Supplementary Information, and the
-# Word version actually submitted)
-python build_paper_asoc.py
-python build_paper_asoc_docx.py
+# Regenerate the IJCS manuscript (LaTeX + Supplementary + Word) from the
+# experiment CSVs. On macOS 26/27, scipy's prebuilt Fortran extensions fail
+# to load; run the generators through the non-destructive wrapper, which
+# stubs only those unused extensions (Wilcoxon/Friedman results are unaffected):
+python build_run_macos27.py build_paper_ijcs.py        # -> .tex + Supplementary
+python build_run_macos27.py build_paper_ijcs_docx.py   # -> generator .docx
+# then compile the PDF (tectonic or Overleaf):
+tectonic RG-SCSO_IJCS.tex && tectonic RG-SCSO_IJCS_Supplementary.tex
 ```
+
+> **Note on the submission `.docx`.** `RG-SCSO_IJCS.docx` as submitted has been
+> **hand-finalized in Word** — its 183 equations were converted to native Word
+> equation objects, and margins/justification/hyphenation were set for the
+> Springer template. `build_paper_ijcs_docx.py` therefore reproduces the *text
+> and tables* but **not** the hand-edited equation rendering; the LaTeX/PDF
+> (`build_paper_ijcs.py` → `RG-SCSO_IJCS.pdf`) is the fully reproducible source
+> of record. Treat `RG-SCSO_IJCS.docx` as a frozen manual artifact.
 
 Each harness supports a `--smoke` flag for a fast wiring check (1-2 runs,
 not a result) before committing to a full run.
@@ -95,5 +107,4 @@ not a result) before committing to a full run.
 
 ## License
 
-No license file has been added yet. The authors intend to add one (e.g. MIT)
-before the repository is made public upon acceptance.
+Released under the MIT License; see [`LICENSE`](LICENSE).

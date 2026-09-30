@@ -361,7 +361,7 @@ def _add_heldout_combined_table(doc, _hs) -> None:
                  "fitness fit on the 80% training split only; dataset "
                  "feature counts are given in Supplementary Table S1). "
                  "Per-run raw results, from which every figure here can be "
-                 "recomputed exactly, are in the public repository (Data "
+                 "recomputed exactly, are in the repository (Data "
                  "availability). "
                  "Bold = best accuracy per dataset.")
 
