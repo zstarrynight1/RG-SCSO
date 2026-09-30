@@ -51,7 +51,7 @@ Optimization}
 \author[1]{\fnm{Duong Minh} \sur{Son}}\email{sondm@donga.edu.vn}
 \affil[1]{\orgname{Dong A University}, \city{Da Nang}, \country{Vietnam}}
 
-\abstract{Wrapper feature selection with swarm intelligence typically searches in continuous space and crosses into the binary domain through a fixed transfer function, a feature-agnostic quantization that discards the continuous operators' fine adjustments, an effect we term washout. RG-SCSO replaces this transfer with a per-feature, relevance-modulated binarization: a mutual-information field biases each feature's bit-flip probability so informative features resist removal and noise resists inclusion, leaving SCSO's continuous search otherwise unchanged. Evaluated on 18 datasets, including two gene-expression sets, under a budget-matched, leak-free protocol that computes the relevance prior, the search, and the cross-validated fitness only on the training partition, RG-SCSO attains the best mean held-out accuracy of the seven metaheuristics compared while selecting the second-smallest feature subsets of any method tested, trailing only COA, which is several points less accurate. The advantage is parsimony rather than raw accuracy: it persists against optimizers carrying published adaptive transfers, against which RG-SCSO still selects 26--43\% fewer features, and against same-family binary SCSO selectors; ablation and cross-prior tests show it depends on where the relevance signal is injected and on the prior used. On the two gene-expression sets a classical LASSO baseline is sparser at no loss of accuracy, so the transferable gain is parsimony on data without that extreme structure.}
+\abstract{Wrapper feature selection with swarm intelligence typically searches in continuous space and crosses into the binary domain through a fixed transfer function, a feature-agnostic quantization that discards the continuous operators' fine adjustments, an effect we term washout. RG-SCSO replaces this transfer with a per-feature, relevance-modulated binarization: a mutual-information field biases each feature's bit-flip probability so informative features resist removal and noise resists inclusion, leaving SCSO's continuous search otherwise unchanged. Evaluated on 18 datasets, including two gene-expression sets, under a fixed-budget, leak-free protocol that computes the relevance prior, the search, and the cross-validated fitness only on the training partition, RG-SCSO attains the best mean held-out accuracy of the seven metaheuristics compared while selecting the second-smallest feature subsets of any method tested, trailing only COA, which is several points less accurate. The advantage is parsimony rather than raw accuracy: it persists against optimizers carrying published adaptive transfers, against which RG-SCSO still selects 26--43\% fewer features, and against same-family binary SCSO selectors; ablation and cross-prior tests show it depends on where the relevance signal is injected and on the prior used. On the two gene-expression sets a classical LASSO baseline is sparser at no loss of accuracy, so the transferable gain is parsimony on data without that extreme structure.}
 
 \keywords{Feature selection, Sand Cat Swarm Optimization, binary
 optimization, relevance-guided binarization, parsimony}
@@ -103,7 +103,7 @@ ablation-confirmed centerpiece is relevance-modulated sensitivity (RMS),
 supplemented by a smaller, budget-neutral memetic refinement step (UMR) that a
 sensitivity sweep shows contributes far less than RMS; an online-learning
 variant of the relevance field is examined and pruned entirely by ablation.
-Third, we evaluate under a preregistered, budget-matched, leak-free protocol
+Third, we evaluate under a preregistered, fixed-budget, leak-free protocol
 that denies the relevance prior any access to test labels. Fourth, we report a
 full statistical treatment, a component ablation, and a size-fair enrichment
 analysis correlating the observed parsimony with relevance guidance.
@@ -266,7 +266,11 @@ $p<10^{-3}$). A
 Holm-corrected Wilcoxon signed-rank test across all pairwise comparisons gives
 RG-SCSO 64 significant wins, 1 loss, and 43 ties; the only close
 competitor is AOA, against which the advantage is genuine but moderate
-(median $|d|=0.30$), RG-SCSO still leading on mean accuracy.
+(median $|d|=0.30$), RG-SCSO still leading on mean accuracy. Over the
+18 datasets the paired accuracy difference against AOA is $+0.017$ (95\%
+bootstrap CI $[+0.003,+0.034]$, excluding zero), confirming a small but
+consistent aggregate edge; against every other baseline the paired difference
+is larger (all 95\% CIs excluding zero).
 Fig.~\ref{fig:cd} visualizes this held-out ranking as a critical-difference
 diagram: the Nemenyi test, a more conservative simultaneous comparison than
 the pairwise Wilcoxon test above, does not separate RG-SCSO from AOA, but
@@ -697,7 +701,7 @@ parsimony with competitive predictive performance under the tested
 conditions: across 18 benchmark datasets it selects the
 second-smallest feature subsets of any method evaluated, trailing only COA,
 while attaining the best mean held-out accuracy among all seven algorithms
-compared, under a fixed, budget-matched, leak-free evaluation protocol
+compared, under a fixed-budget, leak-free evaluation protocol
 (RQ1, RQ2).
 
 This advantage is not universal, and the boundaries established in

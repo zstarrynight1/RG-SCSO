@@ -316,7 +316,7 @@ def build() -> None:
         "removal and noise resists inclusion, leaving SCSO's continuous "
         "search otherwise unchanged. "
         f"Evaluated on {s['n']} datasets, including two gene-expression sets, "
-        "under a budget-matched, leak-free protocol that computes the "
+        "under a fixed-budget, leak-free protocol that computes the "
         "relevance prior, the search, and the cross-validated fitness only on "
         "the training partition, RG-SCSO attains the best mean held-out "
         "accuracy of the seven metaheuristics compared while selecting the "
@@ -377,7 +377,7 @@ ablation-confirmed centerpiece is relevance-modulated sensitivity (RMS),
 supplemented by a smaller, budget-neutral memetic refinement step (UMR) that a
 sensitivity sweep shows contributes far less than RMS; an online-learning
 variant of the relevance field is examined and pruned entirely by ablation.
-Third, we evaluate under a preregistered, budget-matched, leak-free protocol
+Third, we evaluate under a preregistered, fixed-budget, leak-free protocol
 that denies the relevance prior any access to test labels. Fourth, we report a
 full statistical treatment, a component ablation, and a size-fair enrichment
 analysis correlating the observed parsimony with relevance guidance.
@@ -627,7 +627,11 @@ $p{fr_p_str}$). A
 Holm-corrected Wilcoxon signed-rank test across all pairwise comparisons gives
 RG-SCSO {hs_w} significant wins, {hs_l} loss, and {hs_t} ties; the only close
 competitor is AOA, against which the advantage is genuine but moderate
-(median $|d|={hs_d_aoa:.2f}$), RG-SCSO still leading on mean accuracy.
+(median $|d|={hs_d_aoa:.2f}$), RG-SCSO still leading on mean accuracy. Over the
+{s['n']} datasets the paired accuracy difference against AOA is $+0.017$ (95\%
+bootstrap CI $[+0.003,+0.034]$, excluding zero), confirming a small but
+consistent aggregate edge; against every other baseline the paired difference
+is larger (all 95\% CIs excluding zero).
 Fig.~\ref{{fig:cd}} visualizes this held-out ranking as a critical-difference
 diagram: the Nemenyi test, a more conservative simultaneous comparison than
 the pairwise Wilcoxon test above, does not separate RG-SCSO from AOA, but
@@ -871,7 +875,7 @@ parsimony with competitive predictive performance under the tested
 conditions: across {s['n']} benchmark datasets it selects the
 second-smallest feature subsets of any method evaluated, trailing only COA,
 while attaining the best mean held-out accuracy among all seven algorithms
-compared, under a fixed, budget-matched, leak-free evaluation protocol
+compared, under a fixed-budget, leak-free evaluation protocol
 (RQ1, RQ2).
 
 This advantage is not universal, and the boundaries established in

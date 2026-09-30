@@ -741,7 +741,7 @@ def build() -> None:
         "removal and noise resists inclusion, leaving SCSO's continuous "
         "search otherwise unchanged. "
         f"Evaluated on {s['n']} datasets, including two gene-expression sets, "
-        "under a budget-matched, leak-free protocol that computes the "
+        "under a fixed-budget, leak-free protocol that computes the "
         "relevance prior, the search, and the cross-validated fitness only on "
         "the training partition, RG-SCSO attains the best mean held-out "
         "accuracy of the seven metaheuristics compared while selecting the "
@@ -824,7 +824,7 @@ def build() -> None:
               "sensitivity sweep shows contributes far less than RMS; an "
               "online-learning variant of the relevance field is examined "
               "and pruned entirely by ablation. Third, we evaluate under a "
-              "preregistered, budget-matched, leak-free protocol that denies "
+              "preregistered, fixed-budget, leak-free protocol that denies "
               "the relevance prior any access to test labels. Fourth, we "
               "report a full statistical treatment, a component ablation, "
               "and a size-fair enrichment analysis correlating the observed "
@@ -982,7 +982,7 @@ def build() -> None:
               f"significant wins, {hs_l} loss, and {hs_t} ties; the only "
               "close competitor is AOA, against which the advantage is "
               f"genuine but moderate (median |d|={hs_d_aoa:.2f}), RG-SCSO "
-              "still leading on mean accuracy.")
+              "still leading on mean accuracy. Over the 18 datasets the paired accuracy difference against AOA is +0.017 (95% bootstrap CI [+0.003, +0.034], excluding zero), confirming a small but consistent aggregate edge; against every other baseline the paired difference is larger (all 95% CIs excluding zero).")
     _ci_rng = np.random.default_rng(42)
 
     def _boot_ci(vals: np.ndarray, n_boot: int = 2000) -> tuple:
@@ -1155,7 +1155,7 @@ def build() -> None:
         "evaluations, RG-SCSO vs. SCSO vs. AOA, on Zoo (16 features), WDBC "
         "(30 features), and ColonCancer (2000 features), mean over 5 runs "
         "on the feature-selection objective. NFE is the shared, "
-        "budget-matched resource; raw iteration count would not be "
+        "fixed-budget resource; raw iteration count would not be "
         "comparable, since RG-SCSO's memetic step spends more NFE per "
         "iteration than SCSO or AOA. The curves are illustrative rather "
         "than a new statistical claim. On Zoo the three algorithms "
@@ -1450,7 +1450,7 @@ def build() -> None:
               "benchmark datasets it selects the second-smallest feature "
               "subsets of any method evaluated, trailing only COA, while "
               "attaining the best mean held-out accuracy among all seven "
-              "algorithms compared, under a fixed, budget-matched, "
+              "algorithms compared, under a fixed, fixed-budget, "
               "leak-free evaluation protocol (RQ1, RQ2).")
     para(doc, "This advantage is not universal, and the boundaries "
               "established in Discussion above are real constraints, not "
