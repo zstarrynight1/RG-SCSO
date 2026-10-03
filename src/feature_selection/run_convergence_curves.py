@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from config import MAX_ITERATION, POPULATION_SIZE, RANDOM_SEED_BASE
+from config import MAX_ITERATION, MAX_NFE, POPULATION_SIZE, RANDOM_SEED_BASE
 from src.algorithms.baselines import run_mealpy_baseline
 from src.algorithms.rg_scso import RGSCSO
 from src.algorithms.scso import SCSO
@@ -58,15 +58,16 @@ def _run_single(task: dict) -> list[dict]:
         result = RGSCSO(
             obj_func=obj_func, dim=dim, lb=SEARCH_LB, ub=SEARCH_UB,
             pop_size=POPULATION_SIZE, max_iter=MAX_ITERATION, seed=seed,
-            X=X, y=y, eval_mask=eval_mask,
+            max_nfe=MAX_NFE, X=X, y=y, eval_mask=eval_mask,
         ).optimize()
     elif algo == "SCSO":
         result = SCSO(obj_func, dim, SEARCH_LB, SEARCH_UB, POPULATION_SIZE,
-                       MAX_ITERATION, seed).optimize()
-    else:                         
+                       MAX_ITERATION, seed, max_nfe=MAX_NFE).optimize()
+    else:
         result = run_mealpy_baseline(algo, obj_func, dim=dim, lb=SEARCH_LB,
                                       ub=SEARCH_UB, pop_size=POPULATION_SIZE,
-                                      max_iter=MAX_ITERATION, seed=seed)
+                                      max_iter=MAX_ITERATION, seed=seed,
+                                      max_nfe=MAX_NFE)
 
     curve = result["convergence_curve"]
 

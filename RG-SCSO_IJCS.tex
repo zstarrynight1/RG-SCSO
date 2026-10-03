@@ -210,9 +210,15 @@ strategies~\cite{imscso2024,mescso2025,scsolensobl2024,improvedscso2024}
 improves continuous-space search dynamics while leaving the binarization
 interface itself untouched -- across the SCSO-family literature we screened,
 we found none that makes
-the binarization operator itself per-feature and relevance-aware.
-Table~\ref{tab:litpos} below positions each of these works against this
-claim directly.
+the binarization operator itself per-feature and relevance-aware. A
+per-reference audit of the binarization mechanism (transfer function;
+whether relevance enters at the binarization step or only upstream) is
+released with the code; notably, the closest binary SCSO selector that uses
+relevance injects it at \emph{initialization} (a differential-expression
+pre-filter), not at the binarization operator, which is precisely the
+distinction our signal-position experiment (Section~\ref{sec:ablation})
+isolates. Table~\ref{tab:litpos} below positions each of these works against
+this claim directly.
 
 \subsection{Literature-positioning summary}
 Table~\ref{tab:litpos} makes this gap concrete across every SCSO-family
@@ -923,6 +929,25 @@ make no runtime-speedup claim for RG-SCSO over same-budget baselines.
 The benchmark spans 18 preprocessed datasets of 8 to
 3571 features across biomedical, gene-expression, and categorical
 domains, full characteristics in Supplementary Table~S1.
+
+\paragraph{Leakage control (data flow).} Every step that could learn from
+the labels or the held-out partition is confined to the training fold. The
+flow is:
+\begin{center}
+\footnotesize
+\fbox{\begin{minipage}{0.92\columnwidth}\centering
+raw data $\rightarrow$ label-independent cleaning/encoding $\rightarrow$
+\textbf{outer 80/20 split} $\rightarrow$
+[on the 80\% train only:] fit standardizer $\,\cdot\,$ compute MI relevance
+prior $\rho$ $\,\cdot\,$ 5-fold CV fitness $\,\cdot\,$ feature-subset search
+$\rightarrow$ freeze selected mask $\rightarrow$
+[on the 20\% hold-out:] transform with the train-fitted standardizer only
+$\rightarrow$ single KNN evaluation
+\end{minipage}}
+\end{center}
+No standardizer, relevance prior, cross-validation fold, or hyperparameter is
+ever fit on, or given access to, the held-out partition; the hold-out is
+touched exactly once, for final evaluation.
 
 We benchmark against six baselines: SCSO (base)~\cite{scso},
 AOA~\cite{aoa}, CoatiOA~\cite{coa}, GWO~\cite{gwo}, PSO~\cite{pso}, and

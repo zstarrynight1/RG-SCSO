@@ -942,7 +942,13 @@ def build() -> None:
               "binarization interface itself untouched; across the "
               "SCSO-family literature we screened, we found none that makes "
               "the binarization operator "
-              "itself per-feature and relevance-aware. Table 1 below "
+              "itself per-feature and relevance-aware. A per-reference audit "
+              "of the binarization mechanism is released with the code; "
+              "notably, the closest binary SCSO selector that uses relevance "
+              "injects it at initialization (a differential-expression "
+              "pre-filter), not at the binarization operator, which is "
+              "precisely the distinction our signal-position experiment "
+              "isolates. Table 1 below "
               "positions each of these works against this claim directly.")
     doc.add_heading("2.4 Literature-positioning summary", level=2)
     para(doc, "Table 1 makes this gap concrete across every SCSO-family "
@@ -1801,6 +1807,21 @@ def build() -> None:
               f"{feat_min} to {feat_max} features across biomedical, "
               "gene-expression, and categorical domains, full "
               "characteristics in Supplementary Table S1.")
+
+    _lk=doc.add_paragraph(); _lk.alignment=WD_ALIGN_PARAGRAPH.JUSTIFY
+    _lk.paragraph_format.line_spacing_rule=WD_LINE_SPACING.ONE_POINT_FIVE
+    _lk.paragraph_format.space_after=Pt(10)
+    _r=_lk.add_run("Leakage control (data flow). Every step that could learn "
+        "from the labels or the held-out partition is confined to the "
+        "training fold: raw data → label-independent cleaning/encoding → "
+        "outer 80/20 split → [on the 80% train only] fit standardizer · "
+        "compute MI relevance prior ρ · 5-fold CV fitness · feature-subset "
+        "search → freeze selected mask → [on the 20% hold-out] transform with "
+        "the train-fitted standardizer only → single KNN evaluation. No "
+        "standardizer, relevance prior, CV fold, or hyperparameter is ever fit "
+        "on, or given access to, the held-out partition; the hold-out is "
+        "touched exactly once, for final evaluation.")
+    _r.font.size=Pt(BODY_PT)
 
     para(doc, f"We benchmark against six baselines: SCSO (base) {_c('scso')}, "
               f"AOA {_c('aoa')}, CoatiOA {_c('coa')}, GWO {_c('gwo')}, PSO "
