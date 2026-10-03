@@ -19,6 +19,7 @@ from tqdm import tqdm
 from config import (
     KNN_NEIGHBORS,
     MAX_ITERATION,
+    MAX_NFE,
     NUM_INDEPENDENT_RUNS,
     POPULATION_SIZE,
     RANDOM_SEED_BASE,
@@ -107,7 +108,8 @@ def _run_single_task(algorithm: str, dataset: str, run_id: int) -> dict:
             pop_size=POPULATION_SIZE,
             max_iter=MAX_ITERATION,
             seed=seed,
-            X=x_train,                              
+            max_nfe=MAX_NFE,
+            X=x_train,
             y=y_train,
             eval_mask=eval_mask,
         ).optimize()
@@ -121,6 +123,7 @@ def _run_single_task(algorithm: str, dataset: str, run_id: int) -> dict:
             pop_size=POPULATION_SIZE,
             max_iter=MAX_ITERATION,
             seed=seed,
+            max_nfe=MAX_NFE,
         ).optimize()
         mask = binarize_threshold(result["best_solution"])
     else:
@@ -133,6 +136,7 @@ def _run_single_task(algorithm: str, dataset: str, run_id: int) -> dict:
             pop_size=POPULATION_SIZE,
             max_iter=MAX_ITERATION,
             seed=seed,
+            max_nfe=MAX_NFE,
         )
         mask = binarize_threshold(result["best_solution"])
 

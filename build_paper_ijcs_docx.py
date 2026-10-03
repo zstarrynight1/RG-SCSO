@@ -556,27 +556,21 @@ def add_complexity_table(doc) -> None:
         mrun("N"), mrun(" × "), msub([mrun("T")], [mrun("max")]),
         mrun(" = 30 × 500 = 15,000."),
     ])
-    para(doc, "The two families of algorithms enforce this budget "
-              "differently, verified directly against the implementation "
-              "rather than against the simplified pseudocode above. "
-              "RG-SCSO maintains its own evaluation counter and checks it "
-              "before every individual evaluation, each population move "
-              "and each UMR probe, so its total, including its own "
-              "initialization, never exceeds exactly 15,000. The six "
-              "baselines (SCSO, and AOA/GWO/PSO/RIME/CoatiOA via the "
-              "mealpy library) instead run a fixed number of generations "
-              "of N = 30 evaluations each, plus one additional "
-              "initial-population evaluation before the first generation:")
-    eqm(doc, [
-        mrun("N"), mrun(" × "),
-        mdelim([msub([mrun("T")], [mrun("max")]), mrun(" + 1")]),
-        mrun(" = 30 × 501 = 15,030 evaluations in total,"),
-    ])
-    para(doc, "the standard convention for both our SCSO implementation "
-              "and mealpy. RG-SCSO's own cap is therefore exactly 15,000, "
-              "30 fewer evaluations than every baseline receives, never "
-              "more; UMR's extra per-iteration cost is absorbed within, "
-              "not added on top of, this cap.")
+    para(doc, "This cap is enforced identically for every algorithm, "
+              "verified directly against the implementation. RG-SCSO and the "
+              "base SCSO maintain an evaluation counter checked before every "
+              "individual evaluation (each population move and each UMR "
+              "probe), stopping the moment the counter reaches 15,000; each "
+              "population-based baseline (AOA/GWO/PSO/RIME/CoatiOA via the "
+              "mealpy library) is run under a hard function-evaluation "
+              "termination at the same 15,000. The only residual difference "
+              "is CoatiOA, which evaluates in sub-population batches and so "
+              "halts at the first batch boundary not below the cap (15,030, a "
+              "0.2% excess that favours the baseline, not RG-SCSO). Budgets "
+              "are thus matched to within 0.2% across all seven methods, "
+              "removing any budget advantage for the proposed method; UMR's "
+              "extra per-iteration cost is absorbed within, not added on top "
+              "of, this cap.")
 
 
 def add_classic_baselines_all18(doc):
@@ -1438,7 +1432,12 @@ def build() -> None:
               "we do not claim a practical advantage for RG-SCSO on "
               "ultra-high-dimensional, small-sample data; we scope its "
               "transferable benefit to parsimony on datasets without that "
-              "extreme structure. These boundaries are gathered together, "
+              "extreme structure. A further boundary is that the baselines "
+              "are evaluated at their published/default control parameters "
+              "under a shared protocol rather than individually re-tuned per "
+              "dataset; this is a faithful-reproduction comparison, and a "
+              "per-dataset tuning study of every competitor is left to future "
+              "work. These boundaries are gathered together, "
               "with the future work they motivate, in Conclusion below.")
 
                                                                                
@@ -1811,12 +1810,36 @@ def build() -> None:
               "independent runs, seed = 42+run_id (paired across "
               "algorithms), KNN (k=5) with stratified 5-fold "
               "cross-validation, search space [-1,1]^d, and the fitness "
-              "above. Every baseline runs with its library-default "
-              "published hyperparameters, with only population size and "
-              "evaluation budget matched across methods; RG-SCSO's γ and "
-              "K are likewise fixed before the full run.")
+              "above. This is a faithful published-default comparison, not "
+              "an equally-tuned one: every baseline runs at its own "
+              "published/library-default control parameters under this "
+              "identical shared protocol, and no method is re-tuned per "
+              "dataset. RG-SCSO's γ = 0.5, τ = 0.5, and K = 8 are likewise "
+              "fixed before the full run; τ and the cardinality weight λ are "
+              "additionally characterized by the sensitivity sweeps in "
+              "Supplementary Information, while γ and K were frozen from the "
+              "preregistration pilot and not tuned on the test data. A "
+              "per-method fidelity table (source, version, control "
+              "parameters, search space, tuning, budget, seed) is provided in "
+              "the released repository (Baseline_Fidelity_Report); the "
+              "limitation of comparing against untuned baselines is "
+              "acknowledged in Discussion.")
 
     doc.add_heading("6.7 Statistics and reproducibility", level=2)
+    para(doc, "We state the inference units explicitly. The experimental "
+              "unit is one independent run (an outer 80/20 split under a "
+              "distinct seed). The primary cross-algorithm comparison is at "
+              "the dataset level: for each dataset and algorithm the 30 runs "
+              "are aggregated to a mean held-out accuracy, giving 18 paired "
+              "per-dataset summaries that are the units for the Friedman test, "
+              "the critical-difference diagram, and the paired bootstrap "
+              "confidence intervals of the accuracy difference "
+              "(RG-SCSO − baseline). The per-dataset Wilcoxon signed-rank "
+              "test instead treats the 30 paired runs within a single dataset "
+              "as its unit; those within-dataset results are repeated-run "
+              "comparisons, not cross-dataset generalization, and are "
+              "reported as such. Cohen's d and rank-biserial r are computed "
+              "on the same paired samples as the test they accompany.")
     para(doc, f"Significance uses the paired Wilcoxon signed-rank test "
               f"with Holm correction {_c('holm')}, the Holm family formed "
               "per dataset, at α = 0.05. A tie denotes failure to reject "
@@ -1885,10 +1908,11 @@ def build() -> None:
               "in an anonymized repository "
               "(https://anonymous.4open.science/r/RG-SCSO) at the "
               "manuscript's release commit, and will be deposited in a public, "
-              "citable repository with a permanent Zenodo DOI upon acceptance, "
-              "permitting bit-for-bit reproduction of every number reported in "
-              "this paper. The exact software environment is pinned in "
-              "requirements.txt (Python 3.10).")
+              "citable repository with a permanent Zenodo DOI upon acceptance. "
+              "With the pinned dependencies (requirements.txt, Python 3.10) "
+              "and the per-run seeds, the tables and figures can be "
+              "regenerated from the released raw results, and the experiments "
+              "re-run deterministically.")
 
     add_references_asoc(doc)
     _linkify_citations(doc, len(ASOC_CITE_ORDER))

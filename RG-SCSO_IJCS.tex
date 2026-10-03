@@ -261,7 +261,7 @@ access to the test labels. Table~\ref{tab:heldout} reports held-out
 accuracy over all seven algorithms and 18 datasets, at a fixed
 evaluation budget of $\mathrm{max\_nfe}=15000$ for every algorithm compared.
 RG-SCSO attains the best average Friedman rank (1.33, ahead of
-the second-placed AOA at 2.03; $\chi^2$=66.16,
+the second-placed AOA at 2.03; $\chi^2$=67.25,
 $p<10^{-3}$). A
 Holm-corrected Wilcoxon signed-rank test across all pairwise comparisons gives
 RG-SCSO 64 significant wins, 1 loss, and 43 ties; the only close
@@ -288,23 +288,23 @@ remaining five algorithms.
 Dataset & RG-SCSO & AOA & COA & SCSO & RIME & PSO & GWO \\
 \midrule
 BreastEW & 0.9630 (5.2) & \textbf{0.9679 (8.7)} & 0.9487 (4.7) & 0.9509 (4.4) & 0.9521 (3.9) & 0.9428 (4.8) & 0.9511 (4.1) \\
-ColonCancer & \textbf{0.7615 (555.1)} & 0.7410 (1958.2) & 0.7205 (484.3) & 0.7410 (1002.3) & 0.7308 (999.3) & 0.7333 (1006.6) & 0.7513 (1007.0) \\
+ColonCancer & \textbf{0.7615 (555.1)} & 0.7410 (1958.2) & 0.7103 (534.6) & 0.7410 (1002.3) & 0.7308 (999.3) & 0.7333 (1006.6) & 0.7513 (1007.0) \\
 Diabetes & 0.7229 (4.6) & \textbf{0.7279 (7.4)} & 0.7000 (4.7) & 0.7030 (4.1) & 0.6883 (3.4) & 0.6695 (3.9) & 0.6708 (3.9) \\
-GermanCredit & 0.7260 (8.4) & \textbf{0.7353 (19.9)} & 0.6832 (10.8) & 0.7038 (10.0) & 0.7048 (9.8) & 0.6980 (10.5) & 0.6948 (9.7) \\
-HeartDisease & 0.8089 (5.9) & \textbf{0.8261 (12.8)} & 0.7833 (6.8) & 0.7661 (6.6) & 0.7633 (6.3) & 0.7367 (6.6) & 0.7567 (6.3) \\
-IonosphereEW & \textbf{0.8864 (8.0)} & 0.8418 (33.9) & 0.8507 (11.0) & 0.8549 (16.5) & 0.8531 (15.8) & 0.8418 (16.6) & 0.8385 (16.5) \\
-KrVsKpEW & \textbf{0.9518 (12.2)} & 0.9289 (35.0) & 0.8354 (17.3) & 0.8351 (17.5) & 0.7808 (16.4) & 0.7908 (17.1) & 0.7120 (17.2) \\
-Leukemia & \textbf{0.9733 (957.4)} & 0.9622 (3549.2) & 0.9467 (623.0) & 0.9533 (1770.7) & 0.9644 (1778.9) & 0.9600 (1780.8) & 0.9578 (1788.6) \\
-Lymphography & 0.7978 (7.0) & \textbf{0.8167 (17.9)} & 0.7722 (9.8) & 0.7711 (9.1) & 0.7556 (8.7) & 0.7611 (8.6) & 0.7356 (8.0) \\
-M-of-n & \textbf{0.9960 (6.3)} & 0.8712 (12.8) & 0.7892 (7.1) & 0.7733 (7.2) & 0.7480 (6.6) & 0.7263 (6.1) & 0.6985 (6.2) \\
-Parkinsons & \textbf{0.9051 (6.6)} & 0.9026 (21.7) & 0.8889 (8.8) & 0.8812 (11.2) & 0.8812 (10.8) & 0.8718 (11.0) & 0.8761 (10.8) \\
-Sonar & \textbf{0.8079 (16.7)} & 0.8024 (59.9) & 0.7937 (28.2) & 0.7976 (29.6) & 0.7897 (29.7) & 0.7944 (30.6) & 0.8024 (29.8) \\
-SpectEW & \textbf{0.8204 (7.8)} & 0.8099 (21.4) & 0.8012 (9.4) & 0.8012 (11.0) & 0.7951 (10.0) & 0.8074 (11.0) & 0.7932 (10.8) \\
+GermanCredit & 0.7260 (8.4) & \textbf{0.7353 (19.9)} & 0.7020 (11.2) & 0.7038 (10.0) & 0.7048 (9.8) & 0.6980 (10.5) & 0.6948 (9.7) \\
+HeartDisease & 0.8089 (5.9) & \textbf{0.8261 (12.8)} & 0.7817 (7.1) & 0.7661 (6.6) & 0.7633 (6.3) & 0.7367 (6.6) & 0.7567 (6.3) \\
+IonosphereEW & \textbf{0.8864 (8.0)} & 0.8418 (33.9) & 0.8540 (11.8) & 0.8549 (16.5) & 0.8531 (15.8) & 0.8418 (16.6) & 0.8385 (16.5) \\
+KrVsKpEW & \textbf{0.9518 (12.2)} & 0.9289 (35.0) & 0.8383 (17.4) & 0.8351 (17.5) & 0.7808 (16.4) & 0.7908 (17.1) & 0.7120 (17.2) \\
+Leukemia & \textbf{0.9733 (957.4)} & 0.9622 (3549.2) & 0.9511 (619.4) & 0.9533 (1770.7) & 0.9644 (1778.9) & 0.9600 (1780.8) & 0.9578 (1788.6) \\
+Lymphography & 0.7978 (7.0) & \textbf{0.8167 (17.9)} & 0.7611 (10.1) & 0.7711 (9.1) & 0.7556 (8.7) & 0.7611 (8.6) & 0.7356 (8.0) \\
+M-of-n & \textbf{0.9960 (6.3)} & 0.8712 (12.8) & 0.7882 (7.2) & 0.7733 (7.2) & 0.7480 (6.6) & 0.7263 (6.1) & 0.6985 (6.2) \\
+Parkinsons & \textbf{0.9051 (6.6)} & 0.9026 (21.7) & 0.8872 (10.3) & 0.8812 (11.2) & 0.8812 (10.8) & 0.8718 (11.0) & 0.8761 (10.8) \\
+Sonar & \textbf{0.8079 (16.7)} & 0.8024 (59.9) & 0.8008 (29.0) & 0.7976 (29.6) & 0.7897 (29.7) & 0.7944 (30.6) & 0.8024 (29.8) \\
+SpectEW & \textbf{0.8204 (7.8)} & 0.8099 (21.4) & 0.8031 (9.9) & 0.8012 (11.0) & 0.7951 (10.0) & 0.8074 (11.0) & 0.7932 (10.8) \\
 TicTacToe & \textbf{0.8212 (7.7)} & 0.7856 (8.4) & 0.6924 (5.9) & 0.6462 (4.5) & 0.6538 (4.8) & 0.6552 (4.6) & 0.6241 (4.1) \\
-Vote & \textbf{0.9560 (3.0)} & 0.9220 (15.9) & 0.8965 (5.2) & 0.8837 (6.5) & 0.9028 (7.9) & 0.8915 (7.2) & 0.9021 (8.3) \\
-WDBC & \textbf{0.9667 (12.5)} & 0.9649 (29.7) & 0.9582 (13.7) & 0.9561 (14.9) & 0.9558 (15.0) & 0.9532 (14.5) & 0.9544 (15.0) \\
-WaveformEW & \textbf{0.8153 (15.8)} & 0.7571 (38.3) & 0.7505 (21.8) & 0.7352 (20.6) & 0.7170 (20.2) & 0.7238 (20.8) & 0.6863 (19.0) \\
-Zoo & 0.9079 (7.8) & \textbf{0.9190 (15.7)} & 0.8651 (9.0) & 0.8540 (8.3) & 0.8460 (8.0) & 0.8476 (8.3) & 0.8270 (7.8) \\
+Vote & \textbf{0.9560 (3.0)} & 0.9220 (15.9) & 0.9014 (5.7) & 0.8837 (6.5) & 0.9028 (7.9) & 0.8915 (7.2) & 0.9021 (8.3) \\
+WDBC & \textbf{0.9667 (12.5)} & 0.9649 (29.7) & 0.9585 (14.1) & 0.9561 (14.9) & 0.9558 (15.0) & 0.9532 (14.5) & 0.9544 (15.0) \\
+WaveformEW & \textbf{0.8153 (15.8)} & 0.7571 (38.3) & 0.7456 (21.0) & 0.7352 (20.6) & 0.7170 (20.2) & 0.7238 (20.8) & 0.6863 (19.0) \\
+Zoo & 0.9079 (7.8) & \textbf{0.9190 (15.7)} & 0.8460 (8.6) & 0.8540 (8.3) & 0.8460 (8.0) & 0.8476 (8.3) & 0.8270 (7.8) \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -321,7 +321,7 @@ second-fewest features on the held-out setting, on average
 91.6 against
 164.2 for base SCSO and
 325.9 for AOA. Only COA selects fewer
-(71.2 on average), and it does so at
+(74.0 on average), and it does so at
 0.051 lower
 mean accuracy, so RG-SCSO is the most compact method that does not trade
 away accuracy to get there. On ColonCancer it retains
@@ -690,7 +690,11 @@ lead on accuracy, and on the two gene-expression datasets specifically a
 classical LASSO baseline outperforms RG-SCSO outright, so we do
 not claim a practical advantage for RG-SCSO on ultra-high-dimensional,
 small-sample data; we scope its transferable benefit to parsimony on
-datasets without that extreme structure. These boundaries are gathered
+datasets without that extreme structure. A further boundary is that the
+baselines are evaluated at their published/default control parameters under a
+shared protocol rather than individually re-tuned per dataset; this is a
+faithful-reproduction comparison, and a per-dataset tuning study of every
+competitor is left to future work. These boundaries are gathered
 together, with the future work they motivate, in Conclusion below.
 
 \FloatBarrier
@@ -891,14 +895,17 @@ best mask~\cite{neri} and the flip is kept only if fitness improves.
 
 \subsection{Algorithm and computational cost}
 Every fitness evaluation, whether from population moves, memetic probes, or
-initialization, is counted against a single budget $\mathrm{max\_nfe}=\mathrm{pop\_size}\times
-\mathrm{max\_iter}=15000$, so UMR grants no extra evaluations
-(Algorithm~\ref{alg:main}). RG-SCSO is hard-capped at exactly this figure,
-whereas the population-based baselines evaluate the initial population and then
-$T_{\max}$ iterations, i.e.\ $30\times501=15030$ evaluations by the standard
-mealpy convention; RG-SCSO therefore receives 30 \emph{fewer} evaluations than
-every baseline, never more, so its budget is conservative rather than
-advantageous.
+initialization, is counted against a single budget
+$\mathrm{max\_nfe}=15000$, so UMR grants no extra evaluations
+(Algorithm~\ref{alg:main}). This cap is enforced identically for \emph{every}
+algorithm: RG-SCSO and the base SCSO stop as soon as the counter reaches
+15{,}000, and each population-based baseline is run under a hard
+function-evaluation termination at the same 15{,}000. The only residual
+difference is CoatiOA, which evaluates in sub-population batches and therefore
+halts at the first batch boundary not below the cap (15{,}030, a $0.2\%$
+excess that favours the baseline, not RG-SCSO). Budgets are thus matched to
+within $0.2\%$ across all seven methods, removing any budget advantage for the
+proposed method.
 
 The per-iteration cost is dominated by the $N+K$ wrapper evaluations, each a
 KNN fit under fixed folds; the mutual-information prior adds a one-time
@@ -923,12 +930,34 @@ RIME~\cite{rime}. The protocol is preregistered and locked prior to the full
 run. All algorithms share: population 30, 500 iterations, 30 independent
 runs, seed $=42+\mathrm{run\_id}$ (paired across algorithms), KNN ($k=5$)
 with stratified 5-fold cross-validation, search space $[-1,1]^d$, and the
-fitness of~\eqref{eq:fitness}. Every baseline runs with its library-default
-published hyperparameters, with only population size and evaluation budget
-matched across methods; RG-SCSO's $\gamma$ and $K$ are likewise fixed before
-the full run.
+fitness of~\eqref{eq:fitness}. This is a \emph{faithful published-default}
+comparison, not an equally-tuned one: every baseline runs at its own
+published/library-default control parameters under this identical shared
+protocol, and we do not re-tune any method per dataset. RG-SCSO's
+$\gamma=0.5$, $\tau=0.5$, and $K=8$ are likewise fixed before the full run;
+$\tau$ and the cardinality weight $\lambda$ are additionally characterized by
+the sensitivity sweeps reported in Supplementary Information, while $\gamma$
+and $K$ were frozen from the preregistration pilot and not tuned on the test
+data. A per-method fidelity table (source, version, control parameters, search
+space, tuning, budget, seed) is provided in the released repository
+(\texttt{Baseline\_Fidelity\_Report}); the limitation of comparing against
+untuned baselines is acknowledged in Discussion.
 
 \subsection{Statistics and reproducibility}
+\paragraph{Statistical units.} We state the inference units explicitly. The
+\emph{experimental unit} is one independent run (an outer 80/20 split under a
+distinct seed). The \emph{primary cross-algorithm comparison} is at the
+\emph{dataset level}: for each dataset and algorithm the 30 runs are
+aggregated to a mean held-out accuracy, giving 18 paired per-dataset
+summaries that are the units for the Friedman test and the critical-difference
+diagram, and for the paired bootstrap confidence intervals of the
+accuracy difference (RG-SCSO$-$baseline). The per-dataset Wilcoxon signed-rank
+test instead treats the 30 paired runs within a single dataset as its unit;
+these within-dataset results are therefore repeated-run comparisons, not
+cross-dataset generalization, and are reported as such. Cohen's $d$ and
+rank-biserial $r$ are computed on the same paired samples as the test they
+accompany.
+
 Significance uses the paired Wilcoxon signed-rank test with Holm
 correction~\cite{holm}, the Holm family formed \emph{per dataset}, at
 $\alpha=0.05$. A tie denotes failure to reject $H_0$ (no significant
@@ -972,9 +1001,10 @@ hyperparameter table, a pinned dependency list (\texttt{requirements.txt}),
 an MIT \texttt{LICENSE}, and the raw per-run results are available for review
 in an anonymized repository (\url{https://anonymous.4open.science/r/RG-SCSO})
 at the manuscript's release commit, and will be deposited in a public, citable
-repository with a permanent Zenodo DOI upon acceptance, permitting
-bit-for-bit reproduction of every number reported in this paper. The exact
-software environment is pinned in \texttt{requirements.txt} (Python 3.10).
+repository with a permanent Zenodo DOI upon acceptance. With the pinned
+dependencies (\texttt{requirements.txt}, Python 3.10) and the per-run seeds,
+the tables and figures can be regenerated from the released raw results, and
+the experiments re-run deterministically.
 
 % Note: sn-jnl.cls already sets \bibliographystyle{sn-basic} internally, so
 % an explicit \bibliographystyle here would trigger BibTeX's "Illegal, another

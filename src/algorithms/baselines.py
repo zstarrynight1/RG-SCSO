@@ -43,6 +43,7 @@ def run_mealpy_baseline(
     pop_size: int,
     max_iter: int,
     seed: int,
+    max_nfe: int | None = None,
 ) -> dict:
     if algorithm_name not in _MEALPY_ALGORITHMS:
         raise ValueError(
@@ -63,8 +64,15 @@ def run_mealpy_baseline(
     model_cls = _MEALPY_ALGORITHMS[algorithm_name]
     model = model_cls(epoch=max_iter, pop_size=pop_size)
 
+    # SOP Q6 — exact budget match: cap every baseline at max_nfe fitness
+    # evaluations (mealpy counts init+epoch*pop, CoatiOA far more), so each
+    # method gets the same budget as RG-SCSO (hard-capped at max_nfe).
+    solve_kwargs = {"seed": seed}
+    if max_nfe is not None:
+        solve_kwargs["termination"] = {"max_fe": int(max_nfe)}
+
     start = time.perf_counter()
-    g_best = model.solve(problem, seed=seed)
+    g_best = model.solve(problem, **solve_kwargs)
     runtime = time.perf_counter() - start
 
     return {

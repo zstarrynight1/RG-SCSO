@@ -2,6 +2,9 @@
                                      
 POPULATION_SIZE = 30
 MAX_ITERATION = 500
+MAX_NFE = 15000  # hard cap on fitness evaluations, identical for EVERY algorithm
+                 # (SOP Q6: budgets must be exactly matched; mealpy/SCSO otherwise
+                 #  consume init+epoch*pop=15,030 and CoatiOA far more)
 NUM_INDEPENDENT_RUNS = 30                                      
 RANDOM_SEED_BASE = 42                                                        
 

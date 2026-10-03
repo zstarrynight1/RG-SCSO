@@ -18,9 +18,14 @@ class SCSO(BaseOptimizer):
         max_iter: int,
         seed: int,
         S_M: float = 2.0,
+        max_nfe: int | None = None,
     ) -> None:
         super().__init__(obj_func, dim, lb, ub, pop_size, max_iter, seed)
         self.S_M = S_M
+        # SOP Q6 — exact budget match: hard-cap fitness evaluations at max_nfe
+        # (otherwise SCSO consumes init+max_iter*pop_size = 15,030).
+        self.max_nfe = max_nfe if max_nfe is not None else pop_size * max_iter
+        self._nfe = 0
 
     def _sensitivity_range(self, t: int) -> float:
         return self.S_M - self.S_M * t / self.max_iter
@@ -33,8 +38,10 @@ class SCSO(BaseOptimizer):
         best_solution: np.ndarray,
     ) -> None:
         for i in range(self.pop_size):
-            R = 2.0 * rG * self.rng.random() - rG           
-            r = rG * self.rng.random()           
+            if self._nfe >= self.max_nfe:   # SOP Q6 hard cap
+                break
+            R = 2.0 * rG * self.rng.random() - rG
+            r = rG * self.rng.random()
 
             if abs(R) > 1.0:
                                        
@@ -51,6 +58,7 @@ class SCSO(BaseOptimizer):
 
             population[i] = self._clip(new_pos)
             fitness[i] = self.obj_func(population[i])
+            self._nfe += 1
 
     def optimize(self) -> dict:
         return self._timed(self._run)
@@ -58,6 +66,7 @@ class SCSO(BaseOptimizer):
     def _run(self) -> dict:
         population = self._init_population()
         fitness = self._evaluate_population(population)
+        self._nfe = self.pop_size   # initial-population evaluations count toward the budget
 
         best_idx = int(np.argmin(fitness))
         best_solution = population[best_idx].copy()
@@ -65,6 +74,8 @@ class SCSO(BaseOptimizer):
         convergence_curve = []
 
         for t in range(self.max_iter):
+            if self._nfe >= self.max_nfe:   # SOP Q6 hard cap
+                break
             rG = self._sensitivity_range(t)
             self._scso_move_step(rG, population, fitness, best_solution)
 

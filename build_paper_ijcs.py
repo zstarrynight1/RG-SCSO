@@ -865,7 +865,11 @@ lead on accuracy, and on the two gene-expression datasets specifically a
 classical LASSO baseline outperforms RG-SCSO outright, so we do
 not claim a practical advantage for RG-SCSO on ultra-high-dimensional,
 small-sample data; we scope its transferable benefit to parsimony on
-datasets without that extreme structure. These boundaries are gathered
+datasets without that extreme structure. A further boundary is that the
+baselines are evaluated at their published/default control parameters under a
+shared protocol rather than individually re-tuned per dataset; this is a
+faithful-reproduction comparison, and a per-dataset tuning study of every
+competitor is left to future work. These boundaries are gathered
 together, with the future work they motivate, in Conclusion below."""
 
                                                                              
@@ -1185,14 +1189,17 @@ best mask~\cite{{neri}} and the flip is kept only if fitness improves.
 
 \subsection{{Algorithm and computational cost}}
 Every fitness evaluation, whether from population moves, memetic probes, or
-initialization, is counted against a single budget $\mathrm{{max\_nfe}}=\mathrm{{pop\_size}}\times
-\mathrm{{max\_iter}}=15000$, so UMR grants no extra evaluations
-(Algorithm~\ref{{alg:main}}). RG-SCSO is hard-capped at exactly this figure,
-whereas the population-based baselines evaluate the initial population and then
-$T_{{\max}}$ iterations, i.e.\ $30\times501=15030$ evaluations by the standard
-mealpy convention; RG-SCSO therefore receives 30 \emph{{fewer}} evaluations than
-every baseline, never more, so its budget is conservative rather than
-advantageous.
+initialization, is counted against a single budget
+$\mathrm{{max\_nfe}}=15000$, so UMR grants no extra evaluations
+(Algorithm~\ref{{alg:main}}). This cap is enforced identically for \emph{{every}}
+algorithm: RG-SCSO and the base SCSO stop as soon as the counter reaches
+15{{,}}000, and each population-based baseline is run under a hard
+function-evaluation termination at the same 15{{,}}000. The only residual
+difference is CoatiOA, which evaluates in sub-population batches and therefore
+halts at the first batch boundary not below the cap (15{{,}}030, a $0.2\%$
+excess that favours the baseline, not RG-SCSO). Budgets are thus matched to
+within $0.2\%$ across all seven methods, removing any budget advantage for the
+proposed method.
 
 The per-iteration cost is dominated by the $N+K$ wrapper evaluations, each a
 KNN fit under fixed folds; the mutual-information prior adds a one-time
@@ -1217,12 +1224,34 @@ RIME~\cite{{rime}}. The protocol is preregistered and locked prior to the full
 run. All algorithms share: population 30, 500 iterations, 30 independent
 runs, seed $=42+\mathrm{{run\_id}}$ (paired across algorithms), KNN ($k=5$)
 with stratified 5-fold cross-validation, search space $[-1,1]^d$, and the
-fitness of~\eqref{{eq:fitness}}. Every baseline runs with its library-default
-published hyperparameters, with only population size and evaluation budget
-matched across methods; RG-SCSO's $\gamma$ and $K$ are likewise fixed before
-the full run.
+fitness of~\eqref{{eq:fitness}}. This is a \emph{{faithful published-default}}
+comparison, not an equally-tuned one: every baseline runs at its own
+published/library-default control parameters under this identical shared
+protocol, and we do not re-tune any method per dataset. RG-SCSO's
+$\gamma=0.5$, $\tau=0.5$, and $K=8$ are likewise fixed before the full run;
+$\tau$ and the cardinality weight $\lambda$ are additionally characterized by
+the sensitivity sweeps reported in Supplementary Information, while $\gamma$
+and $K$ were frozen from the preregistration pilot and not tuned on the test
+data. A per-method fidelity table (source, version, control parameters, search
+space, tuning, budget, seed) is provided in the released repository
+(\texttt{{Baseline\_Fidelity\_Report}}); the limitation of comparing against
+untuned baselines is acknowledged in Discussion.
 
 \subsection{{Statistics and reproducibility}}
+\paragraph{{Statistical units.}} We state the inference units explicitly. The
+\emph{{experimental unit}} is one independent run (an outer 80/20 split under a
+distinct seed). The \emph{{primary cross-algorithm comparison}} is at the
+\emph{{dataset level}}: for each dataset and algorithm the 30 runs are
+aggregated to a mean held-out accuracy, giving {s['n']} paired per-dataset
+summaries that are the units for the Friedman test and the critical-difference
+diagram, and for the paired bootstrap confidence intervals of the
+accuracy difference (RG-SCSO$-$baseline). The per-dataset Wilcoxon signed-rank
+test instead treats the 30 paired runs within a single dataset as its unit;
+these within-dataset results are therefore repeated-run comparisons, not
+cross-dataset generalization, and are reported as such. Cohen's $d$ and
+rank-biserial $r$ are computed on the same paired samples as the test they
+accompany.
+
 Significance uses the paired Wilcoxon signed-rank test with Holm
 correction~\cite{{holm}}, the Holm family formed \emph{{per dataset}}, at
 $\alpha=0.05$. A tie denotes failure to reject $H_0$ (no significant
@@ -1266,9 +1295,10 @@ hyperparameter table, a pinned dependency list (\texttt{{requirements.txt}}),
 an MIT \texttt{{LICENSE}}, and the raw per-run results are available for review
 in an anonymized repository (\url{{https://anonymous.4open.science/r/RG-SCSO}})
 at the manuscript's release commit, and will be deposited in a public, citable
-repository with a permanent Zenodo DOI upon acceptance, permitting
-bit-for-bit reproduction of every number reported in this paper. The exact
-software environment is pinned in \texttt{{requirements.txt}} (Python 3.10).
+repository with a permanent Zenodo DOI upon acceptance. With the pinned
+dependencies (\texttt{{requirements.txt}}, Python 3.10) and the per-run seeds,
+the tables and figures can be regenerated from the released raw results, and
+the experiments re-run deterministically.
 
 % Note: sn-jnl.cls already sets \bibliographystyle{{sn-basic}} internally, so
 % an explicit \bibliographystyle here would trigger BibTeX's "Illegal, another

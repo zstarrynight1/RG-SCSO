@@ -58,3 +58,14 @@ SOP_1_*.md
 *.bak2
 RG-SCSO_IJCS_Cover_Letter.docx
 *.bak*
+_resume_q6_rerun.sh
+
+# Post-A–Z SOP process + audit docs (internal)
+RG-SCSO_MASTER_POST_AZ_*.md
+RG-SCSO_Q1_Experimental_Agent_*.md
+SOP_2_*.md
+POST_AZ_*.md
+[Cc]heck.md
+*.PRE_Q6.bak
+RG-SCSO_IJCS_Cover_Letter.pdf
+RG-SCSO_IJCS_DOCX_preview.pdf
