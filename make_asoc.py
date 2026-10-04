@@ -45,6 +45,20 @@ def build() -> None:
     # --- body: from after \maketitle to before \bibliography ----------
     body = tex[tex.index("\\maketitle") + len("\\maketitle") : tex.index("\\bibliography{references}")]
     body = body.strip("\n")
+    # The master is two-column (sn-jnl), so wide floats are starred to span both
+    # columns. ASOC is single-column (elsarticle): un-star them.
+    body = (body.replace("\\begin{figure*}", "\\begin{figure}")
+                .replace("\\end{figure*}", "\\end{figure}")
+                .replace("\\begin{table*}", "\\begin{table}")
+                .replace("\\end{table*}", "\\end{table}"))
+    # Floats go to the top/bottom of a page, never mid-paragraph: strip the "h"
+    # (here) placement so a figure/table can never split a paragraph. "!" relaxes
+    # LaTeX's float-fraction limits so they still pack tightly rather than drifting.
+    body = (body.replace("[htbp]", "[!tbp]")
+                .replace("[htb]", "[!tbp]")
+                .replace("[hbtp]", "[!tbp]")
+                .replace("\\begin{table}[t]", "\\begin{table}[!tbp]")
+                .replace("\\begin{figure}[t]", "\\begin{figure}[!tbp]"))
 
     preamble = r"""% !TeX program = pdflatex
 %=======================================================================
@@ -85,6 +99,15 @@ def build() -> None:
 \newtheorem{proposition}[lemma]{Proposition}
 
 \journal{Applied Soft Computing}
+
+% Remove the "Preprint submitted to ..." footer on the first page.
+\makeatletter
+\def\ps@pprintTitle{%
+  \let\@oddhead\@empty
+  \let\@evenhead\@empty
+  \let\@oddfoot\@empty
+  \let\@evenfoot\@oddfoot}
+\makeatother
 
 \begin{document}
 

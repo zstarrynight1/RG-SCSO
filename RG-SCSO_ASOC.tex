@@ -38,6 +38,15 @@
 
 \journal{Applied Soft Computing}
 
+% Remove the "Preprint submitted to ..." footer on the first page.
+\makeatletter
+\def\ps@pprintTitle{%
+  \let\@oddhead\@empty
+  \let\@evenhead\@empty
+  \let\@oddfoot\@empty
+  \let\@evenfoot\@oddfoot}
+\makeatother
+
 \begin{document}
 
 \begin{frontmatter}
@@ -155,18 +164,6 @@ binary transfer functions in swarm-based feature selection, (ii)
 relevance-guided search mechanisms, and (iii) SCSO variants
 (Section~\ref{sec:relwork}).
 
-\begin{figure*}[htbp]
-\centering
-\includegraphics[width=0.92\textwidth]{concept.pdf}
-\caption{Conceptual overview. (a) The conventional pipeline, where
-continuous-operator adjustments are collapsed by a fixed, feature-agnostic
-transfer (washout). (b) RG-SCSO, where a per-feature, relevance-modulated
-binarization replaces the feature-agnostic transfer, biasing each feature's
-bit-flip probability by a mutual-information relevance field, followed by
-memetic refinement on uncertain bits.}
-\label{fig:concept}
-\end{figure*}
-
 \FloatBarrier
 \section{Related work}
 \label{sec:relwork}
@@ -186,6 +183,18 @@ of that feature's relevance, the structural weakness this paper terms washout
 (Introduction, Methods). RG-SCSO is orthogonal to this line -- it modulates
 the binarization per feature by a relevance prior, and could in principle be
 combined with an adaptive transfer rather than replacing one.
+
+\begin{figure}[!tbp]
+\centering
+\includegraphics[width=0.92\textwidth]{concept.pdf}
+\caption{Conceptual overview. (a) The conventional pipeline, where
+continuous-operator adjustments are collapsed by a fixed, feature-agnostic
+transfer (washout). (b) RG-SCSO, where a per-feature, relevance-modulated
+binarization replaces the feature-agnostic transfer, biasing each feature's
+bit-flip probability by a mutual-information relevance field, followed by
+memetic refinement on uncertain bits.}
+\label{fig:concept}
+\end{figure}
 
 \subsection{Relevance-guided mechanisms in feature selection}
 Filter criteria such as mutual information and mRMR~\cite{guyon,mrmr} encode
@@ -250,7 +259,7 @@ dynamics without touching the binarization interface at all. None of the
 eight prior works positioned here makes the binarization operator itself
 per-feature and relevance-aware -- the interface RG-SCSO modifies.
 
-\begin{table*}[t]
+\begin{table}[!tbp]
 \centering
 \caption{Positioning of RG-SCSO against recent SCSO-family literature cited in this paper. The four 2024--2025 continuous-search variants (IMSCSO, SCSO+Lens-OBL+SSA, Improved SCSO, MESCSO) improve exploration/exploitation dynamics in continuous space but are global optimization studies, not feature selectors, so they are not directly comparable under this paper's binary FS protocol; they are cited to establish that none of them touches the binarization interface itself. The three binary SCSO feature selectors (bSCSO and two further variants) are directly comparable and are included as same-family baselines (Discussion; Supplementary Information).}
 \label{tab:litpos}
@@ -269,7 +278,7 @@ Improved SCSO~\cite{improvedscso2024} & 2024 & Continuous search dynamics & No -
 MESCSO~\cite{mescso2025} & 2025 & Continuous search (multi-strategy) & No -- global optimization only, no FS \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
 
 
 \FloatBarrier
@@ -307,7 +316,7 @@ the pairwise Wilcoxon test above, does not separate RG-SCSO from AOA, but
 places both above a single indistinguishable cluster comprising the
 remaining five algorithms.
 
-\begin{table*}[t]
+\begin{table}[!tbp]
 \centering
 \caption{Held-out generalization: mean accuracy, with mean number of selected features in parentheses, on the outer 20\% hold-out over 30 runs (relevance prior, search, and CV fitness fit on the 80\% training split only; dataset feature counts are given in Supplementary Table~S1). Standard deviations are omitted here for compactness; per-run raw results, from which they can be recomputed exactly, are in the repository (Data availability). \textbf{Bold} = best accuracy per dataset.}
 \label{tab:heldout}
@@ -337,7 +346,7 @@ WaveformEW & \textbf{0.8153 (15.8)} & 0.7571 (38.3) & 0.7456 (21.0) & 0.7352 (20
 Zoo & 0.9079 (7.8) & \textbf{0.9190 (15.7)} & 0.8460 (8.6) & 0.8540 (8.3) & 0.8460 (8.0) & 0.8476 (8.3) & 0.8270 (7.8) \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
 
 
 \subsection{Feature-subset parsimony}
@@ -364,7 +373,7 @@ features, and against same-family binary SCSO
 selectors~\cite{bscso,scsofs2,scsofs3} it is
 42\% smaller at comparable accuracy. The dimensionality reductions are too small relative to these datasets' modest sample counts (50--455 training instances) for a wall-clock inference saving to be resolvable above call overhead; a projected, reconstructed inference-cost analysis at a synthetic deployment-scale workload, a controlled complexity demonstration rather than a measurement on the benchmark's own test sets, is reported in Supplementary Information instead of here.
 
-\begin{figure*}[htbp]
+\begin{figure}[!tbp]
 \centering
 \includegraphics[width=0.7\textwidth]{accuracy_parsimony_tradeoff.pdf}
 \caption{Mean held-out accuracy vs.\ mean selected-feature fraction,
@@ -378,12 +387,12 @@ accuracy than RG-SCSO. In numbers, RG-SCSO's mean operating point is 0.866
 accuracy at 41\% of features; AOA reaches 0.849 at 98\% of features, and COA
 0.815; mean accuracy across the seven algorithms spans 0.791--0.866.}
 \label{fig:tradeoff}
-\end{figure*}
+\end{figure}
 
 \subsection{Ranking and statistical significance}
 Table~\ref{tab:rank} gives the in-sample average rank (1.00 for RG-SCSO) and the Holm-significant win/tie/loss against each baseline (the corresponding critical-difference diagram is Supplementary Fig.~S6; Fig.~\ref{fig:cd} in the main text gives the held-out counterpart). These are paired per-dataset comparisons, not independent trials: across the 108 dataset-baseline comparisons RG-SCSO records 107 significant wins, 1 non-significant tie, and 0 significant losses after Holm correction, with predominantly large effect sizes (median $|d|=2.15$; 96\% exceed 0.8). These in-sample effect sizes are an optimistic upper bound: they contract to the small-to-moderate held-out range above once the relevance prior is denied access to test labels, whereas the ranking itself is preserved.
 
-\begin{table}[t]
+\begin{table}[!tbp]
 \centering
 \caption{Average accuracy rank across the 18 datasets, the Holm-significant win/tie/loss of RG-SCSO against each baseline (Wilcoxon signed-rank, $\alpha=0.05$), and the median $|$Cohen's $d|$ effect size over the significant-win comparisons against each baseline.}
 \label{tab:rank}
@@ -410,7 +419,7 @@ We started from a three-component design and tested each part by removal (Table~
 
 RQ3 asks whether direct relevance injection at the binarization interface is more effective than relevance-guided initialization or objective weighting. A dedicated signal-position experiment answers it: injecting the same mutual-information field elsewhere, at initialization or as an objective penalty, rather than at the binarization interface (both alternatives are reported in full in Supplementary Information). MI-weighted objective injection is significantly worse than the deployed RMS+UMR configuration on four of five datasets and tied on the fifth (Leukemia), supporting the original claim that the binarization interface is a more effective injection point than the objective function. MI-guided initialization is a harder comparison: significantly worse on ColonCancer and Sonar, but statistically indistinguishable on Leukemia, WDBC, and Zoo, and on Leukemia specifically it matches RG-SCSO's accuracy while selecting roughly four times fewer features (245 vs.\ 940). The binarization interface is thus the most reliable injection point across datasets, not a uniformly superior one; on the most extreme $p\gg n$ dataset tested, a simpler injection at initialization meets or beats it on both accuracy and parsimony. Figure~\ref{fig:injection} traces this ladder: the mean accuracy is essentially flat for relevance at initialization (V1) or in the objective (V2) and rises only once the relevance field enters the binarization decision itself (V3), while parsimony is already gained upstream.
 
-\begin{table*}[t]
+\begin{table}[!tbp]
 \centering
 \caption{Component ablation: mean accuracy over 30 runs on five datasets. $^\dagger$ significantly worse than Full (paired Wilcoxon signed-rank, Holm-corrected $p<0.05$). ``$-$ ORL'' is the final RG-SCSO (RMS+UMR); ORL removal never degrades accuracy, so ORL is not retained.}
 \label{tab:ablation}
@@ -426,10 +435,10 @@ $-$ UMR & 0.8815 & 0.9860 & 0.8880$^\dagger$ & 0.9789 & 0.9804 \\
 $-$ all three & 0.8441 & 0.9860 & 0.8857 & 0.9781 & 0.9808 \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
 
 
-\begin{figure*}[htbp]
+\begin{figure}[!tbp]
 \centering
 \includegraphics[width=0.95\textwidth]{injection_ladder.pdf}
 \caption{Controlled injection-point ablation of the relevance signal, from
@@ -446,9 +455,9 @@ gained at V1/V3, so the two effects arise at different injection points. The
 pattern is not uniform -- on the most extreme $p\gg n$ set, initialization
 (V1) is competitive on both axes.}
 \label{fig:injection}
-\end{figure*}
+\end{figure}
 
-\begin{figure*}[htbp]
+\begin{figure}[!tbp]
 \centering
 \includegraphics[width=0.92\textwidth]{convergence_fs.pdf}
 \caption{Mean best fitness versus iteration, RG-SCSO vs.\ SCSO vs.\ AOA, on
@@ -461,7 +470,7 @@ which themselves plateau early at a distinctly worse value rather than
 continuing to close the gap with more iterations; the difference grows with
 dimensionality.}
 \label{fig:convfs}
-\end{figure*}
+\end{figure}
 
 We also test whether relevance guidance makes RG-SCSO preferentially retain
 high mutual-information features. Because a subset of size $|S|$ overlaps the
@@ -483,7 +492,7 @@ matter consistently; the exact per-feature ranking within it matters
 demonstrably on only one of five datasets, a materially weaker causal claim
 than the enrichment analysis alone would suggest.
 
-\begin{figure*}[htbp]
+\begin{figure}[!tbp]
 \centering
 \includegraphics[width=0.95\textwidth]{relevance_vs_frequency.pdf}
 \caption{How relevance guidance translates into selection behaviour. (a) For
@@ -503,7 +512,7 @@ visualization; they never enter the optimization, model selection,
 hyperparameter choice, or any reported statistical test, all of which use the
 train-only prior.}
 \label{fig:relfreq}
-\end{figure*}
+\end{figure}
 
 \subsection{Threshold sensitivity}
 The 0.5 preferred-bit threshold that separates preferred from disfavored
@@ -516,7 +525,7 @@ accuracy on two of five datasets; mean selected-feature count falls
 monotonically as $\tau$ increases on every dataset, at a modest,
 dataset-dependent, non-uniform accuracy cost.
 
-\begin{table}[t]
+\begin{table}[!tbp]
 \centering
 \caption{Threshold sensitivity ($\tau\in\{0.4,0.5,0.6\}$ replacing the fixed 0.5 preferred-bit threshold in Eq.~(2); 30 independent runs per cell, same protocol and datasets as the main ablation). Highest accuracy per dataset in bold. No single $\tau$ dominates uniformly: $\tau=0.5$, the value deployed throughout this paper, attains the highest accuracy on two of five datasets; mean selected-feature count falls monotonically as $\tau$ increases on every dataset, at a modest, dataset-dependent, non-uniform accuracy cost. $\Phi$ is the Nogueira stability index (Supplementary Information gives the full feature-selection stability comparison across algorithms).}
 \label{tab:threshold}
@@ -549,7 +558,7 @@ Dataset & $\tau$ & Mean Acc. & Mean \#Feat. & $\Phi$ \\
 \end{table}
 
 
-\begin{figure*}[htbp]
+\begin{figure}[!tbp]
 \centering
 \includegraphics[width=0.55\textwidth]{threshold_heatmap.pdf}
 \caption{Mean held-out accuracy (color) and mean number of selected features
@@ -560,18 +569,18 @@ $\tau{=}0.4$ vs.\ $\tau{=}0.5$), while the selected-feature count falls
 monotonically as $\tau$ increases on all five datasets, confirming
 $\tau=0.5$ is not a fragile choice.}
 \label{fig:threshheat}
-\end{figure*}
+\end{figure}
 
 \subsection{Comparison with classical selectors}
 \label{sec:classical}
 RQ4 asks how robust the mechanism is across classifiers, relevance priors, and dataset dimensionalities; this subsection and Table~\ref{tab:classifierrobust} answer it directly. Table~\ref{tab:classic} compares RG-SCSO across the full 18-dataset benchmark against five classical filter, embedded, and wrapper selectors -- mutual-information thresholding, mRMR, ReliefF, LASSO, and sequential forward selection -- and a Concrete-Autoencoder deep feature selector~\cite{{concreteae}}, under the identical stratified 5-fold KNN evaluator. RG-SCSO attains the best accuracy of all methods on 12 of 18 datasets. Across the benchmark it is significantly more accurate (Holm-corrected Wilcoxon signed-rank over the 18 datasets) than mutual-information thresholding, sequential forward selection, mRMR, and LASSO (all Holm $p<0.05$); the one classical selector it does not significantly beat is ReliefF, which it still leads on 13 of 18 datasets ($p=0.2$). The Concrete-Autoencoder baseline, matched to RG-SCSO's per-dataset subset size, is the weakest selector on the small-sample datasets tested, consistent with deep reconstruction objectives needing far more than the 50--455 training instances these benchmarks provide. The exceptions to RG-SCSO's lead are informative and concentrated: on the two gene-expression ($p\gg n$) datasets a classical LASSO baseline attains higher accuracy with far fewer features on both Leukemia (99.8\% at 23 features vs.\ RG-SCSO's 98.6\% at 940) and ColonCancer (95.7\% at 64 vs.\ 88.1\% at 563), with mRMR competitive on both; and on four combinatorial or categorical datasets (TicTacToe, M-of-n, KrVsKpEW, WaveformEW) a classical method edges it by at most 1.7 accuracy points. RG-SCSO's advantage is thus broad but not universal: clearest on datasets without extreme $p\gg n$ structure, where on ultra-high-dimensional gene-expression data a computationally far cheaper embedded method such as LASSO is a strong, arguably preferable, alternative. A remaining question is whether this parsimony mechanism is an artifact of the KNN wrapper used throughout; Table~\ref{tab:classifierrobust} answers it directly, extending the same relevance-guided search to SVM and Random Forest wrappers. The advantage over a no-prior baseline is not a KNN artifact, though it is a more consistent parsimony gain than an accuracy one under Random Forest specifically, and the ReliefF-prior degradation already established above reproduces under every wrapper tested.
 
-\begin{sidewaystable}[t]
+\begin{table}[!tbp]
 \centering
 \caption{Full 18-dataset comparison of RG-SCSO against five classical filter/embedded/wrapper selectors and a Concrete-Autoencoder deep feature selector (CAE), replacing the earlier five-dataset pilot; accuracy with mean selected-feature count in parentheses, 30 runs each, identical evaluator (stratified 5-fold KNN) throughout, \textbf{bold} = best accuracy per dataset. RG-SCSO attains the best accuracy of all methods on 12 of 18 datasets. Across the benchmark it is significantly more accurate (Holm-corrected Wilcoxon signed-rank over the 18 datasets) than MI-thr ($p<0.001$), SFS ($p=0.002$), mRMR ($p=0.017$), LASSO ($p=0.047$); the one classical method it does not significantly beat is ReliefF (better on 13/18, $p=0.20$). The CAE baseline, matched to RG-SCSO's per-dataset subset size, is the weakest selector on the small-sample datasets tested, consistent with deep reconstruction objectives needing more data than these 50--455-instance benchmarks provide. LASSO and mRMR remain the strongest competitors on the two gene-expression ($p\gg n$) sets.}
 \label{tab:classic}
 \scriptsize
-\setlength{\tabcolsep}{3.5pt}
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{lccccccc}
 \toprule
 Dataset & RG-SCSO & LASSO & mRMR & ReliefF & SFS & MI-thr & CAE \\
@@ -596,7 +605,7 @@ ColonCancer & 0.881 (563) & \textbf{0.957 (64)} & 0.907 (6) & 0.907 (11) & 0.902
 Leukemia & 0.986 (940) & \textbf{0.998 (23)} & 0.989 (6) & 0.978 (10) & 0.981 (25) & 0.963 (30) & 0.892 (419) \\
 \bottomrule
 \end{tabular}
-\end{sidewaystable}
+\end{table}
 
 
 \begin{table}[tb]
@@ -624,7 +633,7 @@ Wrapper & Method & Mean Acc. & Mean \#Feat. \\
 \end{table}
 
 
-\begin{figure*}[htbp]
+\begin{figure}[!tbp]
 \centering
 \includegraphics[width=0.92\textwidth]{cd_diagram_heldout.pdf}
 \caption{Critical-difference (Nemenyi) diagram at $\alpha=0.05$ over the
@@ -636,9 +645,9 @@ algorithms, 18 datasets), so RG-SCSO and AOA are statistically
 indistinguishable from each other yet both separate from the rest. The
 corresponding in-sample diagram appears in Supplementary Fig.~S6.}
 \label{fig:cd}
-\end{figure*}
+\end{figure}
 
-\begin{figure*}[htbp]
+\begin{figure}[!tbp]
 \centering
 \includegraphics[width=0.62\textwidth]{mechanism.pdf}
 \caption{Mechanism evidence: size-fair top-MI enrichment on the two
@@ -651,7 +660,7 @@ search, contributing to the smaller and more accurate subsets. Feature-selection
 stability is reported
 separately, with its size correction, in Fig.~\ref{fig:stability}.}
 \label{fig:mech}
-\end{figure*}
+\end{figure}
 
 \FloatBarrier
 \section{Discussion}
@@ -730,7 +739,7 @@ values are reported as a metric-diagnostic in Supplementary Information to make
 this behaviour explicit rather than to headline a favourable number. The full
 per-dataset breakdown for both checks is in Supplementary Information.
 
-\begin{figure*}[htbp]
+\begin{figure}[!tbp]
 \centering
 \includegraphics[width=0.95\textwidth]{stability_metrics.pdf}
 \caption{Feature-subset stability across the five representative datasets, 30
@@ -742,7 +751,7 @@ selects $\approx$98--99\% of all features, so its subsets trivially overlap,
 whereas RG-SCSO selects the fewest. Raw pairwise Jaccard (confounded by this
 size imbalance) is provided only as a Supplementary diagnostic.}
 \label{fig:stability}
-\end{figure*}
+\end{figure}
 
 This wrapper search is itself compute-intensive; absolute wall-clock cost
 per run, for every algorithm tested, is reported in full in Supplementary

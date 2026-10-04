@@ -150,11 +150,11 @@ def classic_baselines_all18_table() -> str:
         "gene-expression ($p\\gg n$) sets."
     )
     return (
-        "\\begin{sidewaystable}[t]\n\\centering\n"
+        "\\begin{table*}[t]\n\\centering\n"
         f"\\caption{{{cap}}}\n"
-        "\\label{tab:classic}\n\\scriptsize\n\\setlength{\\tabcolsep}{3.5pt}\n"
+        "\\label{tab:classic}\n\\scriptsize\n\\setlength{\\tabcolsep}{3pt}\n"
         f"\\begin{{tabular}}{{{cols_spec}}}\n\\toprule\n{head}\n\\midrule\n"
-        f"{body}\n\\bottomrule\n\\end{{tabular}}\n\\end{{sidewaystable}}\n"
+        f"{body}\n\\bottomrule\n\\end{{tabular}}\n\\end{{table*}}\n"
     )
 
 
@@ -486,6 +486,18 @@ of that feature's relevance, the structural weakness this paper terms washout
 (Introduction, Methods). RG-SCSO is orthogonal to this line -- it modulates
 the binarization per feature by a relevance prior, and could in principle be
 combined with an adaptive transfer rather than replacing one.
+
+\begin{{figure*}}[!tbp]
+\centering
+\includegraphics[width=0.92\textwidth]{{concept.pdf}}
+\caption{{Conceptual overview. (a) The conventional pipeline, where
+continuous-operator adjustments are collapsed by a fixed, feature-agnostic
+transfer (washout). (b) RG-SCSO, where a per-feature, relevance-modulated
+binarization replaces the feature-agnostic transfer, biasing each feature's
+bit-flip probability by a mutual-information relevance field, followed by
+memetic refinement on uncertain bits.}}
+\label{{fig:concept}}
+\end{{figure*}}
 
 \subsection{{Relevance-guided mechanisms in feature selection}}
 Filter criteria such as mutual information and mRMR~\cite{{guyon,mrmr}} encode
@@ -1135,18 +1147,6 @@ optimization, relevance-guided binarization, parsimony}}
 
 \section{{Introduction}}
 {introduction}
-
-\begin{{figure*}}[htbp]
-\centering
-\includegraphics[width=0.92\textwidth]{{concept.pdf}}
-\caption{{Conceptual overview. (a) The conventional pipeline, where
-continuous-operator adjustments are collapsed by a fixed, feature-agnostic
-transfer (washout). (b) RG-SCSO, where a per-feature, relevance-modulated
-binarization replaces the feature-agnostic transfer, biasing each feature's
-bit-flip probability by a mutual-information relevance field, followed by
-memetic refinement on uncertain bits.}}
-\label{{fig:concept}}
-\end{{figure*}}
 
 \section{{Related work}}
 \label{{sec:relwork}}
