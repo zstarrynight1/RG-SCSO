@@ -281,8 +281,8 @@ def stability_diagnostic_table() -> str:
     )
 
 
-OUT_TEX = "RG-SCSO_IJCS.tex"
-OUT_SUPP_TEX = "RG-SCSO_IJCS_Supplementary.tex"
+OUT_TEX = "RG-SCSO_master.tex"
+OUT_SUPP_TEX = "RG-SCSO_master_Supplementary.tex"
 
 
 def build() -> None:
@@ -509,7 +509,7 @@ experiment in Results (Table~\ref{{tab:ablation}}) tests this design choice
 directly against both the initialization and objective alternatives.
 
 \paragraph{{Positioning against relevance-injecting binary GWO/WOA/HHO
-variants.}} The closest competitors are binary grey-wolf, whale, and
+variants}} The closest competitors are binary grey-wolf, whale, and
 Harris-hawks selectors that already carry a relevance signal: MOBGWO-GMS
 initializes its population from feature correlation and guides mutation with
 it~\cite{{mobgwogms2023}}, the enhanced Harris-hawks optimizer seeds the search
@@ -736,7 +736,7 @@ features, and against same-family binary SCSO
 selectors~\cite{{bscso,scsofs2,scsofs3}} it is
 {scsofam_pct_str}\% smaller at comparable accuracy.{inference_sentence}
 
-\begin{{figure}}[htbp]
+\begin{{figure*}}[htbp]
 \centering
 \includegraphics[width=0.7\textwidth]{{accuracy_parsimony_tradeoff.pdf}}
 \caption{{Mean held-out accuracy vs.\ mean selected-feature fraction,
@@ -750,7 +750,7 @@ accuracy than RG-SCSO. In numbers, RG-SCSO's mean operating point is 0.866
 accuracy at 41\% of features; AOA reaches 0.849 at 98\% of features, and COA
 0.815; mean accuracy across the seven algorithms spans 0.791--0.866.}}
 \label{{fig:tradeoff}}
-\end{{figure}}
+\end{{figure*}}
 
 \subsection{{Ranking and statistical significance}}
 {ranking_block}
@@ -765,7 +765,7 @@ accuracy at 41\% of features; AOA reaches 0.849 at 98\% of features, and COA
 
 {ablation_table(s) if s.get("ablation") else ""}
 
-\begin{{figure}}[htbp]
+\begin{{figure*}}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{{injection_ladder.pdf}}
 \caption{{Controlled injection-point ablation of the relevance signal, from
@@ -782,9 +782,9 @@ gained at V1/V3, so the two effects arise at different injection points. The
 pattern is not uniform -- on the most extreme $p\gg n$ set, initialization
 (V1) is competitive on both axes.}}
 \label{{fig:injection}}
-\end{{figure}}
+\end{{figure*}}
 
-\begin{{figure}}[htbp]
+\begin{{figure*}}[htbp]
 \centering
 \includegraphics[width=0.92\textwidth]{{convergence_fs.pdf}}
 \caption{{Mean best fitness versus iteration, RG-SCSO vs.\ SCSO vs.\ AOA, on
@@ -797,7 +797,7 @@ which themselves plateau early at a distinctly worse value rather than
 continuing to close the gap with more iterations; the difference grows with
 dimensionality.}}
 \label{{fig:convfs}}
-\end{{figure}}
+\end{{figure*}}
 
 We also test whether relevance guidance makes RG-SCSO preferentially retain
 high mutual-information features. Because a subset of size $|S|$ overlaps the
@@ -819,7 +819,7 @@ matter consistently; the exact per-feature ranking within it matters
 demonstrably on only one of five datasets, a materially weaker causal claim
 than the enrichment analysis alone would suggest.
 
-\begin{{figure}}[htbp]
+\begin{{figure*}}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{{relevance_vs_frequency.pdf}}
 \caption{{How relevance guidance translates into selection behaviour. (a) For
@@ -835,7 +835,7 @@ informative. This association is correlational -- RG-SCSO uses the prior by
 construction while SCSO does not -- so the causal weight rests on the
 shuffled-prior control above, not on this alignment alone.}}
 \label{{fig:relfreq}}
-\end{{figure}}
+\end{{figure*}}
 
 \subsection{{Threshold sensitivity}}
 The 0.5 preferred-bit threshold that separates preferred from disfavored
@@ -850,7 +850,7 @@ dataset-dependent, non-uniform accuracy cost.
 
 {threshold_tab_asoc}
 
-\begin{{figure}}[htbp]
+\begin{{figure*}}[htbp]
 \centering
 \includegraphics[width=0.55\textwidth]{{threshold_heatmap.pdf}}
 \caption{{Mean held-out accuracy (color) and mean number of selected features
@@ -861,7 +861,7 @@ $\tau{{=}}0.4$ vs.\ $\tau{{=}}0.5$), while the selected-feature count falls
 monotonically as $\tau$ increases on all five datasets, confirming
 $\tau=0.5$ is not a fragile choice.}}
 \label{{fig:threshheat}}
-\end{{figure}}
+\end{{figure*}}
 
 \subsection{{Comparison with classical selectors}}
 \label{{sec:classical}}
@@ -947,7 +947,7 @@ values are reported as a metric-diagnostic in Supplementary Information to make
 this behaviour explicit rather than to headline a favourable number. The full
 per-dataset breakdown for both checks is in Supplementary Information.
 
-\begin{{figure}}[htbp]
+\begin{{figure*}}[htbp]
 \centering
 \includegraphics[width=0.95\textwidth]{{stability_metrics.pdf}}
 \caption{{Feature-subset stability across the five representative datasets, 30
@@ -959,7 +959,7 @@ selects $\approx$98--99\% of all features, so its subsets trivially overlap,
 whereas RG-SCSO selects the fewest. Raw pairwise Jaccard (confounded by this
 size imbalance) is provided only as a Supplementary diagnostic.}}
 \label{{fig:stability}}
-\end{{figure}}
+\end{{figure*}}
 
 This wrapper search is itself compute-intensive; absolute wall-clock cost
 per run, for every algorithm tested, is reported in full in Supplementary
@@ -1086,6 +1086,9 @@ used here or transfers to others."""
 \usepackage{{rotating}}
 \usepackage{{url}}
 \usepackage{{placeins}}
+\usepackage{{microtype}}
+\renewcommand{{\arraystretch}}{{1.12}}
+\setlength{{\emergencystretch}}{{3em}}
 \raggedbottom
 \makeatletter
 \setlength{{\@fptop}}{{0pt}}
@@ -1123,7 +1126,7 @@ optimization, relevance-guided binarization, parsimony}}
 \section{{Introduction}}
 {introduction}
 
-\begin{{figure}}[htbp]
+\begin{{figure*}}[htbp]
 \centering
 \includegraphics[width=0.92\textwidth]{{concept.pdf}}
 \caption{{Conceptual overview. (a) The conventional pipeline, where
@@ -1133,7 +1136,7 @@ binarization replaces the feature-agnostic transfer, biasing each feature's
 bit-flip probability by a mutual-information relevance field, followed by
 memetic refinement on uncertain bits.}}
 \label{{fig:concept}}
-\end{{figure}}
+\end{{figure*}}
 
 \section{{Related work}}
 \label{{sec:relwork}}
@@ -1142,7 +1145,7 @@ memetic refinement on uncertain bits.}}
 \section{{Results}}
 {results}
 
-\begin{{figure}}[htbp]
+\begin{{figure*}}[htbp]
 \centering
 \includegraphics[width=0.92\textwidth]{{cd_diagram_heldout.pdf}}
 \caption{{Critical-difference (Nemenyi) diagram at $\alpha=0.05$ over the
@@ -1154,9 +1157,9 @@ algorithms, 18 datasets), so RG-SCSO and AOA are statistically
 indistinguishable from each other yet both separate from the rest. The
 corresponding in-sample diagram appears in Supplementary Fig.~S6.}}
 \label{{fig:cd}}
-\end{{figure}}
+\end{{figure*}}
 
-\begin{{figure}}[htbp]
+\begin{{figure*}}[htbp]
 \centering
 \includegraphics[width=0.62\textwidth]{{mechanism.pdf}}
 \caption{{Mechanism evidence: size-fair top-MI enrichment on the two
@@ -1168,7 +1171,7 @@ on both), evidence that the relevance field, not the base search, drives the
 smaller and more accurate subsets. Feature-selection stability is reported
 separately, with its size correction, in Fig.~\ref{{fig:stability}}.}}
 \label{{fig:mech}}
-\end{{figure}}
+\end{{figure*}}
 
 \section{{Discussion}}
 {discussion}
@@ -1583,24 +1586,24 @@ reported metric share the same cross-validation folds; effect sizes here are
 inflated relative to the held-out estimate (see main text Discussion).
 
 \section{{Convergence behaviour}}
-\begin{{figure}}[htbp]
+\begin{{figure*}}[htbp]
 \centering
 \includegraphics[width=0.92\textwidth]{{convergence.pdf}}
 \caption{{Mean best fitness versus iteration on a low-dimensional (Zoo) and a
 high-dimensional (ColonCancer) dataset, averaged over 30 runs.}}
 \label{{fig:conv}}
-\end{{figure}}
+\end{{figure*}}
 
 \section{{Exploration-safety diagnostic}}
 {diversity['table'] if diversity else ''}
-\begin{{figure}}[htbp]
+\begin{{figure*}}[htbp]
 \centering
 \includegraphics[width=0.92\textwidth]{{diversity.pdf}}
 \caption{{Population diversity and frozen-bit fraction versus iteration, for
 $\gamma=0$, the deployed $\gamma=0.5$, and the stress-test $\gamma=1$, on
 three datasets of increasing dimensionality.}}
 \label{{fig:diversity}}
-\end{{figure}}
+\end{{figure*}}
 
 \section{{Preliminary washout study}}
 {washout_tab_placeholder}
@@ -1739,7 +1742,7 @@ share the same cross-validation folds; as elsewhere in this Supplementary
 Information, in-sample results are an optimistic upper bound and are reported
 here for completeness rather than as the primary claim.
 
-\begin{{figure}}[htbp]
+\begin{{figure*}}[htbp]
 \centering
 \includegraphics[width=0.92\textwidth]{{cd_diagram.pdf}}
 \caption{{Critical-difference (Nemenyi) diagram at $\alpha=0.05$ over the
@@ -1747,7 +1750,7 @@ in-sample ranking (an optimistic upper bound; main text Fig.~2 gives the
 held-out counterpart); algorithms not joined by a bar differ significantly in
 mean in-sample rank.}}
 \label{{fig:cdinsample}}
-\end{{figure}}
+\end{{figure*}}
 
 \bibliographystyle{{plain}}
 \bibliography{{references}}

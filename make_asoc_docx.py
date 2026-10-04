@@ -33,9 +33,9 @@ HIGHLIGHTS = [
 
 
 def main_manuscript() -> None:
-    """Identical body to the IJCS docx (verified journal-agnostic: no IJCS/Springer text)."""
-    shutil.copyfile("RG-SCSO_IJCS.docx", "RG-SCSO_ASOC.docx")
-    print("Wrote RG-SCSO_ASOC.docx (copy of IJCS docx — identical body)")
+    """Identical body to the master docx (verified journal-agnostic: no IJCS/Springer text)."""
+    shutil.copyfile("RG-SCSO_master.docx", "RG-SCSO_ASOC.docx")
+    print("Wrote RG-SCSO_ASOC.docx (copy of master docx — identical body)")
 
 
 def highlights_doc() -> None:

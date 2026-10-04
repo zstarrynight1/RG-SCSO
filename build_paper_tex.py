@@ -177,11 +177,11 @@ def ablation_table(s: dict) -> str:
            "Holm-corrected $p<0.05$). ``$-$ ORL'' is the final RG-SCSO (RMS+UMR); "
            "ORL removal never degrades accuracy, so ORL is not retained.")
     return (
-        "\\begin{table}[t]\n\\centering\n"
+        "\\begin{table*}[t]\n\\centering\n"
         f"\\caption{{{cap}}}\n"
         "\\label{tab:ablation}\n\\footnotesize\n"
         f"\\begin{{tabular}}{{{cols}}}\n\\toprule\n{head}\n\\midrule\n"
-        f"{body}\n\\bottomrule\n\\end{{tabular}}\n\\end{{table}}\n"
+        f"{body}\n\\bottomrule\n\\end{{tabular}}\n\\end{{table*}}\n"
     )
 
 

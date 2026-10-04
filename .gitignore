@@ -75,3 +75,14 @@ POST_AZ_*.md
 *.PRE_Q6.bak
 RG-SCSO_IJCS_Cover_Letter.pdf
 RG-SCSO_IJCS_DOCX_preview.pdf
+
+# Overleaf upload bundles (derived; not part of the source repo)
+overleaf_ASOC/
+overleaf_IJCS/
+RG-SCSO_ASOC_Overleaf.zip
+RG-SCSO_IJCS_Overleaf.zip
+
+# Internal master source (sn-jnl format) from which ASOC is generated; intermediate only
+RG-SCSO_master.tex
+RG-SCSO_master_Supplementary.tex
+RG-SCSO_master.docx

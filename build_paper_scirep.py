@@ -188,11 +188,11 @@ def extended_ablation_table(s: dict) -> str:
         "4$\\times$ fewer features (245 vs.\\ 940)."
     )
     return (
-        "\\begin{table}[t]\n\\centering\n"
+        "\\begin{table*}[t]\n\\centering\n"
         f"\\caption{{{cap}}}\n"
         "\\label{tab:ablation}\n\\footnotesize\n"
         f"\\begin{{tabular}}{{{cols}}}\n\\toprule\n{head}\n\\midrule\n"
-        f"{body}\n\\bottomrule\n\\end{{tabular}}\n\\end{{table}}\n"
+        f"{body}\n\\bottomrule\n\\end{{tabular}}\n\\end{{table*}}\n"
     )
 
 
@@ -376,12 +376,12 @@ def literature_positioning_table() -> str:
         "as same-family baselines (Discussion; Supplementary Information)."
     )
     return (
-        "\\begin{table}[t]\n\\centering\n"
+        "\\begin{table*}[t]\n\\centering\n"
         f"\\caption{{{cap}}}\n"
         "\\label{tab:litpos}\n\\footnotesize\n"
-        "\\begin{tabular}{p{4.2cm}cp{3.6cm}p{3.6cm}}\n\\toprule\n"
+        "\\begin{tabular}{p{4.6cm}cp{4.3cm}p{4.3cm}}\n\\toprule\n"
         "Method & Year & What it modifies & Comparable to this protocol? \\\\\n\\midrule\n"
-        f"{body}\n\\bottomrule\n\\end{{tabular}}\n\\end{{table}}\n"
+        f"{body}\n\\bottomrule\n\\end{{tabular}}\n\\end{{table*}}\n"
     )
 
 
@@ -698,11 +698,11 @@ def heldout_combined_table(hs: dict) -> str:
         "availability). \\textbf{Bold} = best accuracy per dataset."
     )
     return (
-        "\\begin{table}[t]\n\\centering\n"
+        "\\begin{table*}[t]\n\\centering\n"
         f"\\caption{{{cap}}}\n"
-        "\\label{tab:heldout}\n\\tiny\n\\setlength{\\tabcolsep}{1.0pt}\n"
+        "\\label{tab:heldout}\n\\scriptsize\n\\setlength{\\tabcolsep}{2pt}\n"
         f"\\begin{{tabular}}{{{cols}}}\n\\toprule\n{head} \\\\\n\\midrule\n"
-        f"{body}\n\\bottomrule\n\\end{{tabular}}\n\\end{{table}}\n"
+        f"{body}\n\\bottomrule\n\\end{{tabular}}\n\\end{{table*}}\n"
     )
 
 

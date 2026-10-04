@@ -11,8 +11,8 @@ from __future__ import annotations
 
 import re
 
-IJCS_TEX = "RG-SCSO_IJCS.tex"
-IJCS_SUPP = "RG-SCSO_IJCS_Supplementary.tex"
+IJCS_TEX = "RG-SCSO_master.tex"
+IJCS_SUPP = "RG-SCSO_master_Supplementary.tex"
 OUT_TEX = "RG-SCSO_ASOC.tex"
 OUT_SUPP = "RG-SCSO_ASOC_Supplementary.tex"
 OUT_HL = "RG-SCSO_ASOC_Highlights.txt"
@@ -65,6 +65,9 @@ def build() -> None:
 \usepackage{rotating}
 \usepackage{url}
 \usepackage{placeins}
+\usepackage{microtype}
+\renewcommand{\arraystretch}{1.12}
+\setlength{\emergencystretch}{3em}
 
 % Reduce float-induced whitespace: let floats fill more of the page before a
 % text page is forced, and tighten the gaps around them.

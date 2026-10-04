@@ -66,7 +66,7 @@ from build_paper_scirep_docx import (
     _style_setup,
 )
 
-OUT_DOCX = "RG-SCSO_IJCS.docx"
+OUT_DOCX = "RG-SCSO_master.docx"
 
 
 _orig_para = para
