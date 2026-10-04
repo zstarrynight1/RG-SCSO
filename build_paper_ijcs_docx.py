@@ -1006,7 +1006,7 @@ def build() -> None:
               "sensitivity sweep shows contributes far less than RMS; an "
               "online-learning variant of the relevance field is examined "
               "and pruned entirely by ablation. Third, we evaluate under a "
-              "preregistered, fixed-budget, leak-free protocol that denies "
+              "pre-specified, fixed-budget, leak-free protocol that denies "
               "the relevance prior any access to test labels. Fourth, we "
               "report a full statistical treatment, a component ablation, "
               "and a size-fair enrichment analysis correlating the observed "
@@ -1168,9 +1168,12 @@ def build() -> None:
               "p < 0.001). A Holm-corrected Wilcoxon signed-rank test "
               f"across all pairwise comparisons gives RG-SCSO {hs_w} "
               f"significant wins, {hs_l} loss, and {hs_t} ties; the only "
-              "close competitor is AOA, against which the advantage is "
-              f"genuine but moderate (median |d|={hs_d_aoa:.2f}), RG-SCSO "
-              "still leading on mean accuracy. Over the 18 datasets the paired accuracy difference against AOA is +0.017 (95% bootstrap CI [+0.003, +0.034], excluding zero), confirming a small but consistent aggregate edge; against every other baseline the paired difference is larger (all 95% CIs excluding zero).")
+              "close competitor is AOA, over which RG-SCSO holds the higher "
+              f"mean accuracy and a consistent positive aggregate difference "
+              f"(median |d|={hs_d_aoa:.2f}). The more conservative Nemenyi "
+              "post-hoc, however, does not separate the two (Fig. 3), so we "
+              "read this as a modest aggregate edge rather than a "
+              "statistically conclusive superiority over AOA. Over the 18 datasets the paired accuracy difference against AOA is +0.017 (95% bootstrap CI [+0.003, +0.034], excluding zero), confirming a small but consistent aggregate edge; against every other baseline the paired difference is larger (all 95% CIs excluding zero).")
     _ci_rng = np.random.default_rng(42)
 
     def _boot_ci(vals: np.ndarray, n_boot: int = 2000) -> tuple:
@@ -1258,8 +1261,10 @@ def build() -> None:
                   "Holm-significant win/tie/loss against each baseline. "
                   f"These are paired per-dataset comparisons, "
                   f"not independent trials: across the {n_cmp} "
-                  f"dataset-baseline pairs RG-SCSO wins {w} and loses "
-                  f"{l}, with predominantly large effect sizes (median "
+                  f"dataset-baseline comparisons RG-SCSO records {w} "
+                  f"significant wins, {n_cmp - w - l} non-significant tie, "
+                  f"and {l} significant losses after Holm correction, with "
+                  f"predominantly large effect sizes (median "
                   f"|d|={s['es_median']:.2f}; {s['es_large_pct']:.0f}% "
                   "exceed 0.8). These in-sample effect sizes are an "
                   "optimistic upper bound: they contract to the "
@@ -1410,10 +1415,10 @@ def build() -> None:
         "chance level |S|/N; mean over 30 runs, error bars = std). "
         "RG-SCSO enriches its subset 1.22-1.26x above chance (ColonCancer, "
         "Leukemia respectively), whereas the relevance-agnostic SCSO sits "
-        "at essentially chance (lift 1.00 on both), evidence that the "
-        "relevance field, not the base search, drives the smaller and more "
-        "accurate subsets. Feature-selection stability is reported "
-        "separately, with its size correction, in Fig. 9.",
+        "at essentially chance (lift 1.00 on both), evidence consistent with "
+        "relevance guidance, rather than the base search, contributing to the "
+        "smaller and more accurate subsets. Feature-selection stability is "
+        "reported separately, with its size correction, in Fig. 9.",
         width_in=3.6))
     para(doc, "Figure 7 shows directly how relevance guidance translates "
               "into selection behaviour: RG-SCSO's per-feature selection "
@@ -1436,7 +1441,11 @@ def build() -> None:
         "markedly more so on the higher-dimensional ones (ColonCancer, "
         "Leukemia, WDBC), and essentially tied on low-dimensional Zoo. The "
         "association is correlational; the causal evidence is the "
-        "shuffled-prior control (Supplementary Information).",
+        "shuffled-prior control (Supplementary Information). The full-sample "
+        "relevance values plotted here are used solely as an ex-post "
+        "descriptive visualization; they never enter the optimization, model "
+        "selection, hyperparameter choice, or any reported statistical test, "
+        "all of which use the train-only prior.",
         width_in=5.3))
 
     doc.add_heading("3.5 Threshold sensitivity", level=2)
@@ -1729,13 +1738,15 @@ def build() -> None:
               f"{feat_min}–{feat_max}-feature benchmark, drawn from a single "
               "curated dataset family, leaves behavior at 10^4–10^5 features "
               "extrapolated rather than measured.")
-    para(doc, "In practical terms, RG-SCSO is a drop-in replacement for "
-              "the binarization step of any SCSO-based wrapper, adding "
+    para(doc, "In practical terms, RG-SCSO is designed to drop into the "
+              "binarization step of an SCSO-based wrapper, adding "
               "only a small, fixed set of hyperparameters (the modulation "
               "strength γ, the preferred-bit threshold τ, and the memetic "
               "budget K) that this paper shows are not fragile choices; "
-              "its main practical payoff is a smaller, cheaper-to-store "
-              "and cheaper-to-deploy feature subset at accuracy that "
+              "its main practical payoff is a smaller feature subset that "
+              "is cheaper to store and can lower downstream "
+              "feature-processing cost wherever feature acquisition and "
+              "preprocessing scale with dimensionality, at accuracy that "
               "matches or exceeds the swarm-based selectors it was "
               "compared against.")
     fw = doc.add_paragraph()
@@ -2086,7 +2097,7 @@ def build() -> None:
     para(doc, f"We benchmark against six baselines: SCSO (base) {_c('scso')}, "
               f"AOA {_c('aoa')}, CoatiOA {_c('coa')}, GWO {_c('gwo')}, PSO "
               f"{_c('pso')}, and RIME {_c('rime')}. The protocol is "
-              "preregistered and locked prior to the full run. All "
+              "pre-specified and locked prior to the full run. All "
               "algorithms share: population 30, 500 iterations, 30 "
               "independent runs, seed = 42+run_id (paired across "
               "algorithms), KNN (k=5) with stratified 5-fold "
@@ -2099,7 +2110,7 @@ def build() -> None:
               "fixed before the full run; τ and the cardinality weight λ are "
               "additionally characterized by the sensitivity sweeps in "
               "Supplementary Information, while γ and K were frozen from the "
-              "preregistration pilot and not tuned on the test data. A "
+              "pre-specification pilot and not tuned on the test data. A "
               "per-method fidelity table (source, version, control "
               "parameters, search space, tuning, budget, seed) is provided in "
               "the released repository (Baseline_Fidelity_Report); the "
@@ -2128,7 +2139,7 @@ def build() -> None:
               "it is not evidence of equivalence. Effect sizes use Cohen's d and rank-biserial "
               f"r; overall comparison uses the Friedman test with a "
               f"critical-difference diagram {_c('demsar')}. The "
-              "experimental design was preregistered and "
+              "experimental design was pre-specified and "
               "version-controlled before the full run and left unmodified "
               "after results were observed; all randomness is seeded "
               "deterministically and shared across algorithms.")
@@ -2183,7 +2194,7 @@ def build() -> None:
     para(doc, "The datasets analysed in this study are publicly available "
               "benchmarks (UCI and standard microarray sets); Supplementary "
               "Table S1 lists each source. The source code, the locked "
-              "preregistration, the per-run seeds, a complete hyperparameter "
+              "pre-specification, the per-run seeds, a complete hyperparameter "
               "table, a pinned dependency list (requirements.txt), an MIT "
               "LICENSE, and the raw per-run results are available for review "
               "in an anonymized repository "

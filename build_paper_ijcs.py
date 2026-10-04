@@ -438,7 +438,7 @@ ablation-confirmed centerpiece is relevance-modulated sensitivity (RMS),
 supplemented by a smaller, budget-neutral memetic refinement step (UMR) that a
 sensitivity sweep shows contributes far less than RMS; an online-learning
 variant of the relevance field is examined and pruned entirely by ablation.
-Third, we evaluate under a preregistered, fixed-budget, leak-free protocol
+Third, we evaluate under a pre-specified, fixed-budget, leak-free protocol
 that denies the relevance prior any access to test labels. Fourth, we report a
 full statistical treatment, a component ablation, and a size-fair enrichment
 analysis correlating the observed parsimony with relevance guidance.
@@ -567,8 +567,10 @@ per-feature and relevance-aware -- the interface RG-SCSO modifies.
             "Fig.~\\ref{fig:cd} in the main text gives the held-out "
             "counterpart). These "
             f"are paired per-dataset comparisons, not independent trials: "
-            f"across the {n_cmp} dataset-baseline pairs RG-SCSO wins {w} and "
-            f"loses {l}, with predominantly large effect sizes (median "
+            f"across the {n_cmp} dataset-baseline comparisons RG-SCSO records "
+            f"{w} significant wins, {n_cmp - w - l} non-significant tie, and "
+            f"{l} significant losses after Holm correction, with predominantly "
+            f"large effect sizes (median "
             f"$|d|={s['es_median']:.2f}$; {s['es_large_pct']:.0f}\\% exceed "
             "0.8). These in-sample effect sizes are an optimistic upper "
             "bound: they contract to the small-to-moderate held-out range "
@@ -698,8 +700,11 @@ the second-placed AOA at {hs_rank.iloc[1]:.2f}; $\chi^2${fr_chi2_str},
 $p{fr_p_str}$). A
 Holm-corrected Wilcoxon signed-rank test across all pairwise comparisons gives
 RG-SCSO {hs_w} significant wins, {hs_l} loss, and {hs_t} ties; the only close
-competitor is AOA, against which the advantage is genuine but moderate
-(median $|d|={hs_d_aoa:.2f}$), RG-SCSO still leading on mean accuracy. Over the
+competitor is AOA, over which RG-SCSO holds the higher mean accuracy and a
+consistent positive aggregate difference (median $|d|={hs_d_aoa:.2f}$). The
+more conservative Nemenyi post-hoc, however, does not separate the two
+(Fig.~\ref{{fig:cd}}), so we read this as a modest aggregate edge rather than a
+statistically conclusive superiority over AOA. Over the
 {s['n']} datasets the paired accuracy difference against AOA is $+0.017$ (95\%
 bootstrap CI $[+0.003,+0.034]$, excluding zero), confirming a small but
 consistent aggregate edge; against every other baseline the paired difference
@@ -833,7 +838,11 @@ set and markedly more so on the higher-dimensional ones (ColonCancer, Leukemia,
 WDBC), and essentially tied on low-dimensional Zoo where almost all features are
 informative. This association is correlational -- RG-SCSO uses the prior by
 construction while SCSO does not -- so the causal weight rests on the
-shuffled-prior control above, not on this alignment alone.}}
+shuffled-prior control above, not on this alignment alone. The full-sample
+relevance values plotted here are used solely as an ex-post descriptive
+visualization; they never enter the optimization, model selection,
+hyperparameter choice, or any reported statistical test, all of which use the
+train-only prior.}}
 \label{{fig:relfreq}}
 \end{{figure*}}
 
@@ -1038,13 +1047,14 @@ biomedical, gene-expression, and categorical domains, is drawn from a single
 curated family of datasets, so behavior on ultra-high-dimensional omics data
 of $10^4$--$10^5$ features is extrapolated rather than measured.
 
-In practical terms, RG-SCSO is a drop-in replacement for the binarization
-step of any SCSO-based wrapper, adding only a small, fixed set of
-hyperparameters (the modulation strength $\gamma$, the preferred-bit
-threshold $\tau$, and the memetic budget $K$) that this paper shows are
-not fragile choices; its main practical payoff is a smaller,
-cheaper-to-store and cheaper-to-deploy feature subset at accuracy that
-matches or exceeds the swarm-based selectors it was compared against.
+In practical terms, RG-SCSO is designed to drop into the binarization step of
+an SCSO-based wrapper, adding only a small, fixed set of hyperparameters (the
+modulation strength $\gamma$, the preferred-bit threshold $\tau$, and the
+memetic budget $K$) that this paper shows are not fragile choices; its main
+practical payoff is a smaller feature subset that is cheaper to store and can
+lower downstream feature-processing cost wherever feature acquisition and
+preprocessing scale with dimensionality, at accuracy that matches or exceeds
+the swarm-based selectors it was compared against.
 
 \textbf{{Future work}} includes: (i) adaptive, data-driven selection of the
 preferred-bit threshold, for example via cross-validation or an
@@ -1167,8 +1177,9 @@ gene-expression sets (selection precision divided by the chance level
 $|S|/N$; mean over 30 runs, error bars = std). RG-SCSO enriches its subset
 1.22--1.26$\times$ above chance (ColonCancer, Leukemia respectively),
 whereas the relevance-agnostic SCSO sits at essentially chance (lift 1.00
-on both), evidence that the relevance field, not the base search, drives the
-smaller and more accurate subsets. Feature-selection stability is reported
+on both), evidence consistent with relevance guidance, rather than the base
+search, contributing to the smaller and more accurate subsets. Feature-selection
+stability is reported
 separately, with its size correction, in Fig.~\ref{{fig:stability}}.}}
 \label{{fig:mech}}
 \end{{figure*}}
@@ -1378,7 +1389,7 @@ touched exactly once, for final evaluation.
 
 We benchmark against six baselines: SCSO (base)~\cite{{scso}},
 AOA~\cite{{aoa}}, CoatiOA~\cite{{coa}}, GWO~\cite{{gwo}}, PSO~\cite{{pso}}, and
-RIME~\cite{{rime}}. The protocol is preregistered and locked prior to the full
+RIME~\cite{{rime}}. The protocol is pre-specified and locked prior to the full
 run. All algorithms share: population 30, 500 iterations, 30 independent
 runs, seed $=42+\mathrm{{run\_id}}$ (paired across algorithms), KNN ($k=5$)
 with stratified 5-fold cross-validation, search space $[-1,1]^d$, and the
@@ -1389,7 +1400,7 @@ protocol, and we do not re-tune any method per dataset. RG-SCSO's
 $\gamma=0.5$, $\tau=0.5$, and $K=8$ are likewise fixed before the full run;
 $\tau$ and the cardinality weight $\lambda$ are additionally characterized by
 the sensitivity sweeps reported in Supplementary Information, while $\gamma$
-and $K$ were frozen from the preregistration pilot and not tuned on the test
+and $K$ were frozen from the pre-specification pilot and not tuned on the test
 data. A per-method fidelity table (source, version, control parameters, search
 space, tuning, budget, seed) is provided in the released repository
 (\texttt{{Baseline\_Fidelity\_Report}}); the limitation of comparing against
@@ -1416,7 +1427,7 @@ $\alpha=0.05$. A tie denotes failure to reject $H_0$ (no significant
 accuracy difference) at this threshold; it is not evidence of equivalence.
 Effect sizes use Cohen's $d$ and rank-biserial $r$; overall comparison uses the
 Friedman test with a critical-difference diagram~\cite{{demsar}}. The
-experimental design was preregistered and version-controlled before the full
+experimental design was pre-specified and version-controlled before the full
 run and left unmodified after results were observed; all randomness is
 seeded deterministically and shared across algorithms.
 
@@ -1448,7 +1459,7 @@ the authors, who take full responsibility for the content of this manuscript.
 \subsection*{{Data Availability Statement}}
 The datasets analysed in this study are publicly available benchmarks (UCI
 and standard microarray sets); Supplementary Table~S1 lists each source. The
-source code, the locked preregistration, the per-run seeds, a complete
+source code, the locked pre-specification, the per-run seeds, a complete
 hyperparameter table, a pinned dependency list (\texttt{{requirements.txt}}),
 an MIT \texttt{{LICENSE}}, and the raw per-run results are available for review
 in an anonymized repository (\url{{https://anonymous.4open.science/r/RG-SCSO}})
