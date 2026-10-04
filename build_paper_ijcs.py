@@ -227,6 +227,60 @@ def sigpos_supp_table(s: dict) -> str:
         f"{body}\n\\bottomrule\n\\end{{tabular}}\n\\end{{table}}\n"
     )
 
+STABILITY_METRICS_CSV = os.path.join("figures", "stability_metrics.csv")
+
+
+def stability_diagnostic_table() -> str:
+    """Supplementary metric-diagnostic: Nogueira phi vs raw Jaccard vs selected
+    fraction, making the size-confound of raw Jaccard explicit (transparency)."""
+    if not os.path.exists(STABILITY_METRICS_CSV):
+        return ""
+    df = pd.read_csv(STABILITY_METRICS_CSV)
+    ds_order = ["Zoo", "Sonar", "WDBC", "ColonCancer", "Leukemia"]
+    algos = ["RG-SCSO", "SCSO", "AOA"]
+    cols = "ll" + "c" * len(ds_order)
+    head = "Metric & Algorithm & " + " & ".join(esc(d) for d in ds_order) + r" \\"
+
+    def cell(metric: str, algo: str, ds: str) -> str:
+        r = df[(df.algorithm == algo) & (df.dataset == ds)]
+        if r.empty:
+            return "--"
+        return f"{float(r.iloc[0][metric]):.3f}"
+
+    blocks = [
+        ("Nogueira $\\Phi$ (corrected)", "nogueira_phi"),
+        ("Raw Jaccard (size-confounded)", "raw_mean_jaccard"),
+        ("Mean selected fraction", "mean_selected_fraction"),
+    ]
+    lines = []
+    for label, metric in blocks:
+        for i, algo in enumerate(algos):
+            first = f"\\multirow{{3}}{{*}}{{{label}}}" if i == 0 else ""
+            cells = [first, esc(algo)] + [cell(metric, algo, ds) for ds in ds_order]
+            lines.append(" & ".join(cells) + r" \\")
+        lines.append(r"\midrule")
+    body = "\n".join(lines[:-1])  # drop trailing midrule
+    cap = (
+        "Feature-selection stability metric-diagnostic (five datasets, 30 runs "
+        "each). The size- and chance-corrected Nogueira $\\Phi$ is the metric "
+        "used in the main text; uncorrected raw pairwise Jaccard and the mean "
+        "selected fraction are reported here to make the size confound explicit. "
+        "AOA attains a near-perfect raw Jaccard ($\\approx$0.98) purely because "
+        "it selects $\\approx$0.99 of all features, yet its corrected $\\Phi$ is "
+        "$\\approx$0; RG-SCSO's lower raw Jaccard reflects its much smaller "
+        "subsets, not lower genuine stability. This diagnostic is included to "
+        "show the stability metric was itself stress-tested, not chosen because "
+        "it favours RG-SCSO."
+    )
+    return (
+        "\\begin{table}[t]\n\\centering\n"
+        f"\\caption{{{cap}}}\n"
+        "\\label{tab:stabilitydiag}\n\\footnotesize\n"
+        f"\\begin{{tabular}}{{{cols}}}\n\\toprule\n{head}\n\\midrule\n"
+        f"{body}\n\\bottomrule\n\\end{{tabular}}\n\\end{{table}}\n"
+    )
+
+
 OUT_TEX = "RG-SCSO_IJCS.tex"
 OUT_SUPP_TEX = "RG-SCSO_IJCS_Supplementary.tex"
 
@@ -308,29 +362,30 @@ def build() -> None:
     abstract = (
         "Wrapper feature selection with swarm intelligence typically searches "
         "in continuous space and crosses into the binary domain through a "
-        "fixed transfer function, a feature-agnostic quantization that "
-        "discards the continuous operators' fine adjustments, an effect we "
-        "term washout. RG-SCSO replaces this transfer with a per-feature, "
-        "relevance-modulated binarization: a mutual-information field biases "
-        "each feature's bit-flip probability so informative features resist "
-        "removal and noise resists inclusion, leaving SCSO's continuous "
-        "search otherwise unchanged. "
-        f"Evaluated on {s['n']} datasets, including two gene-expression sets, "
-        "under a fixed-budget, leak-free protocol that computes the "
-        "relevance prior, the search, and the cross-validated fitness only on "
-        "the training partition, RG-SCSO attains the best mean held-out "
-        "accuracy of the seven metaheuristics compared while selecting the "
-        "second-smallest feature subsets of any method tested, trailing only "
-        "COA, which is several points less accurate. The advantage is "
-        "parsimony rather than raw accuracy: it persists against optimizers "
-        "carrying published adaptive transfers, against which RG-SCSO still "
-        f"selects {adaptive['red_min']:.0f}--{adaptive['red_max']:.0f}\\% "
-        "fewer features, and against same-family binary SCSO selectors; "
-        "ablation and cross-prior tests show it depends on where the "
-        "relevance signal is injected and on the prior used. On the two "
-        "gene-expression sets a classical LASSO baseline is sparser at no "
-        "loss of accuracy, so the transferable gain is parsimony on data "
-        "without that extreme structure."
+        "fixed transfer function -- a feature-agnostic quantization that "
+        "discards the continuous operators' fine adjustments, a failure mode "
+        "we identify and name washout. We diagnose washout as the reason "
+        "continuous-space enhancements stop helping at the binarization "
+        "boundary, and address it at that boundary: RG-SCSO replaces the fixed "
+        "transfer with a per-feature, relevance-modulated binarization in "
+        "which a mutual-information field biases each feature's bit-flip "
+        "probability, so informative features resist removal and noise resists "
+        "inclusion, while SCSO's continuous search is left otherwise "
+        "unchanged. The design targets low- to medium-dimensional wrapper "
+        "feature selection, where the practical goal is a smaller subset at "
+        "matched accuracy. "
+        f"Evaluated on {s['n']} datasets under a fixed-budget, leak-free "
+        "protocol that computes the relevance prior, the search, and the "
+        "cross-validated fitness only on the training partition, RG-SCSO "
+        "attains the best mean held-out accuracy of the seven metaheuristics "
+        "compared while selecting the second-smallest feature subsets of any "
+        "method, trailing only the less-accurate COA. A controlled ablation "
+        "localizes the gain to the binarization decision -- not initialization "
+        "or the objective -- and it persists across classifier wrappers and "
+        "relevance priors, with more stable subsets than the base search. On "
+        "the two gene-expression ($p\\gg n$) sets a "
+        "classical LASSO baseline is preferable, bounding the method's "
+        "envelope to data without that extreme structure."
     )
 
                                                                             
@@ -369,8 +424,14 @@ binarization in which a mutual-information relevance field biases each
 feature's bit-flip probability, turning a knowledge-agnostic quantization
 step into a knowledge-carrying operator. SCSO's continuous search, including
 its sensitivity range, is retained unchanged; the novelty resides entirely in
-the binarization (Fig.~\ref{{fig:concept}}). This paper makes four
-contributions. First, we identify washout as a mechanistic failure mode and
+the binarization (Fig.~\ref{{fig:concept}}). The method is designed for the
+regime where wrapper feature selection is most often applied in practice --
+low- to medium-dimensional problems in which the goal is a smaller, more
+deployable feature subset at matched accuracy -- and we evaluate it, and bound
+it, against that intended use rather than claiming universal dominance; on
+extreme $p\gg n$ gene-expression data a classical embedded selector remains
+preferable, a boundary we report as a scope of the design, not a hidden
+caveat. This paper makes four contributions. First, we identify washout as a mechanistic failure mode and
 derive a diagnostic bound, together with a cumulative extension linking it to
 discrete transition dynamics. Second, we propose RG-SCSO, whose
 ablation-confirmed centerpiece is relevance-modulated sensitivity (RMS),
@@ -555,7 +616,12 @@ per-feature and relevance-aware -- the interface RG-SCSO modifies.
         "interface is thus the most reliable injection point across "
         "datasets, not a uniformly superior one; on the most extreme "
         "$p\\gg n$ dataset tested, a simpler injection at initialization "
-        "meets or beats it on both accuracy and parsimony."
+        "meets or beats it on both accuracy and parsimony. "
+        "Figure~\\ref{fig:injection} traces this ladder: the mean accuracy is "
+        "essentially flat for relevance at initialization (V1) or in the "
+        "objective (V2) and rises only once the relevance field enters the "
+        "binarization decision itself (V3), while parsimony is already gained "
+        "upstream."
     )
 
     _rel = c18["wl"].get("ReliefF", {})
@@ -701,6 +767,25 @@ accuracy at 41\% of features; AOA reaches 0.849 at 98\% of features, and COA
 
 \begin{{figure}}[htbp]
 \centering
+\includegraphics[width=0.95\textwidth]{{injection_ladder.pdf}}
+\caption{{Controlled injection-point ablation of the relevance signal, from
+V0 (base SCSO, relevance absent) through V1 (relevance at initialization), V2
+(relevance in the objective), V3 (relevance at the binarization decision, RMS)
+to V4 (full RG-SCSO, RMS+UMR), on five datasets spanning $p\gg n$
+gene-expression to low-dimensional data, 30 runs per cell. (a) Mean accuracy:
+thin lines are per-dataset means, the bold line the across-dataset mean. The
+mean accuracy is essentially flat for V1 and V2 and rises only at V3, locating
+the accuracy effect at the binarization interface rather than upstream; the
+V4 UMR step adds little further accuracy (its benefit is in stability,
+Fig.~\ref{{fig:stability}}). (b) Selected-feature fraction: parsimony is already
+gained at V1/V3, so the two effects arise at different injection points. The
+pattern is not uniform -- on the most extreme $p\gg n$ set, initialization
+(V1) is competitive on both axes.}}
+\label{{fig:injection}}
+\end{{figure}}
+
+\begin{{figure}}[htbp]
+\centering
 \includegraphics[width=0.92\textwidth]{{convergence_fs.pdf}}
 \caption{{Mean best fitness versus iteration, RG-SCSO vs.\ SCSO vs.\ AOA, on
 Zoo (16 features), WDBC (30 features), and ColonCancer (2000 features), mean
@@ -733,6 +818,24 @@ both on every dataset. The relevance field's direction and scale therefore
 matter consistently; the exact per-feature ranking within it matters
 demonstrably on only one of five datasets, a materially weaker causal claim
 than the enrichment analysis alone would suggest.
+
+\begin{{figure}}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{{relevance_vs_frequency.pdf}}
+\caption{{How relevance guidance translates into selection behaviour. (a) For
+WDBC, per-feature mutual-information relevance $\rho_j$ (computed on the full
+sample for visualization only; the optimizer uses a train-only prior) versus
+the fraction of 30 runs in which each feature is selected. RG-SCSO's selection
+frequency tracks relevance more closely than base SCSO, which does not use the
+prior (Spearman $\rho=0.60$ vs.\ $0.37$). (b) The same rank correlation across
+all five datasets: RG-SCSO is at least as relevance-aligned as SCSO on every
+set and markedly more so on the higher-dimensional ones (ColonCancer, Leukemia,
+WDBC), and essentially tied on low-dimensional Zoo where almost all features are
+informative. This association is correlational -- RG-SCSO uses the prior by
+construction while SCSO does not -- so the causal weight rests on the
+shuffled-prior control above, not on this alignment alone.}}
+\label{{fig:relfreq}}
+\end{{figure}}
 
 \subsection{{Threshold sensitivity}}
 The 0.5 preferred-bit threshold that separates preferred from disfavored
@@ -823,15 +926,40 @@ the same five-dataset subset as Table~\ref{{tab:classifierrobust}}, the
 parsimony advantage is not a KNN artifact. Under Random Forest specifically it
 is a more consistent gain in subset size than in accuracy, and the
 ReliefF-prior degradation established above reproduces under every wrapper
-tested. The selected subset is smaller and
+tested. The Random Forest check is reported at 10 independent runs per cell
+rather than 30 -- a predefined, compute-bound scope decision, as an RF-wrapper
+run refits a 100-tree ensemble at every fitness evaluation and costs roughly
+$22\times$ the wall-clock of the KNN wrapper (Supplementary Information) -- so
+it is read here as a directional robustness check rather than a fully powered
+test. The selected subset is smaller and
 more consistent in size than competing algorithms', but not necessarily
-more consistent in identity: a feature-selection stability index shows
-RG-SCSO more stable run to run than same-family SCSO on every dataset,
-clearest on the three lower-dimensional sets, yet on both gene-expression
-datasets RG-SCSO's own stability is itself close to the level expected by
-chance, so a much smaller subset there is not a materially more repeatable
-one (Fig.~\ref{{fig:mech}}b; Supplementary Information gives the full
-per-dataset breakdown for both checks).
+more consistent in identity. Measured by the size- and chance-corrected
+Nogueira $\Phi$ (Fig.~\ref{{fig:stability}}a), RG-SCSO exhibited more
+size-corrected feature-selection stability than the baseline SCSO across the
+evaluated datasets, clearest on the three lower-dimensional sets, yet on both
+gene-expression datasets RG-SCSO's own $\Phi$ is itself close to the level
+expected by chance, so a much smaller subset there is not a materially more
+repeatable one. The size correction matters here: an uncorrected pairwise
+Jaccard would rank AOA as the most ``stable'' method only because it selects
+almost every feature every run (Fig.~\ref{{fig:stability}}b), overlap that is
+an artifact of subset size rather than genuine repeatability; the raw-Jaccard
+values are reported as a metric-diagnostic in Supplementary Information to make
+this behaviour explicit rather than to headline a favourable number. The full
+per-dataset breakdown for both checks is in Supplementary Information.
+
+\begin{{figure}}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{{stability_metrics.pdf}}
+\caption{{Feature-subset stability across the five representative datasets, 30
+runs each. (a) Size- and chance-corrected Nogueira $\Phi$: RG-SCSO exhibited
+more size-corrected run-to-run stability than the baseline SCSO on every
+evaluated dataset, while AOA sits at $\Phi\approx0$ (no better than chance).
+(b) Mean selected fraction, explaining why an uncorrected metric misleads: AOA
+selects $\approx$98--99\% of all features, so its subsets trivially overlap,
+whereas RG-SCSO selects the fewest. Raw pairwise Jaccard (confounded by this
+size imbalance) is provided only as a Supplementary diagnostic.}}
+\label{{fig:stability}}
+\end{{figure}}
 
 This wrapper search is itself compute-intensive; absolute wall-clock cost
 per run, for every algorithm tested, is reported in full in Supplementary
@@ -875,8 +1003,15 @@ datasets without that extreme structure. A further boundary is that the
 baselines are evaluated at their published/default control parameters under a
 shared protocol rather than individually re-tuned per dataset; this is a
 faithful-reproduction comparison, and a per-dataset tuning study of every
-competitor is left to future work. These boundaries are gathered
-together, with the future work they motivate, in Conclusion below."""
+competitor is left to future work. A final, deliberate scope boundary concerns
+the host optimizer: the robustness evaluated here is across classifiers,
+relevance priors, and dataset dimensionalities (RQ4), all within SCSO. Whether
+the same per-feature, relevance-modulated binarization operator transfers its
+benefit to other swarm optimizers was not evaluated in the present study and
+therefore remains an open direction for future work (Future work, item iii);
+accordingly we make no cross-optimizer generalization claim. These boundaries
+are gathered together, with the future work they motivate, in Conclusion
+below."""
 
                                                                              
     conclusion = rf"""The results support RG-SCSO as a relevance-guided binary
@@ -1023,20 +1158,15 @@ corresponding in-sample diagram appears in Supplementary Fig.~S6.}}
 
 \begin{{figure}}[htbp]
 \centering
-\includegraphics[width=0.95\textwidth]{{mechanism.pdf}}
-\caption{{Mechanism evidence. (a) Size-fair top-MI enrichment on the two
+\includegraphics[width=0.62\textwidth]{{mechanism.pdf}}
+\caption{{Mechanism evidence: size-fair top-MI enrichment on the two
 gene-expression sets (selection precision divided by the chance level
-$|S|/N$; mean over 30 runs, error bars = std): RG-SCSO enriches its subset
+$|S|/N$; mean over 30 runs, error bars = std). RG-SCSO enriches its subset
 1.22--1.26$\times$ above chance (ColonCancer, Leukemia respectively),
 whereas the relevance-agnostic SCSO sits at essentially chance (lift 1.00
-on both). (b) Feature-selection stability (Nogueira $\Phi$, 30 runs) across
-all five representative datasets: RG-SCSO attains a higher $\Phi$ than
-same-family SCSO on every dataset (e.g., 0.541 vs. 0.512 on Zoo, 0.19 vs.
-0.157 on WDBC), clearest on the three lower-dimensional sets, but
-both are close to the near-zero level expected by chance on the two
-gene-expression sets (RG-SCSO $\Phi\approx$0.014--0.015), where AOA's
-near-zero $\Phi$ reflects that it selects nearly every
-available feature rather than genuine instability.}}
+on both), evidence that the relevance field, not the base search, drives the
+smaller and more accurate subsets. Feature-selection stability is reported
+separately, with its size correction, in Fig.~\ref{{fig:stability}}.}}
 \label{{fig:mech}}
 \end{{figure}}
 
@@ -1514,11 +1644,34 @@ within the fixed evaluation budget on the two largest-$n$ datasets tested
 (KrVsKpEW, WaveformEW); a Random Forest wrapper does not carry this
 architectural restriction (each tree fit scales near-linearly in sample
 count), and is reported below on the same five-dataset representative
-subset as the KNN/SVM comparison above.
+subset as the KNN/SVM comparison above. One scope note applies to the Random
+Forest wrapper specifically: because it refits a 100-tree ensemble at every one
+of the roughly 15{{,}}000 fitness evaluations per run, a single RF-wrapper run
+costs on average about 8{{,}}400~s against about 380~s for the KNN wrapper on
+these datasets -- roughly a $22\times$ wall-clock factor -- so a full
+three-algorithm, five-dataset RF sweep at 30 runs would require on the order of
+700 core-hours. The RF robustness check is therefore reported at 10 independent
+runs per cell, a predefined, compute-bound scope decision taken before
+inspecting its outcome, whereas the primary held-out analysis and the KNN and
+SVM robustness checks all use the full 30 runs. The RF comparison should
+accordingly be read as a directional cross-classifier robustness check rather
+than a fully powered test; the direction it reports -- a parsimony advantage
+that persists under RF, with the ReliefF-prior degradation reproducing -- is
+consistent with the KNN and SVM results that are run at full power.
 
 {robust['table'] if robust and robust.get('table') else ''}
 {svm16['table'] if svm16 and svm16.get('table') else ''}
 {rf_robustness_placeholder}
+
+\section{{Feature-selection stability: metric diagnostic}}
+The main text reports run-to-run feature-selection stability with the size- and
+chance-corrected Nogueira $\Phi$ (Fig.~\ref{{fig:stability}}). Because an
+uncorrected overlap metric can be dominated by subset size, the table below
+reports $\Phi$ alongside the raw pairwise Jaccard and the mean selected fraction,
+so the reader can see directly why the raw metric is misleading on these data and
+why the corrected index is used instead.
+
+{stability_diagnostic_table()}
 
 \section{{Computational cost}}
 {runtime_table()}

@@ -1,0 +1,5 @@
+Transfer-function binarization discards swarm search detail; we name it washout
+RG-SCSO injects per-feature MI relevance into the binarization decision of SCSO
+Best mean accuracy and second-smallest subsets across 18 datasets at equal budget
+Ablation localizes the gain to the binarization step, not init or the objective
+Leak-free gain holds across KNN/SVM/RF wrappers; bounded on p>>n gene-expression

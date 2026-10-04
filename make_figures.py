@@ -497,7 +497,10 @@ def fig_mechanism() -> None:
         chance = nsel[: len(prec)] / n_total
         return prec / chance
 
-    fig, (ax_a, ax_b) = plt.subplots(1, 2, figsize=(10.5, 3.0))
+    # Single-panel enrichment figure: feature-selection stability is reported
+    # separately and in full (size-corrected) in stability_metrics.pdf, so the
+    # stability panel is intentionally not duplicated here.
+    fig, ax_a = plt.subplots(1, 1, figsize=(5.4, 3.2))
 
     x = np.arange(len(mech_ds))
     w = 0.36
@@ -515,32 +518,8 @@ def fig_mechanism() -> None:
     ax_a.tick_params(labelsize=8)
     ax_a.legend(fontsize=7, loc="upper right")
     ax_a.grid(True, axis="y", ls=":", lw=0.5, alpha=0.6)
-    ax_a.set_title(f"(a) Relevance-guided enrichment (mean±std, {n_runs} runs)",
+    ax_a.set_title(f"Relevance-guided enrichment (mean±std, {n_runs} runs)",
                    loc="left", fontsize=9)
-
-    if os.path.exists(STABILITY_CSV):
-        st = pd.read_csv(STABILITY_CSV)
-        stab_ds = sorted(st["dataset"].unique())
-        stab_algos = ["RG-SCSO", "SCSO", "AOA"]
-        xb = np.arange(len(stab_ds))
-        wb = 0.26
-        for ai, a in enumerate(stab_algos):
-            vals = [float(st[(st.dataset == ds) & (st.algorithm == a)]["nogueira_phi"].iloc[0])
-                    for ds in stab_ds]
-            ax_b.bar(xb + (ai - 1) * wb, vals, wb, color=COLORS.get(a, "#888888"),
-                      label=a, edgecolor="black", lw=0.6, zorder=3)
-        ax_b.axhline(0.0, color="black", lw=0.8, zorder=2)
-        ax_b.set_xticks(xb)
-        ax_b.set_xticklabels(stab_ds, fontsize=8, rotation=20, ha="right")
-        ax_b.set_ylabel(r"Stability ($\Phi$)", fontsize=8.5)
-        ax_b.tick_params(labelsize=8)
-        ax_b.legend(fontsize=7, loc="upper right")
-        ax_b.grid(True, axis="y", ls=":", lw=0.5, alpha=0.6)
-        ax_b.set_title("(b) Feature-selection stability (30 runs)", loc="left", fontsize=9)
-    else:
-        ax_b.axis("off")
-        ax_b.text(0.5, 0.5, "stability data not available", ha="center", va="center")
-        print("  ⚠ stability_index_results.csv chưa có → panel (b) trống.")
 
     fig.tight_layout()
     _save(fig, "mechanism")

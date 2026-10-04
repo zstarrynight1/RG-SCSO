@@ -53,16 +53,22 @@ RG-SCSO_IJCS_Master_Fix_Checklist_v2.md
 # SOP academic-audit process reports & workflow (internal self-review, not
 # part of the public reproducibility package).
 RG-SCSO_IJCS_SOP1_AUDIT_REPORT_*.md
+CHECK_MD_R1_CLOSURE.md
+RG-SCSO_IJCS_REAUDIT_R1_HG7.md
 00_MASTER_WORKFLOW_A-Z.md
 SOP_1_*.md
 *.bak2
 RG-SCSO_IJCS_Cover_Letter.docx
+RG-SCSO_ASOC_Cover_Letter.docx
+RG-SCSO_ASOC_Cover_Letter.pdf
+RG-SCSO_ASOC_Suggested_Reviewers.md
 *.bak*
 _resume_q6_rerun.sh
 
 # Post-A–Z SOP process + audit docs (internal)
 RG-SCSO_MASTER_POST_AZ_*.md
 RG-SCSO_Q1_Experimental_Agent_*.md
+POST_AZ_CAMPAIGN/
 SOP_2_*.md
 POST_AZ_*.md
 [Cc]heck.md

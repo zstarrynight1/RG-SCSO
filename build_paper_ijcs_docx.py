@@ -728,28 +728,29 @@ def build() -> None:
         "Wrapper feature selection with swarm intelligence typically searches "
         "in continuous space and crosses into the binary domain through a "
         "fixed transfer function, a feature-agnostic quantization that "
-        "discards the continuous operators' fine adjustments, an effect we "
-        "term washout. RG-SCSO replaces this transfer with a per-feature, "
-        "relevance-modulated binarization: a mutual-information field biases "
-        "each feature's bit-flip probability so informative features resist "
-        "removal and noise resists inclusion, leaving SCSO's continuous "
-        "search otherwise unchanged. "
-        f"Evaluated on {s['n']} datasets, including two gene-expression sets, "
-        "under a fixed-budget, leak-free protocol that computes the "
-        "relevance prior, the search, and the cross-validated fitness only on "
-        "the training partition, RG-SCSO attains the best mean held-out "
-        "accuracy of the seven metaheuristics compared while selecting the "
-        "second-smallest feature subsets of any method tested, trailing only "
-        "COA, which is several points less accurate. The advantage is "
-        "parsimony rather than raw accuracy: it persists against optimizers "
-        "carrying published adaptive transfers, against which RG-SCSO still "
-        f"selects {adaptive['red_min']:.0f}–{adaptive['red_max']:.0f}% fewer "
-        "features, and against same-family binary SCSO selectors; ablation "
-        "and cross-prior tests show it depends on where the relevance signal "
-        "is injected and on the prior used. On the two gene-expression sets a "
-        "classical LASSO baseline is sparser at no loss of accuracy, so the "
-        "transferable gain is parsimony on data without that extreme "
-        "structure.")
+        "discards the continuous operators' fine adjustments, a failure mode "
+        "we identify and name washout. We diagnose washout as the reason "
+        "continuous-space enhancements stop helping at the binarization "
+        "boundary, and address it at that boundary: RG-SCSO replaces the fixed "
+        "transfer with a per-feature, relevance-modulated binarization in "
+        "which a mutual-information field biases each feature's bit-flip "
+        "probability, so informative features resist removal and noise resists "
+        "inclusion, while SCSO's continuous search is left otherwise "
+        "unchanged. The design targets low- to medium-dimensional wrapper "
+        "feature selection, where the practical goal is a smaller subset at "
+        "matched accuracy. "
+        f"Evaluated on {s['n']} datasets under a fixed-budget, leak-free "
+        "protocol that computes the relevance prior, the search, and the "
+        "cross-validated fitness only on the training partition, RG-SCSO "
+        "attains the best mean held-out accuracy of the seven metaheuristics "
+        "compared while selecting the second-smallest feature subsets of any "
+        "method, trailing only the less-accurate COA. A controlled ablation "
+        "localizes the gain to the binarization decision, not initialization "
+        "or the objective, and it persists across classifier wrappers and "
+        "relevance priors, with more stable subsets than the base search. On "
+        "the two gene-expression (p >> n) sets a classical "
+        "LASSO baseline is preferable, bounding the method's envelope to data "
+        "without that extreme structure.")
     abr = ab.add_run(abstract_body)
     abr.font.size = Pt(9)
 
@@ -808,7 +809,16 @@ def build() -> None:
               "quantization step into a knowledge-carrying operator. "
               "SCSO's continuous search, including its sensitivity range, "
               "is retained unchanged; the novelty resides entirely in the "
-              "binarization (Fig. 1). This paper makes four contributions. "
+              "binarization (Fig. 1). The method is designed for the regime "
+              "where wrapper feature selection is most often applied in "
+              "practice, low- to medium-dimensional problems in which the goal "
+              "is a smaller, more deployable feature subset at matched "
+              "accuracy, and we evaluate it, and bound it, against that "
+              "intended use rather than claiming universal dominance; on "
+              "extreme p >> n gene-expression data a classical embedded "
+              "selector remains preferable, a boundary we report as a scope "
+              "of the design, not a hidden caveat. "
+              "This paper makes four contributions. "
               "First, we identify washout as a mechanistic failure mode and "
               "derive a diagnostic bound, together with a cumulative "
               "extension linking it to discrete transition dynamics. Second, "
@@ -1148,10 +1158,31 @@ def build() -> None:
               "the most reliable injection point across datasets, not a "
               "uniformly superior one; on the most extreme p >> n dataset "
               "tested, a simpler injection at initialization meets or "
-              "beats it on both accuracy and parsimony.")
+              "beats it on both accuracy and parsimony. Figure 4 traces this "
+              "ladder: the mean accuracy is essentially flat for relevance at "
+              "initialization (V1) or in the objective (V2) and rises only "
+              "once the relevance field enters the binarization decision "
+              "itself (V3), while parsimony is already gained upstream.")
+    full_width(doc, lambda: add_figure(
+        doc, "injection_ladder.png",
+        "Fig. 4. Controlled injection-point ablation of the relevance "
+        "signal, from V0 (base SCSO, relevance absent) through V1 (relevance "
+        "at initialization), V2 (relevance in the objective), V3 (relevance "
+        "at the binarization decision, RMS) to V4 (full RG-SCSO, RMS+UMR), on "
+        "five datasets spanning p >> n gene-expression to low-dimensional "
+        "data, 30 runs per cell. (a) Mean accuracy: thin lines are "
+        "per-dataset means, the bold line the across-dataset mean. Accuracy "
+        "is flat for V1 and V2 and rises only at V3, locating the accuracy "
+        "effect at the binarization interface rather than upstream; the V4 "
+        "UMR step adds little further accuracy, its benefit being in "
+        "stability (Fig. 9). (b) Selected-feature fraction: parsimony is "
+        "already gained at V1/V3, so the two effects arise at different "
+        "injection points. The pattern is not uniform: on the most extreme "
+        "p >> n set, initialization (V1) is competitive on both axes.",
+        width_in=5.3))
     full_width(doc, lambda: add_figure(
         doc, "convergence_fs.png",
-        "Fig. 4. Mean best fitness versus NFE, the number of fitness "
+        "Fig. 5. Mean best fitness versus NFE, the number of fitness "
         "evaluations, RG-SCSO vs. SCSO vs. AOA, on Zoo (16 features), WDBC "
         "(30 features), and ColonCancer (2000 features), mean over 5 runs "
         "on the feature-selection objective. NFE is the shared, "
@@ -1173,7 +1204,7 @@ def build() -> None:
               "preferentially retain high mutual-information features. "
               "Because a subset of size |S| overlaps the top-|S| "
               "mutual-information features at a chance rate of |S|/N, we "
-              "report a size-fair enrichment (Fig. 5), the fraction of "
+              "report a size-fair enrichment (Fig. 6), the fraction of "
               "selected features in the top-|S| set divided by this "
               "chance level. RG-SCSO's subset is enriched above chance on "
               "both gene-expression sets, whereas the relevance-agnostic "
@@ -1196,21 +1227,38 @@ def build() -> None:
               "enrichment analysis alone would suggest.")
     full_width(doc, lambda: add_figure(
         doc, "mechanism.png",
-        "Fig. 5. Mechanism evidence. (a) Size-fair top-MI enrichment on "
+        "Fig. 6. Mechanism evidence: size-fair top-MI enrichment on "
         "the two gene-expression sets (selection precision divided by the "
-        "chance level |S|/N; mean over 30 runs, error bars = std): "
+        "chance level |S|/N; mean over 30 runs, error bars = std). "
         "RG-SCSO enriches its subset 1.22-1.26x above chance (ColonCancer, "
         "Leukemia respectively), whereas the relevance-agnostic SCSO sits "
-        "at essentially chance (lift 1.00 on both). (b) "
-        "Feature-selection stability (Nogueira Phi, 30 runs) across all "
-        "five representative datasets: RG-SCSO attains a higher Phi than "
-        "same-family SCSO on every dataset (e.g., 0.541 vs. 0.512 on Zoo, "
-        "0.19 vs. 0.157 on WDBC), clearest on the three lower-dimensional "
-        "sets, but both are close to the near-zero level expected by "
-        "chance on the two gene-expression sets (RG-SCSO Phi 0.014-0.015), "
-        "where AOA's near-zero Phi reflects that "
-        "it selects nearly every available feature rather than genuine "
-        "instability.",
+        "at essentially chance (lift 1.00 on both), evidence that the "
+        "relevance field, not the base search, drives the smaller and more "
+        "accurate subsets. Feature-selection stability is reported "
+        "separately, with its size correction, in Fig. 9.",
+        width_in=3.6))
+    para(doc, "Figure 7 shows directly how relevance guidance translates "
+              "into selection behaviour: RG-SCSO's per-feature selection "
+              "frequency tracks the mutual-information relevance prior more "
+              "closely than base SCSO, which does not use it, markedly so on "
+              "the higher-dimensional sets and essentially tied on "
+              "low-dimensional Zoo. This alignment is correlational, so the "
+              "causal weight rests on the shuffled-prior control above, not "
+              "on the alignment alone.")
+    full_width(doc, lambda: add_figure(
+        doc, "relevance_vs_frequency.png",
+        "Fig. 7. How relevance guidance translates into selection "
+        "behaviour. (a) For WDBC, per-feature mutual-information relevance "
+        "(computed on the full sample for visualization only; the optimizer "
+        "uses a train-only prior) versus the fraction of 30 runs in which "
+        "each feature is selected. RG-SCSO's selection frequency tracks "
+        "relevance more closely than base SCSO (Spearman rho = 0.60 vs. "
+        "0.37). (b) The same rank correlation across all five datasets: "
+        "RG-SCSO is at least as relevance-aligned as SCSO on every set and "
+        "markedly more so on the higher-dimensional ones (ColonCancer, "
+        "Leukemia, WDBC), and essentially tied on low-dimensional Zoo. The "
+        "association is correlational; the causal evidence is the "
+        "shuffled-prior control (Supplementary Information).",
         width_in=5.3))
 
     doc.add_heading("3.5 Threshold sensitivity", level=2)
@@ -1228,7 +1276,7 @@ def build() -> None:
     full_width(doc, lambda: add_threshold_sensitivity_table(doc))
     full_width(doc, lambda: add_figure(
         doc, "threshold_heatmap.png",
-        "Fig. 6. Mean held-out accuracy (color) and mean number of "
+        "Fig. 8. Mean held-out accuracy (color) and mean number of "
         "selected features (in parentheses) across the three preferred-bit "
         "thresholds tested (τ in {0.4, 0.5, 0.6}), one row per dataset. "
         "Accuracy is essentially flat across thresholds on every dataset "
@@ -1380,17 +1428,43 @@ def build() -> None:
               "Random Forest specifically it is a more consistent gain in "
               "subset size than in accuracy, and the ReliefF-prior "
               "degradation established above reproduces under every wrapper "
-              "tested. "
+              "tested. The Random Forest check is reported at 10 independent "
+              "runs per cell rather than 30, a predefined, compute-bound "
+              "scope decision, as an RF-wrapper run refits a 100-tree "
+              "ensemble at every fitness evaluation and costs roughly 22x the "
+              "wall-clock of the KNN wrapper (Supplementary Information); it "
+              "is therefore read as a directional robustness check rather "
+              "than a fully powered test. "
               "The selected subset is smaller and more consistent in size "
               "than competing algorithms', but not necessarily more "
-              "consistent in identity: a feature-selection stability index "
-              "shows RG-SCSO more stable run to run than same-family SCSO "
-              "on every dataset, clearest on the three lower-dimensional "
-              "sets, yet on both gene-expression datasets RG-SCSO's own "
-              "stability is itself close to the level expected by chance, "
-              "so a much smaller subset there is not a materially more "
-              "repeatable one (Fig. 5b; Supplementary Information gives "
-              "the full per-dataset breakdown for both checks).")
+              "consistent in identity. Measured by the size- and "
+              "chance-corrected Nogueira Phi (Fig. 9a), RG-SCSO exhibited "
+              "more size-corrected feature-selection stability than the "
+              "baseline SCSO across the evaluated datasets, clearest on the "
+              "three lower-dimensional sets, yet on both gene-expression "
+              "datasets RG-SCSO's own Phi is itself close to the level "
+              "expected by chance, so a much smaller subset there is not a "
+              "materially more repeatable one. The size correction matters "
+              "here: an uncorrected pairwise Jaccard would rank AOA as the "
+              "most 'stable' method only because it selects almost every "
+              "feature every run (Fig. 9b), overlap that is an artifact of "
+              "subset size rather than genuine repeatability; the raw-Jaccard "
+              "values are reported as a metric-diagnostic in Supplementary "
+              "Information to make this behaviour explicit rather than to "
+              "headline a favourable number. The full per-dataset breakdown "
+              "for both checks is in Supplementary Information.")
+    full_width(doc, lambda: add_figure(
+        doc, "stability_metrics.png",
+        "Fig. 9. Feature-subset stability across the five representative "
+        "datasets, 30 runs each. (a) Size- and chance-corrected Nogueira "
+        "Phi: RG-SCSO exhibited more size-corrected run-to-run stability "
+        "than the baseline SCSO on every evaluated dataset, while AOA sits "
+        "at Phi about 0 (no better than chance). (b) Mean selected fraction, "
+        "explaining why an uncorrected metric misleads: AOA selects about "
+        "98-99% of all features, so its subsets trivially overlap, whereas "
+        "RG-SCSO selects the fewest. Raw pairwise Jaccard (confounded by this "
+        "size imbalance) is provided only as a Supplementary diagnostic.",
+        width_in=5.3))
     para(doc, "This wrapper search is itself compute-intensive; absolute "
               "wall-clock cost per run, for every algorithm tested, is "
               "reported in full in Supplementary Information rather than "
@@ -1443,7 +1517,15 @@ def build() -> None:
               "under a shared protocol rather than individually re-tuned per "
               "dataset; this is a faithful-reproduction comparison, and a "
               "per-dataset tuning study of every competitor is left to future "
-              "work. These boundaries are gathered together, "
+              "work. A final, deliberate scope boundary concerns the host "
+              "optimizer: the robustness evaluated here is across classifiers, "
+              "relevance priors, and dataset dimensionalities (RQ4), all "
+              "within SCSO. Whether the same per-feature, relevance-modulated "
+              "binarization operator transfers its benefit to other swarm "
+              "optimizers was not evaluated in the present study and therefore "
+              "remains an open direction for future work (Future work, item "
+              "iii); accordingly we make no cross-optimizer generalization "
+              "claim. These boundaries are gathered together, "
               "with the future work they motivate, in Conclusion below.")
 
                                                                                
@@ -1579,7 +1661,7 @@ def build() -> None:
               "PDF distributed with this submission).", italic=True)
     full_width(doc, lambda: add_figure(
         doc, "washout.png",
-        "Fig. 7. Illustration of Lemma 1. Left: the two standard transfers, "
+        "Fig. 10. Illustration of Lemma 1. Left: the two standard transfers, "
         "S-shaped (sigmoid) and V-shaped (|tanh|). Right: the induced "
         "leverage |T(x+δ)−T(x)| for a fixed perturbation δ=0.2, plotted "
         "against the coordinate x. Both transfers saturate away from the "
