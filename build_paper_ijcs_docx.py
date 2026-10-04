@@ -78,6 +78,184 @@ def para(doc, text, size=BODY_PT, italic=False, align=WD_ALIGN_PARAGRAPH.JUSTIFY
     p.paragraph_format.space_after = Pt(10)
     return p
 
+
+# --------------------------------------------------------------------------- #
+# Inline-math: convert math fragments in prose into inline OMML equations so
+# every special character renders as a proper Word equation (Cambria Math),
+# while tabular "±"/numbers (handled elsewhere) stay as text.
+_IMATH_HALF = BODY_PT * 2  # half-points -> 11pt body
+_MCORE = set("αβγδεζηθλμνξοπρςστυφχψωΦΓΔΘΛΞΠΣΥΨΩ≫≪≈≤≥×÷→∑∏√∈∉⊂⊃∪∩·∞∝∂∇∀∃∅")
+_MSUB = "ⱼₐₑₒₓ₀₁₂₃₄₅₆₇₈₉₊₋"
+_MSUP = "ᵈᵃᵇᶜⁿ⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻′″"
+_MVARS = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+_MCONN = set("=<>≤≥×÷·/|‖()[]{}+−^.,") | set("0123456789")
+_MOPS = set("=<>≤≥+−×÷·/^")
+_SPACE_PREV = _MCORE | set(_MSUB) | set(_MSUP) | _MOPS | set(".)]}|‖′0123456789")
+_SPACE_NEXT = _MCORE | _MOPS | set("([{|‖0123456789")
+_SUB_MAP = {"ⱼ":"j","ₐ":"a","ₑ":"e","ₒ":"o","ₓ":"x","₀":"0","₁":"1","₂":"2","₃":"3",
+            "₄":"4","₅":"5","₆":"6","₇":"7","₈":"8","₉":"9","₊":"+","₋":"−"}
+_SUP_MAP = {"ᵈ":"d","ᵃ":"a","ᵇ":"b","ᶜ":"c","ⁿ":"n","⁰":"0","¹":"1","²":"2","³":"3",
+            "⁴":"4","⁵":"5","⁶":"6","⁷":"7","⁸":"8","⁹":"9","⁺":"+","⁻":"−","′":"′","″":"″"}
+
+
+def _mspan(text, i):
+    n = len(text)
+    def tok(c): return c in _MCORE or c in _MSUB or c in _MSUP or c in _MCONN
+    j = i + 1
+    while j < n:
+        c = text[j]
+        if tok(c): j += 1; continue
+        if c in _MVARS:
+            nxt = text[j + 1] if j + 1 < n else ""
+            if nxt.isalpha() and nxt not in _MSUB: break
+            j += 1; continue
+        if c == " ":
+            if text[j - 1] in _SPACE_PREV and (text[j + 1] if j + 1 < n else "") in _SPACE_NEXT:
+                j += 1; continue
+            break
+        break
+    end = j
+    k = i
+    while k - 1 >= 0:
+        c = text[k - 1]
+        if tok(c): k -= 1; continue
+        if c in _MVARS:
+            if (text[k - 2] if k - 2 >= 0 else "").isalpha(): break
+            k -= 1; continue
+        if c == " ":
+            if (text[k - 2] if k - 2 >= 0 else "") in _SPACE_PREV and text[k] in _SPACE_NEXT:
+                k -= 1; continue
+            break
+        break
+    start = k
+    while start < end and text[start] in " ,": start += 1
+    while end > start and text[end - 1] in " ,": end -= 1
+    while end > start and text[end - 1] in "(=<>+−/^.": end -= 1
+    while start < end and text[start] in ")(=<>+/^,": start += 1
+    while start < end and text[start] == " ": start += 1
+    while end > start and text[end - 1] == " ": end -= 1
+    return start, end
+
+
+def _split_math(text):
+    segs, pos, i, n = [], 0, 0, len(text)
+    while i < n:
+        if text[i] in _MCORE:
+            s, e = _mspan(text, i)
+            s = max(s, pos)
+            if e > s:
+                if s > pos: segs.append(("t", text[pos:s]))
+                segs.append(("m", text[s:e]))
+                pos = e; i = e; continue
+        i += 1
+    if pos < n: segs.append(("t", text[pos:]))
+    return segs
+
+
+def _ir(t):
+    return _msz(t, _IMATH_HALF)
+
+
+def _expr_to_omml(s):
+    elems, buf = [], ""
+    i, n = 0, len(s)
+    while i < n:
+        c = s[i]
+        if c in _SUB_MAP or c in _SUP_MAP:
+            is_sub = c in _SUB_MAP
+            mp = _SUB_MAP if is_sub else _SUP_MAP
+            script = ""
+            while i < n and s[i] in mp:
+                script += mp[s[i]]; i += 1
+            if buf:
+                base, pre, buf = buf[-1], buf[:-1], ""
+                if pre: elems.append(_ir(pre))
+                base_elem = [_ir(base)]
+            elif elems:
+                base_elem = [elems.pop()]
+            else:
+                base_elem = [_ir("")]
+            elems.append((msub if is_sub else msup)(base_elem, [_ir(script)]))
+            continue
+        buf += c; i += 1
+    if buf: elems.append(_ir(buf))
+    return elems
+
+
+import build_paper_structure as _bps
+
+_orig_add_run_text = _bps._add_run_text
+
+
+def _math_aware_add_run_text(p, text, *, size=None, italic=None, bold=None):
+    """Drop-in for _add_run_text that routes inline math fragments through OMML.
+    Used by para/caption/bullet/table cells so every special character in prose
+    becomes a proper Word equation; non-math text (incl. tabular +/-) is unchanged."""
+    if not any(c in _MCORE for c in text):
+        return _orig_add_run_text(p, text, size=size, italic=italic, bold=bold)
+    for kind, seg in _split_math(text):
+        if kind == "t":
+            _orig_add_run_text(p, seg, size=size, italic=italic, bold=bold)
+        else:
+            om = M("oMath")
+            om.extend(_expr_to_omml(seg))
+            p._p.append(om)
+    return p
+
+
+_bps._add_run_text = _math_aware_add_run_text
+# also catch direct local calls in this module and in the scirep docx helpers
+_add_run_text = _math_aware_add_run_text
+try:
+    import build_paper_scirep_docx as _bsd
+    _bsd._add_run_text = _math_aware_add_run_text
+except Exception:
+    pass
+
+import copy as _copy
+
+_W_NS = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+_M_NS = "{http://schemas.openxmlformats.org/officeDocument/2006/math}"
+
+
+def _convert_remaining_math(doc):
+    """Final sweep: convert any leftover plain-text math run (from direct
+    .add_run / cell.text / other helpers, in body AND tables) into inline OMML,
+    so no special character remains outside an equation. Runs already inside an
+    oMath, and runs with no math core char (incl. tabular +/-), are left alone."""
+    for r in list(doc.element.body.iter(f"{_W_NS}r")):
+        par = r.getparent(); inmath = False
+        while par is not None:
+            if par.tag == f"{_M_NS}oMath":
+                inmath = True; break
+            par = par.getparent()
+        if inmath:
+            continue
+        t = r.find(f"{_W_NS}t")
+        if t is None or not t.text or not any(c in _MCORE for c in t.text):
+            continue
+        segs = _split_math(t.text)
+        if not any(k == "m" for k, _ in segs):
+            continue
+        rpr = r.find(f"{_W_NS}rPr")
+        parent = r.getparent(); idx = list(parent).index(r)
+        new_elems = []
+        for kind, seg in segs:
+            if kind == "t":
+                if not seg:
+                    continue
+                nr = OxmlElement("w:r")
+                if rpr is not None:
+                    nr.append(_copy.deepcopy(rpr))
+                nt = OxmlElement("w:t"); nt.set(qn("xml:space"), "preserve"); nt.text = seg
+                nr.append(nt); new_elems.append(nr)
+            else:
+                om = M("oMath"); om.extend(_expr_to_omml(seg)); new_elems.append(om)
+        parent.remove(r)
+        for e in reversed(new_elems):
+            parent.insert(idx, e)
+
+
 LAMBDA_CSV = os.path.join(
     "experiments", "results_lambda", "lambda_sensitivity_results.csv"
 )
@@ -2022,6 +2200,7 @@ def build() -> None:
 
     for _t in doc.tables:
         repeat_header_row(_t)
+    _convert_remaining_math(doc)
     force_font_everywhere(doc)
     doc.save(OUT_DOCX)
     print(f"Đã ghi {OUT_DOCX}")
