@@ -135,8 +135,13 @@ def classic_baselines_all18_table() -> str:
         "filter/embedded/wrapper selectors and a Concrete-Autoencoder deep "
         "feature selector (CAE), replacing the earlier five-dataset pilot; "
         "accuracy with mean selected-feature count in parentheses, 30 runs "
-        "each, identical evaluator (stratified 5-fold KNN) throughout, "
-        "\\textbf{bold} = best accuracy per dataset. RG-SCSO attains the best "
+        "each, under one common in-sample evaluator (stratified 5-fold "
+        "cross-validation on the full dataset, KNN) throughout. These are "
+        "in-sample cross-validated accuracies, not the independent held-out "
+        "accuracies of Table~\\ref{tab:heldout}, and the two are not directly "
+        "comparable. "
+        "\\textbf{bold} = best accuracy per dataset. Under this common "
+        "in-sample protocol RG-SCSO attains the best "
         f"accuracy of all methods on {d['best_all']} of {d['n']} datasets. "
         "Across the benchmark it is significantly more accurate (Holm-corrected "
         f"Wilcoxon signed-rank over the {d['n']} datasets) than "
@@ -374,15 +379,17 @@ def build() -> None:
         "unchanged. The design targets low- to medium-dimensional wrapper "
         "feature selection, where the practical goal is a smaller subset at "
         "matched accuracy. "
-        f"Evaluated on {s['n']} datasets under a fixed-budget, leak-free "
+        f"Evaluated on {s['n']} datasets under a nominal fixed-budget, leak-free "
         "protocol that computes the relevance prior, the search, and the "
         "cross-validated fitness only on the training partition, RG-SCSO "
         "attains the best mean held-out accuracy of the seven metaheuristics "
-        "compared while selecting the second-smallest feature subsets of any "
-        "method, trailing only the less-accurate COA. A controlled ablation "
+        "compared while selecting the second-smallest feature subsets among "
+        "them, trailing only the less-accurate COA. A controlled ablation "
         "localizes the gain to the binarization decision -- not initialization "
-        "or the objective -- and it persists across classifier wrappers and "
-        "relevance priors, with more stable subsets than the base search. On "
+        "or the objective -- and it persists across classifier wrappers, while "
+        "its parsimony benefit depends on the relevance prior. RG-SCSO also "
+        "shows higher size-corrected subset stability than the base search on "
+        "the five evaluated stability datasets. On "
         "the two gene-expression ($p\\gg n$) sets a "
         "classical LASSO baseline is preferable, bounding the method's "
         "envelope to data without that extreme structure."
@@ -438,7 +445,7 @@ ablation-confirmed centerpiece is relevance-modulated sensitivity (RMS),
 supplemented by a smaller, budget-neutral memetic refinement step (UMR) that a
 sensitivity sweep shows contributes far less than RMS; an online-learning
 variant of the relevance field is examined and pruned entirely by ablation.
-Third, we evaluate under a pre-specified, fixed-budget, leak-free protocol
+Third, we evaluate under a pre-specified, nominal fixed-budget, leak-free protocol
 that denies the relevance prior any access to test labels. Fourth, we report a
 full statistical treatment, a component ablation, and a size-fair enrichment
 analysis correlating the observed parsimony with relevance guidance.
@@ -648,7 +655,15 @@ per-feature and relevance-aware -- the interface RG-SCSO modifies.
         "embedded, and wrapper selectors -- mutual-information thresholding, "
         "mRMR, ReliefF, LASSO, and sequential forward selection -- and a "
         "Concrete-Autoencoder deep feature selector~\\cite{{concreteae}}, "
-        "under the identical stratified 5-fold KNN evaluator. RG-SCSO attains "
+        "all under one common in-sample stratified 5-fold cross-validation "
+        "evaluator on the full dataset. These are therefore in-sample "
+        "cross-validated accuracies -- the same optimistic protocol as the "
+        "in-sample ranking (Table~\\ref{tab:rank}), an upper bound rather than "
+        "the independent outer-hold-out estimates of Table~\\ref{tab:heldout}; "
+        "the two sets of numbers answer different questions and are not "
+        "directly comparable, so this comparison holds the evaluator fixed "
+        "across methods rather than re-stating the generalization claim. "
+        "Under this common in-sample protocol, RG-SCSO attains "
         f"the best accuracy of all methods on {c18['best_all']} of "
         f"{c18['n']} datasets. Across the benchmark it is significantly more "
         "accurate (Holm-corrected Wilcoxon signed-rank over the "
@@ -680,7 +695,10 @@ per-feature and relevance-aware -- the interface RG-SCSO modifies.
         "The advantage over a no-prior baseline is not a KNN artifact, though "
         "it is a more consistent parsimony gain than an accuracy one under "
         "Random Forest specifically, and the ReliefF-prior degradation "
-        "already established above reproduces under every wrapper tested."
+        "already established above reproduces under every wrapper tested. "
+        "The robustness is therefore conditional: behaviour across classifier "
+        "wrappers is relatively consistent, whereas the parsimony benefit is "
+        "sensitive to the relevance prior."
     )
 
 
@@ -705,8 +723,10 @@ partition; the selected subset is evaluated once on the untouched 20\%
 hold-out, on which a fresh $k$-NN classifier (standardized on the training
 partition) reports accuracy, so the relevance prior never has transductive
 access to the test labels. Table~\ref{{tab:heldout}} reports held-out
-accuracy over all seven algorithms and {s['n']} datasets, at a fixed
-evaluation budget of $\mathrm{{max\_nfe}}=15000$ for every algorithm compared.
+accuracy over all seven algorithms and {s['n']} datasets, at a nominal
+$15{{,}}000$-NFE evaluation budget ($\mathrm{{max\_nfe}}=15000$) for every
+algorithm compared, with a documented $0.2\%$ batch-boundary exception for
+CoatiOA.
 RG-SCSO attains the best average Friedman rank ({hs_rank.iloc[0]:.2f}, ahead of
 the second-placed AOA at {hs_rank.iloc[1]:.2f}; $\chi^2${fr_chi2_str},
 $p{fr_p_str}$). A
@@ -824,8 +844,8 @@ size-fair enrichment (Fig.~\ref{{fig:mech}}), the fraction of selected
 features in the top-$|S|$ set divided by this chance level. RG-SCSO's subset
 is enriched above chance on both gene-expression sets, whereas the
 relevance-agnostic SCSO sits at chance, evidence consistent with the
-relevance field driving the smaller and more accurate subsets, though
-enrichment alone is correlational. A direct causal test, detailed in
+relevance field contributing to the observed subset enrichment and
+performance pattern, though enrichment alone is correlational. A direct causal test, detailed in
 Supplementary Information, permutes the field's feature identities while
 preserving its
 value distribution: the permuted field yields no significant accuracy
@@ -881,8 +901,8 @@ dataset-dependent, non-uniform accuracy cost.
 ($\tau\in\{{0.4,0.5,0.6\}}$), one row per dataset. Accuracy is essentially
 flat across thresholds on every dataset (largest swing 0.011, ColonCancer
 $\tau{{=}}0.4$ vs.\ $\tau{{=}}0.5$), while the selected-feature count falls
-monotonically as $\tau$ increases on all five datasets, confirming
-$\tau=0.5$ is not a fragile choice.}}
+monotonically as $\tau$ increases on all five datasets, suggesting that
+$\tau=0.5$ is not highly sensitive over the tested range.}}
 \label{{fig:threshheat}}
 \end{{figure*}}
 
@@ -895,9 +915,10 @@ $\tau=0.5$ is not a fragile choice.}}
 {classifier_robust_tab}"""
 
                                                                              
-    discussion = rf"""These results trace washout, a concrete failure mode of
-transfer-function-based binary feature selection, to its source, and cure it
-by moving the relevance signal directly inside the binarization operator
+    discussion = rf"""These results provide evidence that washout, a concrete
+failure mode of transfer-function-based binary feature selection, can arise at
+the binarization boundary, and motivate addressing it by moving the relevance
+signal directly inside the binarization operator
 rather than upstream of it in the objective or the initialization. The formal
 result motivating this design (Methods) is a diagnostic bound: it explains why
 continuous-space enhancements fail at the binarization boundary, but it is not
@@ -905,8 +926,8 @@ a convergence guarantee for RG-SCSO itself. The underlying recipe, a filter
 prior coupled to a wrapper search with memetic refinement, is a known
 combination in the feature-selection literature. What is new is the injection
 point, together with a stringent evaluation protocol: budget-matching, a
-leak-free hold-out, cross-classifier and cross-prior robustness, and an
-explicit exploration-safety diagnostic. We report parsimony, not raw accuracy,
+leak-free hold-out, cross-classifier robustness and cross-prior sensitivity,
+and an explicit exploration-safety diagnostic. We report parsimony, not raw accuracy,
 as the transferable outcome of this choice.
 
 Several boundaries delimit what these results establish. RG-SCSO inherits
@@ -1042,9 +1063,9 @@ below."""
 feature-selection method whose primary advantage is improved subset
 parsimony with competitive predictive performance under the tested
 conditions: across {s['n']} benchmark datasets it selects the
-second-smallest feature subsets of any method evaluated, trailing only COA,
-while attaining the best mean held-out accuracy among all seven algorithms
-compared, under a fixed-budget, leak-free evaluation protocol
+second-smallest feature subsets among the seven algorithms evaluated, trailing only COA,
+while attaining the best mean held-out accuracy in that comparison,
+under a nominal fixed-budget, leak-free evaluation protocol
 (RQ1, RQ2).
 
 This advantage is not universal, and the boundaries established in
@@ -1065,7 +1086,8 @@ of $10^4$--$10^5$ features is extrapolated rather than measured.
 In practical terms, RG-SCSO is designed to drop into the binarization step of
 an SCSO-based wrapper, adding only a small, fixed set of hyperparameters (the
 modulation strength $\gamma$, the preferred-bit threshold $\tau$, and the
-memetic budget $K$) that this paper shows are not fragile choices; its main
+memetic budget $K$) that show limited sensitivity over the tested ranges,
+although $\tau$ is not uniformly optimal; its main
 practical payoff is a smaller feature subset that is cheaper to store and can
 lower downstream feature-processing cost wherever feature acquisition and
 preprocessing scale with dimensionality, at accuracy that matches or exceeds
@@ -1309,7 +1331,7 @@ transfer $V(x_j)=|\tanh(x_j)|$. With relevance $\rho_j\in[0,1]$, preferred bit
 $b^\ast_j=\mathbf{{1}}[\rho_j>0.5]$ and strength $s_j=2|\rho_j-0.5|\in[0,1]$,
 the flip probability is biased toward $b^\ast_j$,
 \begin{{equation}}
-  p_j = \mathrm{{clip}}\!\Big(|\tanh(x_j)|\,\big(1+\gamma\,\sigma_j\,s_j\big),\,0,\,1\Big),
+  p_j = \mathrm{{clip}}\left(\,|\tanh(x_j)|\,(1+\gamma\,\sigma_j\,s_j),\;0,\;1\,\right),
   \label{{eq:rms}}
 \end{{equation}}
 where $\sigma_j=+1$ if the flip moves bit $j$ toward $b^\ast_j$ and $\sigma_j=-1$
@@ -1454,10 +1476,9 @@ Not applicable. This study uses only publicly available benchmark datasets
 human data, or animals.
 
 \subsection*{{Declaration of generative AI and AI-assisted technologies in the writing process}}
-During the preparation of this work the authors used Claude (Anthropic), a
-large language model--based assistant, in order to improve the readability and
-language of the manuscript, and to assist with code refactoring and the
-formatting of tables and figures. After using this tool, the authors reviewed
+During the preparation of this work the authors used a generative
+AI-assisted tool in order to improve the readability and
+language of the manuscript. After using this tool, the authors reviewed
 and edited the content as needed and take full responsibility for the content of
 the publication; all experimental design, implementation, results, and
 scientific claims are the authors' own.

@@ -164,7 +164,7 @@ __KEYWORDS__
         "RG-SCSO injects per-feature MI relevance into the binarization decision of SCSO",
         "Best mean accuracy and second-smallest subsets on 18 datasets under a fixed budget",
         "Ablation localizes the gain to the binarization step, not init or the objective",
-        "Leak-free gain holds across KNN/SVM/RF wrappers; bounded on p>>n gene-expression",
+        "Parsimony gains persist across KNN/SVM/RF wrappers; limited on p>>n gene-expression",
     ]
     for h in highlights:
         if len(h) > 85:
@@ -200,7 +200,7 @@ __KEYWORDS__
         "RG-SCSO injects per-feature MI relevance into the binarization decision of SCSO",
         "Best mean accuracy and second-smallest subsets on 18 datasets under a fixed budget",
         "Ablation localizes the gain to the binarization step, not init or the objective",
-        "Leak-free gain holds across KNN/SVM/RF wrappers; bounded on p>>n gene-expression",
+        "Parsimony gains persist across KNN/SVM/RF wrappers; limited on p>>n gene-expression",
     ]
     for h in highlights:
         if len(h) > 85:
