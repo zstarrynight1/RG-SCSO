@@ -1136,7 +1136,7 @@ def build() -> None:
               "injects it at initialization (a differential-expression "
               "pre-filter), not at the binarization operator, which is "
               "precisely the distinction our signal-position experiment "
-              "isolates. Table 1 below "
+              "isolates. Table 1 "
               "positions each of these works against this claim directly.")
     doc.add_heading("2.4 Literature-positioning summary", level=2)
     para(doc, "Table 1 makes this gap concrete across every SCSO-family "
@@ -1169,11 +1169,11 @@ def build() -> None:
               f"across all pairwise comparisons gives RG-SCSO {hs_w} "
               f"significant wins, {hs_l} loss, and {hs_t} ties; the only "
               "close competitor is AOA, over which RG-SCSO holds the higher "
-              f"mean accuracy and a consistent positive aggregate difference "
-              f"(median |d|={hs_d_aoa:.2f}). The more conservative Nemenyi "
+              f"mean accuracy and a consistently positive paired difference "
+              f"(median |d|={hs_d_aoa:.2f}); the more conservative Nemenyi "
               "post-hoc, however, does not separate the two (Fig. 3), so we "
-              "read this as a modest aggregate edge rather than a "
-              "statistically conclusive superiority over AOA. Over the 18 datasets the paired accuracy difference against AOA is +0.017 (95% bootstrap CI [+0.003, +0.034], excluding zero), confirming a small but consistent aggregate edge; against every other baseline the paired difference is larger (all 95% CIs excluding zero).")
+              "read this as a modest edge rather than a "
+              "statistically conclusive superiority over AOA. Over the 18 datasets that paired difference against AOA is +0.017 (95% bootstrap CI [+0.003, +0.034], excluding zero) -- small but consistent -- while against every other baseline the paired difference is larger (all 95% CIs excluding zero).")
     _ci_rng = np.random.default_rng(42)
 
     def _boot_ci(vals: np.ndarray, n_boot: int = 2000) -> tuple:
@@ -1276,10 +1276,10 @@ def build() -> None:
                          "Win/Tie/Loss, and Median Effect Size vs. RG-SCSO."),
             add_rank_table_with_effect_size(doc, s),
         ))
-        para(doc, "Fig. 3 below visualizes the held-out ranking (Table 2, "
-                  "Held-out generalization above) as a critical-difference "
+        para(doc, "Fig. 3 visualizes the held-out ranking (Table 2, "
+                  "Held-out generalization) as a critical-difference "
                   "diagram, the paper's primary ranking evidence, distinct "
-                  "from the in-sample rank in Table 3 just above.")
+                  "from the in-sample rank in Table 3.")
         full_width(doc, lambda: add_figure(
             doc, "cd_diagram_heldout.png",
             "Fig. 3. Critical-difference (Nemenyi) diagram at α=0.05 "
@@ -1403,11 +1403,13 @@ def build() -> None:
               "datasets, a significant but negligible-effect difference on "
               "Leukemia, and a clear difference only on ColonCancer, while "
               "inverting the field's sign is significantly worse than "
-              "both on every dataset. The relevance field's direction and "
-              "scale therefore matter consistently; the exact per-feature "
-              "ranking within it matters demonstrably on only one of five "
-              "datasets, a materially weaker causal claim than the "
-              "enrichment analysis alone would suggest.")
+              "both on every dataset. The results therefore indicate that "
+              "the direction and scale of the relevance modulation matter "
+              "under the evaluated conditions, whereas evidence for the "
+              "exact per-feature ranking effect is strongest on ColonCancer "
+              "(demonstrable on only one of five datasets) -- a materially "
+              "weaker causal claim than the enrichment analysis alone would "
+              "suggest.")
     full_width(doc, lambda: add_figure(
         doc, "mechanism.png",
         "Fig. 6. Mechanism evidence: size-fair top-MI enrichment on "
@@ -1415,9 +1417,9 @@ def build() -> None:
         "chance level |S|/N; mean over 30 runs, error bars = std). "
         "RG-SCSO enriches its subset 1.22-1.26x above chance (ColonCancer, "
         "Leukemia respectively), whereas the relevance-agnostic SCSO sits "
-        "at essentially chance (lift 1.00 on both), evidence consistent with "
-        "relevance guidance, rather than the base search, contributing to the "
-        "smaller and more accurate subsets. Feature-selection stability is "
+        "at essentially chance (lift 1.00 on both), providing evidence "
+        "consistent with relevance guidance contributing to the observed "
+        "subset enrichment and performance pattern. Feature-selection stability is "
         "reported separately, with its size correction, in Fig. 9.",
         width_in=3.6))
     para(doc, "Figure 7 shows directly how relevance guidance translates "
@@ -1602,8 +1604,9 @@ def build() -> None:
               "in Supplementary Information) rather than to any runtime "
               "advantage over same-budget baselines, which we do not "
               "claim.")
-    para(doc, "The "
-              "main objective is also a KNN wrapper. It was tested directly "
+    para(doc, "A further boundary concerns the classifier itself: the "
+              "fitness objective throughout is a KNN wrapper. "
+              "The selected subsets were re-evaluated directly "
               f"under SVM on {svm16.get('n_ds', 16)} of the {s['n']} "
               "datasets (the full per-dataset breakdown is in Supplementary "
               "Information; the remaining two datasets are excluded from the "
@@ -2182,13 +2185,17 @@ def build() -> None:
               "benchmark datasets (UCI and standard microarray sets) and "
               "involves no human participants, human data, or animals.")
 
-    doc.add_heading("Use of AI tools", level=2)
-    para(doc, "The authors used a generative AI assistant for language "
-              "editing, code refactoring, and formatting of tables and "
-              "figures. All experimental design, implementation, results, and "
-              "scientific claims were produced and verified by the authors, "
-              "who take full responsibility for the content of this "
-              "manuscript.")
+    doc.add_heading("Declaration of generative AI and AI-assisted technologies "
+                    "in the writing process", level=2)
+    para(doc, "During the preparation of this work the authors used Claude "
+              "(Anthropic), a large language model-based assistant, in order to "
+              "improve the readability and language of the manuscript, and to "
+              "assist with code refactoring and the formatting of tables and "
+              "figures. After using this tool, the authors reviewed and edited "
+              "the content as needed and take full responsibility for the "
+              "content of the publication; all experimental design, "
+              "implementation, results, and scientific claims are the authors' "
+              "own.")
 
     doc.add_heading("Data Availability Statement", level=2)
     para(doc, "The datasets analysed in this study are publicly available "

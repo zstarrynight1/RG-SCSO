@@ -550,7 +550,7 @@ released with the code; notably, the closest binary SCSO selector that uses
 relevance injects it at \emph{{initialization}} (a differential-expression
 pre-filter), not at the binarization operator, which is precisely the
 distinction our signal-position experiment (Section~\ref{{sec:ablation}})
-isolates. Table~\ref{{tab:litpos}} below positions each of these works against
+isolates. Table~\ref{{tab:litpos}} positions each of these works against
 this claim directly.
 
 \subsection{{Literature-positioning summary}}
@@ -713,19 +713,18 @@ $p{fr_p_str}$). A
 Holm-corrected Wilcoxon signed-rank test across all pairwise comparisons gives
 RG-SCSO {hs_w} significant wins, {hs_l} loss, and {hs_t} ties; the only close
 competitor is AOA, over which RG-SCSO holds the higher mean accuracy and a
-consistent positive aggregate difference (median $|d|={hs_d_aoa:.2f}$). The
+consistently positive paired difference (median $|d|={hs_d_aoa:.2f}$); the
 more conservative Nemenyi post-hoc, however, does not separate the two
-(Fig.~\ref{{fig:cd}}), so we read this as a modest aggregate edge rather than a
+(Fig.~\ref{{fig:cd}}), so we read this as a modest edge rather than a
 statistically conclusive superiority over AOA. Over the
-{s['n']} datasets the paired accuracy difference against AOA is $+0.017$ (95\%
-bootstrap CI $[+0.003,+0.034]$, excluding zero), confirming a small but
-consistent aggregate edge; against every other baseline the paired difference
+{s['n']} datasets that paired difference against AOA is $+0.017$ (95\%
+bootstrap CI $[+0.003,+0.034]$, excluding zero) -- small but consistent --
+while against every other baseline the paired difference
 is larger (all 95\% CIs excluding zero).
-Fig.~\ref{{fig:cd}} visualizes this held-out ranking as a critical-difference
-diagram: the Nemenyi test, a more conservative simultaneous comparison than
-the pairwise Wilcoxon test above, does not separate RG-SCSO from AOA, but
-places both above a single indistinguishable cluster comprising the
-remaining five algorithms.
+The critical-difference diagram (Fig.~\ref{{fig:cd}}) makes the structure
+explicit: RG-SCSO and AOA sit together at the top of the ranking, both clearly
+ahead of a single indistinguishable cluster formed by the remaining five
+algorithms.
 
 {heldout_tab}
 
@@ -758,11 +757,12 @@ selectors~\cite{{bscso,scsofs2,scsofs3}} it is
 \includegraphics[width=0.7\textwidth]{{accuracy_parsimony_tradeoff.pdf}}
 \caption{{Mean held-out accuracy vs.\ mean selected-feature fraction,
 averaged across all {s['n']} datasets, one point per algorithm. RG-SCSO
-occupies the top-left corner, jointly the highest accuracy and the sparsest
-subsets of all seven algorithms tested -- it is not merely competitive on
+occupies the top-left region, combining the highest mean held-out accuracy
+with the second-smallest mean selected-feature count among the seven
+algorithms tested -- it is not merely competitive on
 one axis at the cost of the other. AOA attains the second-highest accuracy
 but selects on average 98\% of available features, essentially no feature
-selection; COA is the second-sparsest method but at a distinctly lower
+selection; COA is the sparsest method but at a distinctly lower
 accuracy than RG-SCSO. In numbers, RG-SCSO's mean operating point is 0.866
 accuracy at 41\% of features; AOA reaches 0.849 at 98\% of features, and COA
 0.815; mean accuracy across the seven algorithms spans 0.791--0.866.}}
@@ -808,8 +808,9 @@ pattern is not uniform -- on the most extreme $p\gg n$ set, initialization
 Zoo (16 features), WDBC (30 features), and ColonCancer (2000 features), mean
 over 5 runs, on the actual feature-selection objective (illustrative, not a
 new statistical claim). On Zoo the three algorithms converge along
-essentially the same trajectory. On WDBC and ColonCancer, RG-SCSO both
-converges faster and plateaus at a lower (better) fitness than SCSO or AOA,
+essentially the same trajectory. On WDBC and ColonCancer, RG-SCSO reaches
+lower objective values earlier in these illustrative trajectories and
+plateaus at a lower (better) fitness than SCSO or AOA,
 which themselves plateau early at a distinctly worse value rather than
 continuing to close the gap with more iterations; the difference grows with
 dimensionality.}}
@@ -831,10 +832,11 @@ value distribution: the permuted field yields no significant accuracy
 difference from the real field on three of five datasets, a significant but
 negligible-effect difference on Leukemia, and a clear difference only on
 ColonCancer, while inverting the field's sign is significantly worse than
-both on every dataset. The relevance field's direction and scale therefore
-matter consistently; the exact per-feature ranking within it matters
-demonstrably on only one of five datasets, a materially weaker causal claim
-than the enrichment analysis alone would suggest.
+both on every dataset. The results therefore indicate that the direction
+and scale of the relevance modulation matter under the evaluated conditions,
+whereas evidence for the exact per-feature ranking effect is strongest on
+ColonCancer (demonstrable on only one of five datasets) -- a materially
+weaker causal claim than the enrichment analysis alone would suggest.
 
 \begin{{figure*}}[htbp]
 \centering
@@ -940,8 +942,9 @@ dimensionality grows (full per-dataset wall-clock cost is in Supplementary
 Information) rather than to any runtime advantage over same-budget
 baselines, which we do not claim.
 
-The main
-objective is also a KNN wrapper. Under SVM, tested directly on
+A further boundary concerns the classifier itself: the fitness objective
+throughout is a KNN wrapper. Re-evaluating the selected subsets under SVM,
+tested directly on
 {svm16.get('n_ds', 16)} of the {s['n']} datasets, and under Random Forest on
 the same five-dataset subset as Table~\ref{{tab:classifierrobust}}, the
 parsimony advantage is not a KNN artifact. Under Random Forest specifically it
@@ -1177,8 +1180,8 @@ gene-expression sets (selection precision divided by the chance level
 $|S|/N$; mean over 30 runs, error bars = std). RG-SCSO enriches its subset
 1.22--1.26$\times$ above chance (ColonCancer, Leukemia respectively),
 whereas the relevance-agnostic SCSO sits at essentially chance (lift 1.00
-on both), evidence consistent with relevance guidance, rather than the base
-search, contributing to the smaller and more accurate subsets. Feature-selection
+on both), providing evidence consistent with relevance guidance contributing
+to the observed subset enrichment and performance pattern. Feature-selection
 stability is reported
 separately, with its size correction, in Fig.~\ref{{fig:stability}}.}}
 \label{{fig:mech}}
@@ -1450,11 +1453,14 @@ Not applicable. This study uses only publicly available benchmark datasets
 (UCI and standard microarray sets) and involves no human participants,
 human data, or animals.
 
-\subsection*{{Use of AI tools}}
-The authors used a generative AI assistant for language editing, code
-refactoring, and formatting of tables and figures. All experimental design,
-implementation, results, and scientific claims were produced and verified by
-the authors, who take full responsibility for the content of this manuscript.
+\subsection*{{Declaration of generative AI and AI-assisted technologies in the writing process}}
+During the preparation of this work the authors used Claude (Anthropic), a
+large language model--based assistant, in order to improve the readability and
+language of the manuscript, and to assist with code refactoring and the
+formatting of tables and figures. After using this tool, the authors reviewed
+and edited the content as needed and take full responsibility for the content of
+the publication; all experimental design, implementation, results, and
+scientific claims are the authors' own.
 
 \subsection*{{Data Availability Statement}}
 The datasets analysed in this study are publicly available benchmarks (UCI
@@ -1623,7 +1629,7 @@ three datasets of increasing dimensionality.}}
 {sensitivity_table()}
 
 \section{{Isolating the relevance contribution from adaptive transfers}}
-The table below reports binary particle-swarm and grey-wolf optimizers
+This section reports binary particle-swarm and grey-wolf optimizers
 equipped with published adaptive V-shaped transfers, run under the identical
 protocol and budget as the main study but with no per-feature relevance
 signal.
@@ -1657,8 +1663,8 @@ per run scales at least quadratically in sample count, which is intractable
 within the fixed evaluation budget on the two largest-$n$ datasets tested
 (KrVsKpEW, WaveformEW); a Random Forest wrapper does not carry this
 architectural restriction (each tree fit scales near-linearly in sample
-count), and is reported below on the same five-dataset representative
-subset as the KNN/SVM comparison above. One scope note applies to the Random
+count), and is reported on the same five-dataset representative
+subset as the KNN/SVM comparison. One scope note applies to the Random
 Forest wrapper specifically: because it refits a 100-tree ensemble at every one
 of the roughly 15{{,}}000 fitness evaluations per run, a single RF-wrapper run
 costs on average about 8{{,}}400~s against about 380~s for the KNN wrapper on
@@ -1680,7 +1686,7 @@ consistent with the KNN and SVM results that are run at full power.
 \section{{Feature-selection stability: metric diagnostic}}
 The main text reports run-to-run feature-selection stability with the size- and
 chance-corrected Nogueira $\Phi$ (Fig.~\ref{{fig:stability}}). Because an
-uncorrected overlap metric can be dominated by subset size, the table below
+uncorrected overlap metric can be dominated by subset size, this section
 reports $\Phi$ alongside the raw pairwise Jaccard and the mean selected fraction,
 so the reader can see directly why the raw metric is misleading on these data and
 why the corrected index is used instead.
@@ -1747,8 +1753,8 @@ the main text.
 \section{{In-sample ranking: critical-difference diagram}}
 Main text Fig.~2 shows the critical-difference diagram over the held-out
 ranking (Table~1), the paper's primary evidence. Figure~\ref{{fig:cdinsample}}
-below is the corresponding diagram over the in-sample ranking (\S\ref{{sec:insample}}
-above), the protocol in which the relevance prior, search, and reported metric
+is the corresponding diagram over the in-sample ranking (\S\ref{{sec:insample}}),
+the protocol in which the relevance prior, search, and reported metric
 share the same cross-validation folds; as elsewhere in this Supplementary
 Information, in-sample results are an optimistic upper bound and are reported
 here for completeness rather than as the primary claim.

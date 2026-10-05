@@ -236,7 +236,7 @@ $w_o$ (ORL) & 0.1 & 0.9198 & 190.3 \\
 
 \FloatBarrier
 \section{Isolating the relevance contribution from adaptive transfers}
-The table below reports binary particle-swarm and grey-wolf optimizers
+This section reports binary particle-swarm and grey-wolf optimizers
 equipped with published adaptive V-shaped transfers, run under the identical
 protocol and budget as the main study but with no per-feature relevance
 signal.
@@ -320,8 +320,8 @@ per run scales at least quadratically in sample count, which is intractable
 within the fixed evaluation budget on the two largest-$n$ datasets tested
 (KrVsKpEW, WaveformEW); a Random Forest wrapper does not carry this
 architectural restriction (each tree fit scales near-linearly in sample
-count), and is reported below on the same five-dataset representative
-subset as the KNN/SVM comparison above. One scope note applies to the Random
+count), and is reported on the same five-dataset representative
+subset as the KNN/SVM comparison. One scope note applies to the Random
 Forest wrapper specifically: because it refits a 100-tree ensemble at every one
 of the roughly 15{,}000 fitness evaluations per run, a single RF-wrapper run
 costs on average about 8{,}400~s against about 380~s for the KNN wrapper on
@@ -409,7 +409,7 @@ Dataset & Method & Mean Acc. & Mean \#Feat. \\
 \section{Feature-selection stability: metric diagnostic}
 The main text reports run-to-run feature-selection stability with the size- and
 chance-corrected Nogueira $\Phi$ (Fig.~\ref{fig:stability}). Because an
-uncorrected overlap metric can be dominated by subset size, the table below
+uncorrected overlap metric can be dominated by subset size, this section
 reports $\Phi$ alongside the raw pairwise Jaccard and the mean selected fraction,
 so the reader can see directly why the raw metric is misleading on these data and
 why the corrected index is used instead.
@@ -674,8 +674,8 @@ $n$ & Number of samples (in the $O(dn\log n)$ MI-prior cost) \\
 \section{In-sample ranking: critical-difference diagram}
 Main text Fig.~2 shows the critical-difference diagram over the held-out
 ranking (Table~1), the paper's primary evidence. Figure~\ref{fig:cdinsample}
-below is the corresponding diagram over the in-sample ranking (\S\ref{sec:insample}
-above), the protocol in which the relevance prior, search, and reported metric
+is the corresponding diagram over the in-sample ranking (\S\ref{sec:insample}),
+the protocol in which the relevance prior, search, and reported metric
 share the same cross-validation folds; as elsewhere in this Supplementary
 Information, in-sample results are an optimistic upper bound and are reported
 here for completeness rather than as the primary claim.

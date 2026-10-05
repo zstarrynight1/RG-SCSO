@@ -51,13 +51,15 @@ def build() -> None:
                 .replace("\\end{figure*}", "\\end{figure}")
                 .replace("\\begin{table*}", "\\begin{table}")
                 .replace("\\end{table*}", "\\end{table}"))
-    # Floats go to the top/bottom of a page, never mid-paragraph: strip the "h"
-    # (here) placement so a figure/table can never split a paragraph. "!" relaxes
-    # LaTeX's float-fraction limits so they still pack tightly rather than drifting.
+    # Journal-standard float placement: figures/tables go to the top or bottom of
+    # a page ([!tbp]), never mid-paragraph. Directional reference words
+    # ("below"/"above") are removed from the prose (see the generator) so a
+    # floated table/figure never contradicts its reference.
     body = (body.replace("[htbp]", "[!tbp]")
                 .replace("[htb]", "[!tbp]")
                 .replace("[hbtp]", "[!tbp]")
                 .replace("\\begin{table}[t]", "\\begin{table}[!tbp]")
+                .replace("\\begin{table}[tb]", "\\begin{table}[!tbp]")
                 .replace("\\begin{figure}[t]", "\\begin{figure}[!tbp]"))
 
     preamble = r"""% !TeX program = pdflatex
@@ -74,6 +76,7 @@ def build() -> None:
 \usepackage{algorithmic}
 \usepackage{graphicx}
 \graphicspath{{figures/}{./}}
+\usepackage{float}
 \usepackage{booktabs}
 \usepackage{multirow}
 \usepackage{rotating}
@@ -82,6 +85,10 @@ def build() -> None:
 \usepackage{microtype}
 \renewcommand{\arraystretch}{1.12}
 \setlength{\emergencystretch}{3em}
+% Keep inter-paragraph and around-heading spacing tight and uniform: do not let
+% LaTeX stretch vertical glue to force text to the page bottom (any slack goes to
+% the bottom margin instead). This removes the uneven gaps between paragraphs.
+\raggedbottom
 
 % Reduce float-induced whitespace: let floats fill more of the page before a
 % text page is forced, and tighten the gaps around them.
@@ -92,8 +99,20 @@ def build() -> None:
 \setcounter{topnumber}{3}
 \setcounter{bottomnumber}{2}
 \setcounter{totalnumber}{5}
-\setlength{\textfloatsep}{12pt plus 2pt minus 2pt}
-\setlength{\floatsep}{10pt plus 2pt minus 2pt}
+\setlength{\textfloatsep}{10pt plus 1pt minus 1pt}
+\setlength{\floatsep}{8pt plus 1pt minus 1pt}
+\setlength{\intextsep}{10pt plus 1pt minus 1pt}
+\setlength{\parskip}{0pt}
+
+% On a pure float page (two stacked figures/tables), stack them from the top
+% with a fixed small separation and push ALL slack to the bottom, instead of the
+% default behaviour that spreads the floats apart and leaves a wide gap between
+% them (e.g. between Fig. 3 and Fig. 4).
+\makeatletter
+\setlength{\@fptop}{0pt}
+\setlength{\@fpsep}{12pt plus 0fil}
+\setlength{\@fpbot}{0pt plus 1fil}
+\makeatother
 
 \newtheorem{lemma}{Lemma}
 \newtheorem{proposition}[lemma]{Proposition}
@@ -143,7 +162,7 @@ __KEYWORDS__
     highlights = [
         "Transfer-function binarization discards swarm search detail; we name it washout",
         "RG-SCSO injects per-feature MI relevance into the binarization decision of SCSO",
-        "Best mean accuracy and second-smallest subsets across 18 datasets at equal budget",
+        "Best mean accuracy and second-smallest subsets on 18 datasets under a fixed budget",
         "Ablation localizes the gain to the binarization step, not init or the objective",
         "Leak-free gain holds across KNN/SVM/RF wrappers; bounded on p>>n gene-expression",
     ]
@@ -179,7 +198,7 @@ __KEYWORDS__
     highlights = [
         "Transfer-function binarization discards swarm search detail; we name it washout",
         "RG-SCSO injects per-feature MI relevance into the binarization decision of SCSO",
-        "Best mean accuracy and second-smallest subsets across 18 datasets at equal budget",
+        "Best mean accuracy and second-smallest subsets on 18 datasets under a fixed budget",
         "Ablation localizes the gain to the binarization step, not init or the objective",
         "Leak-free gain holds across KNN/SVM/RF wrappers; bounded on p>>n gene-expression",
     ]
