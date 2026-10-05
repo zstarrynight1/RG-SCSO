@@ -72,7 +72,7 @@ COVER = [
      "mechanism from relevance-at-initialization or relevance-in-objective approaches in "
      "the SCSO-family literature (a full-text novelty audit is included).", None),
     ("Evidence and rigor. We evaluate on 18 datasets against six metaheuristics, five "
-     "classical selectors, and a deep baseline, under a fixed 15,000-evaluation budget "
+     "classical selectors, and a deep baseline, under a nominal 15,000-evaluation budget "
      "matched across all methods and a leakage-controlled protocol (relevance prior, "
      "search, and cross-validated fitness fit on the training partition only). We report "
      "a full statistical treatment (Friedman, Wilcoxon with Holm correction, effect "
@@ -84,7 +84,7 @@ COVER = [
      "generalization claim.", None),
     ("Declarations. The manuscript is original, is not under consideration elsewhere, and "
      "all authors approve its submission. The authors declare no competing interests. A "
-     "generative AI assistant was used for language editing and coding support; all "
+     "generative AI assistant was used for language and readability editing; all "
      "scientific content and results are the authors’ own and were verified by the "
      "authors.", None),
     ("We believe this work fits the scope of Applied Soft Computing and will interest its "
